@@ -1,17 +1,18 @@
 package com.cloud.repository;
 
-import com.cloud.entity.Files;
 import com.cloud.enumurator.FileTypes;
+
+import java.io.File;
 
 // Just name parameters search in current directory
 public interface FileRepository {
     //get file type
     FileTypes getFileType(String name);
-    FileTypes getFileTypes(String name, String path);
+    FileTypes getFileType(String name, String path);
     //Files
-    Files getFile(String name);
-    Files getFile(String name, String path);
+    File getFile(String name);
+    File getFile(String name, String path);
     //Folders
-    Files getFolder(String name);
-    Files getFolder(String name, String path);
+    File getFolder(String name);
+    File getFolder(String name, String path);
 }
