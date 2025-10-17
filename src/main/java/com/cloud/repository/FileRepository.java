@@ -1,7 +1,11 @@
 package com.cloud.repository;
 
+import com.cloud.entity.FileDetails;
+import org.springframework.stereotype.Repository;
+
 import java.io.File;
 
+@Repository
 // Just name parameters search in current directory
 public interface FileRepository {
     //get file type
@@ -9,7 +13,7 @@ public interface FileRepository {
     String getFileType(String name, String path);
     //Files
     File getFile(String name);
-    File getFile(String name, String path);
+    FileDetails getFile(String name, String path);
     //Folders
     File getFolder(String name);
     File getFolder(String name, String path);
