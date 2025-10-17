@@ -1,6 +1,5 @@
 package com.cloud.service;
 
-import com.cloud.enumurator.FileTypes;
 import com.cloud.repository.FileRepository;
 
 import java.io.File;
@@ -8,12 +7,12 @@ import java.io.File;
 public class FileService implements FileRepository {
 
     @Override
-    public FileTypes getFileType(String name) {
+    public String getFileType(String name) {
         return null;
     }
 
     @Override
-    public FileTypes getFileType(String name, String path) {
+    public String getFileType(String name, String path) {
         return null;
     }
 
@@ -38,7 +37,7 @@ public class FileService implements FileRepository {
     @Override
     public File getFolder(String name) {
         File getFolder = new File("");
-        if (!getFolder.exists() && !getFolder.isFile()) {
+        if (!getFolder.exists() && getFolder.isFile()) {
             return null;
         }
         return getFolder;
@@ -46,8 +45,8 @@ public class FileService implements FileRepository {
 
     @Override
     public File getFolder(String name, String path) {
-        File getFolder = new File("");
-        if (!getFolder.exists() && !getFolder.isFile()) {
+        File getFolder = new File(path);
+        if (!getFolder.exists() && getFolder.isFile()) {
             return null;
         }
         return getFolder;
