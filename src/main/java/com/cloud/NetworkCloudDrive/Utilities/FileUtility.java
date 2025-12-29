@@ -209,7 +209,7 @@ public class FileUtility {
      * @throws IOException  if an I/O error occurs
      */
     public String getMimeTypeFromExtension(Path filePath) throws IOException {
-        logger.info("File at path absolute {}, {}", filePath.toAbsolutePath(), filePath);
+        logger.debug("File at path absolute {}, {}", filePath.toAbsolutePath(), filePath);
         return Files.probeContentType(filePath);
     }
 
@@ -390,53 +390,60 @@ public class FileUtility {
             throw new FileSystemException("Failed to update user directory name");
     }
 
-    // alternative algorithm to walk file tree
-    // for maintenance features
-    public String traverseFileTree(Path startingPath) throws IOException {
-        int skippedFileCount = 0, skippedFolderCountInside = 0, skippedDuplicateCount = 0, discoveredFolderCount = 0, discoveredFileCount = 0;
-        File lastFolder = new File("");
-        List<Path> fileList = walkFsTree(startingPath, false);
-        for (Path orgPath : fileList) {
-            if (orgPath.toFile().isFile()) {
-                skippedFileCount++;
+    private void scanFilesInDirectory(List<Path> currentDir, long currentDirectoryId) throws IOException {
+        for (Path paths : currentDir) {
+            boolean filenameIsBase32Encoded = false;
+            File currentFile = paths.toFile();
+            if (!currentFile.isFile()) {
                 continue;
             }
-            if (lastFolder.equals(orgPath.toFile())) {
-                skippedDuplicateCount++;
+            if (encodingUtility.isBase32Decodable(currentFile.getName())) {
+                //if its base32 decodable check if its in db
+                if (sqLiteDAO.fileMetadataByNameExists(currentFile.getName())) {
+                    //skip
+                    continue;
+                }
+                filenameIsBase32Encoded = true;
+            }
+            logger.info("-> FILE {}", paths);
+            FileMetadata metadata =
+                    new FileMetadata(
+                            currentFile.getName(),
+                            currentDirectoryId,
+                            userSession.getId(),
+                            getMimeTypeFromExtension(currentFile.toPath()),
+                            currentFile.getTotalSpace());
+            sqLiteDAO.persistObjects(metadata);
+            if (!filenameIsBase32Encoded) {
+                // Encode in BASE32
+                String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
+                metadata.setName(encodedFileName);
+            }
+            sqLiteDAO.saveFile(metadata);
+            // changing in loop causes it to fail but rerunning scan makes it work
+            Files.move(currentFile.toPath(), Path.of(Path.of(currentFile.getPath()).getParent() + File.separator + metadata.getName()));
+        }
+    }
+
+    // alternative algorithm to walk file tree
+    // for maintenance features
+    public String traverseFileTree(long startingDirectoryId) throws IOException, SQLException {
+        File startingPath = returnFileIfItExists(getFolderPath(startingDirectoryId));
+        logger.info("STARTING FOLDER -> {}", startingPath);
+        File lastFolder = new File("");
+        List<Path> fileList = walkFsTree(startingPath.toPath(), false);
+        for (Path orgPath : fileList) {
+            File currentFile = orgPath.toFile();
+            if (currentFile.isFile()) {
+                continue;
+            }
+            if (lastFolder.equals(currentFile)) {
                 continue;
             }
             logger.info("CURRENT FOLDER -> {}", orgPath);
-            discoveredFolderCount++;
-            List<Path> returns = walkFsTree(orgPath, false);
-            for (Path paths : returns) {
-                if (!paths.toFile().isFile()) {
-                    skippedFolderCountInside++;
-                    continue;
-                }
-                logger.info("-> FILE {}", paths);
-                discoveredFileCount++;
-            }
-            lastFolder = orgPath.toFile();
+            scanFilesInDirectory(walkFsTree(orgPath, false), startingDirectoryId);
+            lastFolder = currentFile;
         }
-        logger.info("""
-                        Traversal complete, results:\
-                        
-                        Skipped File count: {}\
-                        
-                        Skipped Folder Count Inside: {}\
-                        
-                        Skipped duplicate count: {}\
-                        
-                        Discovered Folder Count: {}\
-                        
-                        Discovered File Count: {}""",
-                skippedFileCount, skippedFolderCountInside, skippedDuplicateCount, discoveredFolderCount, discoveredFileCount);
-        return String.format("Traversal complete, results:" +
-                        " Skipped File count: %d" +
-                        " Skipped Folder Count Inside: %d" +
-                        " Skipped duplicate count: %d" +
-                        " Discovered Folder Count: %d" +
-                        " Discovered File Count: %d",
-                skippedFileCount, skippedFolderCountInside, skippedDuplicateCount, discoveredFolderCount, discoveredFileCount);
+        return "OK~~";
     }
 }

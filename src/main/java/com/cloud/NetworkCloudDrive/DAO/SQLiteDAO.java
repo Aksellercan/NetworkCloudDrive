@@ -7,6 +7,8 @@ import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Repositories.SQLiteFileRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQLiteFolderRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQLiteUserEntityRepository;
+import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Example;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 @Component
 public class SQLiteDAO {
     private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
+    private final EntityManager entityManager;
     private final SQLiteFolderRepository sqLiteFolderRepository;
     private final SQLiteFileRepository sqLiteFileRepository;
     private final SQLiteUserEntityRepository sqLiteUserEntityRepository;
@@ -31,10 +34,12 @@ public class SQLiteDAO {
     public SQLiteDAO(
             SQLiteFolderRepository sqLiteFolderRepository,
             SQLiteFileRepository sqLiteFileRepository,
-            SQLiteUserEntityRepository sqLiteUserEntityRepository) {
+            SQLiteUserEntityRepository sqLiteUserEntityRepository,
+            EntityManager entityManager) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
+        this.entityManager = entityManager;
     }
 
     // DAO stuff
@@ -95,6 +100,21 @@ public class SQLiteDAO {
     }
 
     // Database service layer
+
+    @Transactional
+    public List<FileMetadata> searchFileMetadataByName(String name) {
+        return sqLiteFileRepository.searchFileMetadataByName(name);
+    }
+
+    @Transactional
+    public boolean fileMetadataByNameExists(String name) {
+        return sqLiteFileRepository.existsFileMetadataByName(name);
+    }
+
+    @Transactional
+    public void persistObjects(Object object) {
+        entityManager.persist(object);
+    }
 
     @Transactional
     public CurrentUserDTO getUserIDNameAndRoleByMail(String mail) {

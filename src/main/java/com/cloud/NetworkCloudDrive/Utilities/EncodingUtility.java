@@ -63,6 +63,14 @@ public class EncodingUtility {
         return encodeBase32FolderName(fileId, fileName, userId);
     }
 
+    public boolean isBase32Decodable(String name) {
+        try {
+            return decodeBase32StringNoPadding(name) != null;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     /**
      * Hashes string in given algorithms
      * @param originalString    string to hash
