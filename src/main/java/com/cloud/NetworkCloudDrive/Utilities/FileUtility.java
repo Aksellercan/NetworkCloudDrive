@@ -411,6 +411,7 @@ public class FileUtility {
                             currentFile.getName(),
                             currentDirectoryId,
                             userSession.getId(),
+                            //zip returns null
                             getMimeTypeFromExtension(currentFile.toPath()),
                             currentFile.getTotalSpace());
             sqLiteDAO.persistObjects(metadata);
