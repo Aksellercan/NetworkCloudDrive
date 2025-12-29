@@ -36,16 +36,15 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((requests) -> requests
                         // give everyone access to these 2 endpoints
-                        .requestMatchers("/api/user/login").permitAll()
+//                        .requestMatchers("/api/user/login").permitAll()
                         .requestMatchers("/api/user/register").permitAll()
                         // but require authentication for any other endpoint
                         .anyRequest()
                         .authenticated()
-                        // temporarily disable csrf protection
                 )
                 .httpBasic(withDefaults()) // use BASIC authentication
                 .formLogin(withDefaults()) // Use both BASIC and FORM logins
-                .csrf(AbstractHttpConfigurer::disable) // blocks POST and cross-platform attacks read more about it
+                .csrf(AbstractHttpConfigurer::disable) // blocks POST and cross-platform attacks
                 .cors(Customizer.withDefaults())
                 // give everyone access to log out
                 .logout(LogoutConfigurer::permitAll);

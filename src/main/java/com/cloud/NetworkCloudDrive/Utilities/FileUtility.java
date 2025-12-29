@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
@@ -9,9 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
+import java.net.URLConnection;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -213,6 +213,11 @@ public class FileUtility {
         return Files.probeContentType(filePath);
     }
 
+    public String guessMimeTypeFromExtension(File file) throws IOException {
+        logger.debug("[GUESS] File at path absolute {}, {}", file.getPath(), file);
+        return URLConnection.guessContentTypeFromStream(new BufferedInputStream(new FileInputStream(file)));
+    }
+
     /**
      * Returns file extension
      * @param fileName  filename with extension
@@ -388,64 +393,5 @@ public class FileUtility {
         Path updatedName = Files.move(oldPath.toPath(), userDirectory.toPath());
         if (Files.notExists(updatedName))
             throw new FileSystemException("Failed to update user directory name");
-    }
-
-    private void scanFilesInDirectory(List<Path> currentDir, long currentDirectoryId) throws IOException {
-        for (Path paths : currentDir) {
-            boolean filenameIsBase32Encoded = false;
-            File currentFile = paths.toFile();
-            if (!currentFile.isFile()) {
-                continue;
-            }
-            if (encodingUtility.isBase32Decodable(currentFile.getName())) {
-                //if its base32 decodable check if its in db
-                // we can also decode Base32 and get id to search by ID index could be more performant
-                if (sqLiteDAO.fileMetadataByNameExists(currentFile.getName())) {
-                    //skip
-                    continue;
-                }
-                filenameIsBase32Encoded = true;
-            }
-            logger.info("-> FILE {}", paths);
-            FileMetadata metadata =
-                    new FileMetadata(
-                            currentFile.getName(),
-                            currentDirectoryId,
-                            userSession.getId(),
-                            //zip returns null
-                            getMimeTypeFromExtension(currentFile.toPath()),
-                            currentFile.getTotalSpace());
-            sqLiteDAO.persistObjects(metadata);
-            if (!filenameIsBase32Encoded) {
-                // Encode in BASE32
-                String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
-                metadata.setName(encodedFileName);
-            }
-            sqLiteDAO.saveFile(metadata);
-            // changing in loop causes it to fail but rerunning scan makes it work
-            Files.move(currentFile.toPath(), Path.of(Path.of(currentFile.getPath()).getParent() + File.separator + metadata.getName()));
-        }
-    }
-
-    // alternative algorithm to walk file tree
-    // for maintenance features
-    public String traverseFileTree(long startingDirectoryId) throws IOException, SQLException {
-        File startingPath = returnFileIfItExists(getFolderPath(startingDirectoryId));
-        logger.info("STARTING FOLDER -> {}", startingPath);
-        File lastFolder = new File("");
-        List<Path> fileList = walkFsTree(startingPath.toPath(), false);
-        for (Path orgPath : fileList) {
-            File currentFile = orgPath.toFile();
-            if (currentFile.isFile()) {
-                continue;
-            }
-            if (lastFolder.equals(currentFile)) {
-                continue;
-            }
-            logger.info("CURRENT FOLDER -> {}", orgPath);
-            scanFilesInDirectory(walkFsTree(orgPath, false), startingDirectoryId);
-            lastFolder = currentFile;
-        }
-        return "OK~~";
     }
 }

@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface SQLiteFolderRepository extends JpaRepository<FolderMetadata, Long> {
     List<FolderMetadata> findAllByPathContainsIgnoreCase(String path);
+    boolean existsFolderMetadataByName(String name);
 }

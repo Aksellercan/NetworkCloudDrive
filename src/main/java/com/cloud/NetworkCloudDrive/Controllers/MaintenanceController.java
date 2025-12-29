@@ -1,7 +1,9 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
+import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.JSONResponse;
+import com.cloud.NetworkCloudDrive.Services.MaintenanceService;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,15 +16,19 @@ import org.springframework.web.bind.annotation.*;
 public class MaintenanceController {
     private final Logger logger = LoggerFactory.getLogger(MaintenanceController.class);
     private final FileUtility fileUtility;
+    private final MaintenanceService maintenanceService;
 
-    public MaintenanceController(FileUtility fileUtility) {
+    public MaintenanceController(FileUtility fileUtility, MaintenanceService maintenanceService) {
         this.fileUtility = fileUtility;
+        this.maintenanceService = maintenanceService;
     }
 
     @GetMapping("scan")
     public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam long folderid) {
         try {
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(new JSONResponse(fileUtility.traverseFileTree(folderid)));
+            maintenanceService.scanFoldersAndFiles(folderid, ScanOptions.GO_INTO_FOLDERS);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONResponse("scan completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "error scanning"));

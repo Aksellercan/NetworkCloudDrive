@@ -7,6 +7,5 @@ import java.util.List;
 
 public interface SQLiteFileRepository extends JpaRepository<FileMetadata, Long> {
     List<FileMetadata> searchFileMetadataByName(String name);
-
     boolean existsFileMetadataByName(String name);
 }

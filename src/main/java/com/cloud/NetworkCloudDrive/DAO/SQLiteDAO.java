@@ -111,6 +111,11 @@ public class SQLiteDAO {
         return sqLiteFileRepository.existsFileMetadataByName(name);
     }
 
+    @Transactional
+    public boolean folderMetadataByNameExists(String name) {
+        return sqLiteFolderRepository.existsFolderMetadataByName(name);
+    }
+
     // to avoid putting @Transactional annotation
     @Transactional
     public void persistObjects(Object object) {

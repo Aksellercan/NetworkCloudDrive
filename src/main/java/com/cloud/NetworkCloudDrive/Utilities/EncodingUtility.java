@@ -65,7 +65,11 @@ public class EncodingUtility {
 
     public boolean isBase32Decodable(String name) {
         try {
-            return decodeBase32StringNoPadding(name) != null;
+            String[] split = decodedBase32SplitArray(name);
+            long id = Long.parseLong(split[0]);
+            String typeName = split[1];
+            long userId = Long.parseLong(split[2]);
+            return true;
         } catch (IllegalArgumentException e) {
             return false;
         }

@@ -36,21 +36,21 @@ public class UserController {
 
     //TODO replace with 2 endpoints, one for failure to login and other for success.
     // On success initialize SessionScope user details and update lastlogin
-    @PostMapping("login")
-    public @ResponseBody ResponseEntity<?> login(@RequestBody UserDTO userDTO) {
-        try {
-            if (!userService.loginUser(userDTO.getName(), userDTO.getMail(), userDTO.getPassword())) {
-                throw new SecurityException("Wrong password");
-            }
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(new JSONMapResponse(
-                            Map.of("username", userDTO.getName(), "mail", userDTO.getMail()), "User logged in successfully"));
-        } catch (Exception e) {
-            logger.error("Failed to login, reason: {}", e.getMessage());
-            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).
-                    body(new JSONErrorResponse(e, "Failed to login, reason: %s", e.getMessage()));
-        }
-    }
+//    @PostMapping("login")
+//    public @ResponseBody ResponseEntity<?> login(@RequestBody UserDTO userDTO) {
+//        try {
+//            if (!userService.loginUser(userDTO.getName(), userDTO.getMail(), userDTO.getPassword())) {
+//                throw new SecurityException("Wrong password");
+//            }
+//            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
+//                    body(new JSONMapResponse(
+//                            Map.of("username", userDTO.getName(), "mail", userDTO.getMail()), "User logged in successfully"));
+//        } catch (Exception e) {
+//            logger.error("Failed to login, reason: {}", e.getMessage());
+//            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).
+//                    body(new JSONErrorResponse(e, "Failed to login, reason: %s", e.getMessage()));
+//        }
+//    }
 
     @PostMapping("register")
     public @ResponseBody ResponseEntity<?> register(@RequestBody UserDTO userDTO) {
