@@ -111,6 +111,7 @@ public class SQLiteDAO {
         return sqLiteFileRepository.existsFileMetadataByName(name);
     }
 
+    // to avoid putting @Transactional annotation
     @Transactional
     public void persistObjects(Object object) {
         entityManager.persist(object);

@@ -399,6 +399,7 @@ public class FileUtility {
             }
             if (encodingUtility.isBase32Decodable(currentFile.getName())) {
                 //if its base32 decodable check if its in db
+                // we can also decode Base32 and get id to search by ID index could be more performant
                 if (sqLiteDAO.fileMetadataByNameExists(currentFile.getName())) {
                     //skip
                     continue;
