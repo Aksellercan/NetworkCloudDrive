@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Repositories;
+package com.cloud.NetworkCloudDrive.Repositories.SQL;
 
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import org.springframework.data.jpa.repository.JpaRepository;

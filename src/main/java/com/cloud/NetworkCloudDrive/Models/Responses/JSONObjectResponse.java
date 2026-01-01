@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Models;
+package com.cloud.NetworkCloudDrive.Models.Responses;
 
 public class JSONObjectResponse extends JSONResponse {
     private Object object;

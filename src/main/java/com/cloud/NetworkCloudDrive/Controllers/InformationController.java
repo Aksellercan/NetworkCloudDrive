@@ -2,8 +2,7 @@ package com.cloud.NetworkCloudDrive.Controllers;
 
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Models.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;

@@ -1,8 +1,8 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
 import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
-import com.cloud.NetworkCloudDrive.Models.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Models.JSONResponse;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Services.MaintenanceService;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import org.slf4j.Logger;

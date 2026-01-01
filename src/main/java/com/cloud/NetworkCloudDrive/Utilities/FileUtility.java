@@ -1,7 +1,6 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;

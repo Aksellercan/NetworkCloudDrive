@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Models;
+package com.cloud.NetworkCloudDrive.Models.Responses;
 
 import java.util.Map;
 
