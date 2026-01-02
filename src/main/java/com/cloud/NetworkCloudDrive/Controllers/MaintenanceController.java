@@ -24,9 +24,9 @@ public class MaintenanceController {
     }
 
     @GetMapping("scan")
-    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam long folderid) {
+    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
         try {
-            maintenanceService.scanFoldersAndFiles(folderid, ScanOptions.GO_INTO_FOLDERS);
+            maintenanceService.scanFoldersAndFiles(folderid, scanOptions);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONResponse("scan completed"));
         } catch (Exception e) {

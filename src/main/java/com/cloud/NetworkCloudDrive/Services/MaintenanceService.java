@@ -46,6 +46,10 @@ public class MaintenanceService {
         List<Path> fileList = fileUtility.walkFsTree(startingPath.toPath(), false);
         for (Path orgPath : fileList) {
             File currentFile = orgPath.toFile();
+            if (scanOptions == ScanOptions.ONLY_FILES) {
+                scanFilesInDirectory(fileUtility.walkFsTree(orgPath, false), startingDirectoryId);
+                break;
+            }
             if (currentFile.isFile() || lastFolder.equals(currentFile)) {
                 continue;
             }
@@ -53,9 +57,9 @@ public class MaintenanceService {
                 logger.info("Skip starting path");
                 continue;
             }
-            if (scanOptions == com.cloud.NetworkCloudDrive.Enum.ScanOptions.DONT_GO_INTO_FOLDERS) {
+            if (scanOptions == ScanOptions.DONT_GO_INTO_FOLDERS) {
                 if (currentFile.getParentFile().equals(startingPath)) {
-                    logger.info("Exit loop because {}", com.cloud.NetworkCloudDrive.Enum.ScanOptions.DONT_GO_INTO_FOLDERS);
+                    logger.info("Exit loop because {}", ScanOptions.DONT_GO_INTO_FOLDERS);
                     break;
                 }
             }
@@ -78,12 +82,13 @@ public class MaintenanceService {
             logger.info("CURRENT FOLDER -> {}", orgPath);
             logger.info("CURRENT ID -> {}", currentFolderId);
             // get current folder Id
-            scanFilesInDirectory(fileUtility.walkFsTree(orgPath, false));
+            scanFilesInDirectory(fileUtility.walkFsTree(orgPath, false),
+                    Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getParentFile().getName())[0]));
             lastFolder = currentFile;
         }
     }
 
-    public void scanFilesInDirectory(List<Path> currentDir) throws IOException {
+    public void scanFilesInDirectory(List<Path> currentDir, long folderId) throws IOException {
         for (Path paths : currentDir) {
             boolean filenameIsBase32Encoded = false;
             File currentFile = paths.toFile();
@@ -106,7 +111,7 @@ public class MaintenanceService {
             FileMetadata metadata =
                     new FileMetadata(
                             currentFile.getName(),
-                            Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getParentFile().getName())[0]),
+                            folderId,
                             userSession.getId(),
                             //zip returns null
                             fileUtility.guessMimeTypeFromExtension(currentFile),
