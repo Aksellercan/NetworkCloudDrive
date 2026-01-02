@@ -52,6 +52,8 @@ public class FileSystemService implements FileSystemRepository {
         List<FolderListItemDTO> folderList = new ArrayList<>();
         for (Path path : filePaths) {
             File file = path.toFile();
+            //ignore dotfiles
+            if (file.getName().startsWith(".")) continue;
             logger.info("file/folder in queue {}", file);
             String[] arrayString = encodingUtility.decodedBase32SplitArray(file.getName());
             long actualFileId = Long.parseLong(arrayString[0]);

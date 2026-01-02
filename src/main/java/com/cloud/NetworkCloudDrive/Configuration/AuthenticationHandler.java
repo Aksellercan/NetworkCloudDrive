@@ -1,8 +1,8 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Models.JSONObjectResponse;
-import com.cloud.NetworkCloudDrive.Models.JSONResponse;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.ServletException;
