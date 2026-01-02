@@ -41,13 +41,13 @@
 
 | Method | 	Route                    | 	Description                                                 | Working            |
 |--------|---------------------------|--------------------------------------------------------------|--------------------|
-| POST   | 	api/user/login           | User login                                                   | :heavy_minus_sign: |
+| POST   | 	/login                   | User login                                                   | :heavy_check_mark: |
 | POST   | 	api/user/register        | Registers user                                               | :heavy_check_mark: |
 | GET    | 	api/user/info            | Returns User details                                         | :heavy_check_mark: |
-| PUT   | 	api/user/update/mail     | Updates user mail                                            | :heavy_check_mark: |
-| PUT   | 	api/user/update/name     | Updates user name                                            | :heavy_check_mark: |
-| PUT   | 	api/user/update/password | Updates and hashes user password                             | :heavy_check_mark: |
-| DELETE   | 	api/user/delete          | Deletes User from database and folders belonging to the user | :heavy_minus_sign: |
+| PUT    | 	api/user/update/mail     | Updates user mail                                            | :heavy_check_mark: |
+| PUT    | 	api/user/update/name     | Updates user name                                            | :heavy_check_mark: |
+| PUT    | 	api/user/update/password | Updates and hashes user password                             | :heavy_check_mark: |
+| DELETE | 	api/user/delete          | Deletes User from database and folders belonging to the user | :heavy_minus_sign: |
 
 Use PUT if request body is same as route's accepted model. PATCH if parts of route's accepted model.
 
