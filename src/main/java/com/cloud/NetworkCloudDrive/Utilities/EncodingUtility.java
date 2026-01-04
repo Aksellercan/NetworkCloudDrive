@@ -1,14 +1,19 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 
 @Component
 public class EncodingUtility {
+    private final Logger logger = LoggerFactory.getLogger(EncodingUtility.class);
 
     public EncodingUtility() {}
 
@@ -65,12 +70,12 @@ public class EncodingUtility {
 
     public boolean isBase32Decodable(String name) {
         try {
-            String[] split = decodedBase32SplitArray(name);
-            long id = Long.parseLong(split[0]);
-            String typeName = split[1];
-            long userId = Long.parseLong(split[2]);
-            return true;
+            String tryDecoding = decodeBase32StringNoPadding(name);
+            long tryIdParse = Long.parseLong(tryDecoding.split(":")[0]);
+            logger.info("trial of id parsing {} from {}", tryIdParse, tryDecoding);
+            return !tryDecoding.isEmpty();
         } catch (IllegalArgumentException e) {
+            logger.error("Failed to parse concluding as not BASE32 for string {}", name);
             return false;
         }
     }

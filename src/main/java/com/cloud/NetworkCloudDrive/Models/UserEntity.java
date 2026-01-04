@@ -27,7 +27,6 @@ public class UserEntity {
     // change to instant
     // purely for telemetry
     @Column(name = "lastLogin")
-    @CreationTimestamp
     private Instant lastLogin;
 
     // purely for telemetry

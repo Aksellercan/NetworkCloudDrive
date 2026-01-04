@@ -39,7 +39,7 @@ public class SecurityConfig {
                                 .anyRequest()
                                 .authenticated()
                         // temporarily disable csrf protection
-                )
+                ).httpBasic(Customizer.withDefaults())
                 .formLogin(formLogin ->
                         formLogin.successHandler(authenticationHandler())
                                 .failureHandler(authenticationHandler())) // Use both BASIC and FORM logins

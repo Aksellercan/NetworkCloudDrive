@@ -37,6 +37,7 @@ public class MaintenanceService {
         this.userSession = userSession;
     }
 
+    // a recursive way maybe???
     public void scanFoldersAndFiles(long startingDirectoryId, ScanOptions scanOptions) throws IOException, SQLException {
         // alternative algorithm to walk file tree
         // for maintenance features
@@ -47,7 +48,8 @@ public class MaintenanceService {
         for (Path orgPath : fileList) {
             File currentFile = orgPath.toFile();
             if (scanOptions == ScanOptions.ONLY_FILES) {
-                scanFilesInDirectory(fileUtility.walkFsTree(orgPath, false), startingDirectoryId);
+                scanFilesInDirectory(fileUtility.returnFilesInDirectory(orgPath, false,
+                        file -> file.toFile().isFile()), startingDirectoryId);
                 break;
             }
             if (currentFile.isFile() || lastFolder.equals(currentFile)) {
@@ -77,13 +79,15 @@ public class MaintenanceService {
                 }
                 currentFolderMetadata = handleFolderScan(currentFolderId, currentFile.getName(), currentFile);
                 logger.info("Created folder metadata ID {} NAME {}", currentFolderMetadata.getId(), currentFolderMetadata.getName());
+                fileList = fileUtility.walkFsTree(orgPath, false); //update entries
             }
             currentFolderId = currentFolderMetadata.getId();
             logger.info("CURRENT FOLDER -> {}", orgPath);
             logger.info("CURRENT ID -> {}", currentFolderId);
             // get current folder Id
-            scanFilesInDirectory(fileUtility.walkFsTree(orgPath, false),
-                    Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getParentFile().getName())[0]));
+            scanFilesInDirectory(fileUtility.returnFilesInDirectory(orgPath, false,
+                    file -> file.toFile().isFile()), currentFolderMetadata.getId());
+            fileList = fileUtility.walkFsTree(orgPath, false);
             lastFolder = currentFile;
         }
     }
@@ -93,9 +97,6 @@ public class MaintenanceService {
             boolean filenameIsBase32Encoded = false;
             File currentFile = paths.toFile();
             logger.info("CURRENT FILE -> {}", currentFile.getName());
-            if (!currentFile.isFile()) {
-                continue;
-            }
             if (encodingUtility.isBase32Decodable(currentFile.getName())) {
                 //if its base32 decodable check if its in db
                 // we can also decode Base32 and get id to search by ID index could be more performant
@@ -137,6 +138,7 @@ public class MaintenanceService {
         createdFolder.setName(encodingUtility.encodeBase32FolderName(createdFolder.getId(), folderName, userSession.getId()));
         sqLiteDAO.saveFolder(createdFolder);
         // changing in loop causes it to fail but rerunning scan makes it work
+        logger.info("mutated path {}", Path.of(Path.of(currentFolder.getPath()).getParent() + File.separator + createdFolder.getName()));
         Files.move(
                 currentFolder.toPath(), Path.of(Path.of(currentFolder.getPath()).getParent() + File.separator + createdFolder.getName()));
         return createdFolder;

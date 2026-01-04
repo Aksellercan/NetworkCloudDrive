@@ -16,7 +16,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
@@ -53,7 +55,10 @@ public class FileUtility {
         }
     }
 
-    //WHAT A MESS
+    public List<Path> returnFilesInDirectory(Path dir, boolean reverse, Predicate<Path> pathFilter) throws IOException {
+        return walkFsTree(dir, reverse).stream().filter(pathFilter).collect(Collectors.toList());
+    }
+
     //TODO instead of generating Id paths use startsWith from DAO and filter files by found folders id's then delete them both from db and system
     public void deleteFsTree(Path dir, String startingIdPath) throws IOException {
         logger.info("Start File Tree deletion operation");
@@ -70,7 +75,6 @@ public class FileUtility {
                 continue;
             }
             if (file.isFile()) {
-                // use deleteIfExists at prod
                 String parentFolderIdPath = generateIdPaths(file.getParentFile().getPath(), startingIdPath);
                 logger.debug("generated file path: {}", parentFolderIdPath);
                 FolderMetadata folderMetadata =
@@ -84,12 +88,10 @@ public class FileUtility {
                 logger.debug("File metadata: name {} path {} Id {}", output.getName(), output.getFolderId(), output.getId());
                 continue;
             }
-            // some progress
             String parentFolderIdPath = generateIdPaths(file.getPath(), startingIdPath);
             logger.debug("generated folder path: {}", parentFolderIdPath);
             FolderMetadata folderMetadata = sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getName(), userSession.getId());
             // manage folders here
-            //temporary comment out to test
             if (!Files.deleteIfExists(file.toPath())) {
                 errorCount++;
                 continue;
@@ -116,6 +118,7 @@ public class FileUtility {
         for (FolderMetadata folderMetadata : folderList) {
             folderMetadata.setPath(folderMetadata.getPath().replaceAll(oldPrefix, newPrefix));
         }
+//        folderList.forEach(folderMetadata -> folderMetadata.setName(folderMetadata.getPath().replaceAll(oldPrefix, newPrefix)));
         return result;
     }
 

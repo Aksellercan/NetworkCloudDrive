@@ -1,8 +1,10 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
+import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.ServletException;
@@ -16,6 +18,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 import java.io.IOException;
+import java.util.Date;
 
 public class AuthenticationHandler implements AuthenticationSuccessHandler, AuthenticationFailureHandler {
     @Autowired
@@ -34,11 +37,12 @@ public class AuthenticationHandler implements AuthenticationSuccessHandler, Auth
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
             throws IOException, ServletException {
+        UserEntity user = sqLiteDAO.findUserByMail(authentication.getName());
+        user.setLastLogin(new Date().toInstant());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().print(new ObjectMapper()
                 .registerModule(new JavaTimeModule())
-                .writeValueAsString(new JSONObjectResponse(
-                        sqLiteDAO.getUserIDNameAndRoleByMail(authentication.getName()), "Login Success")));
+                .writeValueAsString(new JSONObjectResponse(new CurrentUserDTO(sqLiteDAO.saveUser(user)), "Login Success")));
         response.flushBuffer();
     }
 }

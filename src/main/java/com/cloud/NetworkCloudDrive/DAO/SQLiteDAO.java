@@ -8,8 +8,6 @@ import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFileRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFolderRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteUserEntityRepository;
 import jakarta.persistence.EntityManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Example;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
@@ -24,7 +22,6 @@ import java.util.stream.Collectors;
 // Basically DAO but for multiple types*
 @Component
 public class SQLiteDAO {
-    private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
     private final EntityManager entityManager;
     private final SQLiteFolderRepository sqLiteFolderRepository;
     private final SQLiteFileRepository sqLiteFileRepository;
