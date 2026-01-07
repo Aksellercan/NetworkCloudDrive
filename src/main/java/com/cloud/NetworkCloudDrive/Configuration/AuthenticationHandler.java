@@ -1,10 +1,10 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Models.JSONResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,8 +14,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.Date;
 
 public class AuthenticationHandler implements AuthenticationSuccessHandler, AuthenticationFailureHandler {
     @Autowired
@@ -35,10 +37,10 @@ public class AuthenticationHandler implements AuthenticationSuccessHandler, Auth
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
             throws IOException, ServletException {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        UserEntity user = sqLiteDAO.findUserByMail(authentication.getName());
+        user.setLastLogin(new Date().toInstant());
         response.getWriter().print(new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .writeValueAsString(new JSONObjectResponse(
-                        sqLiteDAO.getUserIDNameAndRoleByMail(authentication.getName()), "Login Success")));
+                .writeValueAsString(new JSONObjectResponse(new CurrentUserDTO(sqLiteDAO.saveUser(user)), "Login Success")));
         response.flushBuffer();
     }
 }

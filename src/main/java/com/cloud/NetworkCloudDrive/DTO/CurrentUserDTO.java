@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.DTO;
 
 import com.cloud.NetworkCloudDrive.Enum.UserRole;
+import com.cloud.NetworkCloudDrive.Models.UserEntity;
 
 import java.time.Instant;
 
@@ -24,6 +25,14 @@ public class CurrentUserDTO {
         this.name = name;
         this.mail = mail;
         this.role = role;
+    }
+
+    public CurrentUserDTO(UserEntity userEntity) {
+        this.id = userEntity.getId();
+        this.name = userEntity.getName();
+        this.mail = userEntity.getMail();
+        this.role = userEntity.getRole();
+        this.lastLogin = userEntity.getLastLogin();
     }
 
     public CurrentUserDTO() {
