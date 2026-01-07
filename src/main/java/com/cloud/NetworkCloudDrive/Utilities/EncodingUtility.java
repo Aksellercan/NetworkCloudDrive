@@ -40,7 +40,7 @@ public class EncodingUtility {
     /**
      * Decode BASE32 encoded file/folder names.
      * @param base32String  BASE32 encoded file/folder name
-     * @return  decoded BASE32 string split by ":". Split result 0 is file/folder ID, 1 is file/folder name and 2 is userID
+     * @return  decoded BASE32 string split by ":". Split index 0 is file/folder ID, 1 is file/folder name and 2 is for userID
      */
     public String[] decodedBase32SplitArray(String base32String) {
         return decodeBase32StringNoPadding(base32String).split(":");

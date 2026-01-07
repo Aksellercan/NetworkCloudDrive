@@ -40,14 +40,14 @@ public class MaintenanceService {
         this.userSession = userSession;
     }
 
-    public Path handleFileMetadata(File file) throws IOException {
+    public Path handleFileMetadata(File file, long folderId) throws IOException {
         logger.info("CURRENT FILE -> {}", file.getName());
         if (encodingUtility.isBase32Decodable(file.getName())) {
             //if its base32 decodable check if its in db
             // we can also decode Base32 and get id to search by ID index could be more performant
             if (sqLiteDAO.fileMetadataByNameExists(file.getName())) {
                 //skip
-                logger.info("File exists {}", file.getName());
+                logger.info("File exists {}", encodingUtility.decodedBase32SplitArray(file.getName())[1]);
                 return null;
             }
             logger.info("File does not exist {}", file.getName());
@@ -56,25 +56,32 @@ public class MaintenanceService {
         FileMetadata metadata =
                 new FileMetadata(
                         file.getName(),
+                        //try
                         folderId,
                         userSession.getId(),
-                        //zip returns null
+                        //BROKEN
                         fileUtility.guessMimeTypeFromExtension(file),
                         file.getTotalSpace());
         sqLiteDAO.persistObjects(metadata);
-        return Files.move(file.toPath(), Path.of(Path.of(file.getPath()).getParent() + File.separator + metadata.getName()));
+        String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), file.getName(), userSession.getId());
+        metadata.setName(encodedFileName);
+        sqLiteDAO.saveFile(metadata);
+        logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
+                metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
+        return Files.move(file.toPath(), Path.of(file.getParentFile().getPath() + File.separator + metadata.getName()));
     }
 
-    public List<Path> recursivelyScanFilesAndFolders(List<Path> currentPathList, int recurseCount) throws IOException {
-        if (recurseCount > 5) return currentPathList;
-        recurseCount++;
+    public List<Path> recursivelyScanFilesAndFolders(List<Path> currentPathList, long folderId) throws IOException {
         for (int i = 0; i < currentPathList.size(); i++) {
             File file = currentPathList.get(i).toFile();
             if (file.isFile()) {
-                Path handleFile = handleFileMetadata(file);
+                Path handleFile = handleFileMetadata(file, folderId);
+                if (handleFile == null) continue;
+                logger.info("handled path {}", handleFile.toString());
                 currentPathList.set(i, handleFile);
             } else {
-                handleFolderScan();
+                logger.info("folder not yet {}", encodingUtility.decodedBase32SplitArray(file.getName())[1]);
+//                handleFolderScan();
             }
         }
         return recursivelyScanFilesAndFolders(
@@ -83,7 +90,7 @@ public class MaintenanceService {
                                 .filter(file -> !file.toFile().isFile())
                                 .findFirst().orElseThrow(),
                         false),
-                recurseCount);
+                folderId);
     }
 
     // a recursive way maybe???
@@ -119,7 +126,8 @@ public class MaintenanceService {
             if (encodingUtility.isBase32Decodable(currentFile.getName())) {
                 currentFolderMetadata = sqLiteDAO.queryFolderMetadata(
                         Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getName())[0]), userSession.getId());
-                logger.info("Found folder metadata ID {} NAME {}", currentFolderMetadata.getId(), currentFolderMetadata.getName());
+                logger.info("Found folder metadata ID {} NAME {}",
+                        currentFolderMetadata.getId(), encodingUtility.decodedBase32SplitArray(currentFolderMetadata.getName())[1]);
             } else {
                 if (currentFile.getParentFile().equals(startingPath)) {
                     currentFolderId = 0;
@@ -151,7 +159,7 @@ public class MaintenanceService {
                 // we can also decode Base32 and get id to search by ID index could be more performant
                 if (sqLiteDAO.fileMetadataByNameExists(currentFile.getName())) {
                     //skip
-                    logger.info("File exists {}", currentFile.getName());
+                    logger.info("File exists {}", encodingUtility.decodedBase32SplitArray(currentFile.getName())[1]);
                     continue;
                 }
                 logger.info("File does not exist {}", currentFile.getName());
@@ -163,8 +171,8 @@ public class MaintenanceService {
                             currentFile.getName(),
                             folderId,
                             userSession.getId(),
-                            //zip returns null
-                            fileUtility.guessMimeTypeFromExtension(currentFile),
+                            //BROKEN
+                            fileUtility.useTikaCoreMimeTypeFromExtension(currentFile),
                             currentFile.getTotalSpace());
             sqLiteDAO.persistObjects(metadata);
             if (!filenameIsBase32Encoded) {
@@ -172,9 +180,11 @@ public class MaintenanceService {
                 String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
                 metadata.setName(encodedFileName);
             }
+            logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
+                    metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
             sqLiteDAO.saveFile(metadata);
             // changing in loop causes it to fail but rerunning scan makes it work
-            Files.move(currentFile.toPath(), Path.of(Path.of(currentFile.getPath()).getParent() + File.separator + metadata.getName()));
+            Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
         }
     }
 

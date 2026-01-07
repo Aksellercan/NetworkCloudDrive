@@ -5,6 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -218,6 +219,11 @@ public class FileUtility {
     public String guessMimeTypeFromExtension(File file) throws IOException {
         logger.debug("[GUESS] File at path absolute {}, {}", file.getPath(), file);
         return URLConnection.guessContentTypeFromStream(new BufferedInputStream(new FileInputStream(file)));
+    }
+
+    public String useTikaCoreMimeTypeFromExtension(File file) throws IOException {
+        logger.debug("[TIKA-CORE] File at path absolute {}, {}", file.getPath(), file);
+        return new Tika().detect(file);
     }
 
     /**
