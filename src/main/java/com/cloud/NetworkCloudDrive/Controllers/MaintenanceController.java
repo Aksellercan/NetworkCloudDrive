@@ -46,8 +46,9 @@ public class MaintenanceController {
 //                        else
 //                            logger.error("recursive folder\t{}", folders.toFile().getPath());
 //                    });
-            maintenanceService.recursivelyScanFilesAndFolders(
-                    fileUtility.getFileAndFolderPathsFromFolder(fileUtility.getFolderPath(folderid)), folderid);
+//            maintenanceService.recursivelyScanFilesAndFolders(
+//                    fileUtility.getFileAndFolderPathsFromFolder(fileUtility.getFolderPath(folderid)), folderid);
+            logger.info("result {}", maintenanceService.callRecursive(folderid, scanOptions));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONResponse("recursive scan completed"));
         } catch (Exception e) {

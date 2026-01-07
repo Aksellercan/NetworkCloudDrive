@@ -9,8 +9,6 @@ import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Example;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -19,7 +17,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class MaintenanceService {
@@ -69,28 +66,6 @@ public class MaintenanceService {
         logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
                 metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
         return Files.move(file.toPath(), Path.of(file.getParentFile().getPath() + File.separator + metadata.getName()));
-    }
-
-    public List<Path> recursivelyScanFilesAndFolders(List<Path> currentPathList, long folderId) throws IOException {
-        for (int i = 0; i < currentPathList.size(); i++) {
-            File file = currentPathList.get(i).toFile();
-            if (file.isFile()) {
-                Path handleFile = handleFileMetadata(file, folderId);
-                if (handleFile == null) continue;
-                logger.info("handled path {}", handleFile.toString());
-                currentPathList.set(i, handleFile);
-            } else {
-                logger.info("folder not yet {}", encodingUtility.decodedBase32SplitArray(file.getName())[1]);
-//                handleFolderScan();
-            }
-        }
-        return recursivelyScanFilesAndFolders(
-                fileUtility.walkFsTree(
-                        currentPathList.stream()
-                                .filter(file -> !file.toFile().isFile())
-                                .findFirst().orElseThrow(),
-                        false),
-                folderId);
     }
 
     // a recursive way maybe???
@@ -147,6 +122,70 @@ public class MaintenanceService {
             fileList = fileUtility.walkFsTree(orgPath, false);
             lastFolder = currentFile;
         }
+    }
+
+    public boolean callRecursive(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
+        File startingPath = fileUtility.returnFileIfItExists(fileUtility.getFolderPath(folderId));
+        return recursiveImplementation(
+                0,
+                fileUtility.walkFsTree(startingPath.toPath(), false),
+                folderId,
+                startingPath.getPath(),
+                scanOptions,
+                new File("")
+        );
+    }
+
+    public boolean recursiveImplementation(int index, List<Path> fileList, long currentDirectory, String startingPath, ScanOptions scanOptions, File lastFile) throws IOException, SQLException {
+        if (index >= fileList.size()) return true;
+        logger.info("index: {}", index);
+        File currentFile = fileList.get(index).toFile();
+        if (scanOptions == ScanOptions.ONLY_FILES) {
+            scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(index), false,
+                    file -> file.toFile().isFile()), currentDirectory);
+            return true;
+        }
+        if (currentFile.isFile() || lastFile.equals(currentFile)) {
+            index++;
+            return recursiveImplementation(index, fileList, currentDirectory, startingPath, scanOptions, lastFile);
+        }
+        if (currentFile.equals(startingPath)) {
+            logger.info("Skip starting path");
+            index++;
+            return recursiveImplementation(index, fileList, currentDirectory, startingPath, scanOptions, lastFile);
+        }
+        if (scanOptions == ScanOptions.DONT_GO_INTO_FOLDERS) {
+            if (currentFile.getParentFile().equals(startingPath)) {
+                logger.info("Exit loop because {}", ScanOptions.DONT_GO_INTO_FOLDERS);
+                return true;
+            }
+        }
+        FolderMetadata currentFolderMetadata;
+        long currentFolderId;
+        if (encodingUtility.isBase32Decodable(currentFile.getName())) {
+            currentFolderMetadata = sqLiteDAO.queryFolderMetadata(
+                    Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getName())[0]), userSession.getId());
+            logger.info("Found folder metadata ID {} NAME {}",
+                    currentFolderMetadata.getId(), encodingUtility.decodedBase32SplitArray(currentFolderMetadata.getName())[1]);
+        } else {
+            if (currentFile.getParentFile().equals(new File(startingPath))) {
+                currentFolderId = 0;
+            } else {
+                currentFolderId = Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getParentFile().getName())[0]);
+            }
+            currentFolderMetadata = handleFolderScan(currentFolderId, currentFile.getName(), currentFile);
+            logger.info("Created folder metadata ID {} NAME {}", currentFolderMetadata.getId(), currentFolderMetadata.getName());
+            fileList = fileUtility.walkFsTree(fileList.get(index), false); //update entries
+        }
+        currentFolderId = currentFolderMetadata.getId();
+        logger.info("CURRENT FOLDER -> {}", fileList.get(index));
+        logger.info("CURRENT ID -> {}", currentFolderId);
+        // get current folder Id
+        scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(index), false,
+                file -> file.toFile().isFile()), currentFolderMetadata.getId());
+        index++;
+        return recursiveImplementation(index, fileUtility.walkFsTree(fileList.get(index), false)
+                , currentDirectory, startingPath, scanOptions, currentFile);
     }
 
     public void scanFilesInDirectory(List<Path> currentDir, long folderId) throws IOException {
