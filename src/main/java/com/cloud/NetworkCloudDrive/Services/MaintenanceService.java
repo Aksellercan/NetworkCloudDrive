@@ -9,6 +9,8 @@ import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Example;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -17,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MaintenanceService {
@@ -35,6 +38,52 @@ public class MaintenanceService {
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
+    }
+
+    public Path handleFileMetadata(File file) throws IOException {
+        logger.info("CURRENT FILE -> {}", file.getName());
+        if (encodingUtility.isBase32Decodable(file.getName())) {
+            //if its base32 decodable check if its in db
+            // we can also decode Base32 and get id to search by ID index could be more performant
+            if (sqLiteDAO.fileMetadataByNameExists(file.getName())) {
+                //skip
+                logger.info("File exists {}", file.getName());
+                return null;
+            }
+            logger.info("File does not exist {}", file.getName());
+        }
+        logger.info("-> FILE {}", file.getPath());
+        FileMetadata metadata =
+                new FileMetadata(
+                        file.getName(),
+                        folderId,
+                        userSession.getId(),
+                        //zip returns null
+                        fileUtility.guessMimeTypeFromExtension(file),
+                        file.getTotalSpace());
+        sqLiteDAO.persistObjects(metadata);
+        return Files.move(file.toPath(), Path.of(Path.of(file.getPath()).getParent() + File.separator + metadata.getName()));
+    }
+
+    public List<Path> recursivelyScanFilesAndFolders(List<Path> currentPathList, int recurseCount) throws IOException {
+        if (recurseCount > 5) return currentPathList;
+        recurseCount++;
+        for (int i = 0; i < currentPathList.size(); i++) {
+            File file = currentPathList.get(i).toFile();
+            if (file.isFile()) {
+                Path handleFile = handleFileMetadata(file);
+                currentPathList.set(i, handleFile);
+            } else {
+                handleFolderScan();
+            }
+        }
+        return recursivelyScanFilesAndFolders(
+                fileUtility.walkFsTree(
+                        currentPathList.stream()
+                                .filter(file -> !file.toFile().isFile())
+                                .findFirst().orElseThrow(),
+                        false),
+                recurseCount);
     }
 
     // a recursive way maybe???

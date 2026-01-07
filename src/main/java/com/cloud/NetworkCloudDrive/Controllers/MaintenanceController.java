@@ -34,4 +34,23 @@ public class MaintenanceController {
                     .body(new JSONErrorResponse(e, "error scanning"));
         }
     }
+
+    @GetMapping("scan-recursive")
+    public @ResponseBody ResponseEntity<?> scanDirectoryRecursively(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
+        try {
+            maintenanceService.recursivelyScanFilesAndFolders(
+                            fileUtility.getFileAndFolderPathsFromFolder(fileUtility.getFolderPath(folderid)), 0)
+                    .forEach(folders -> {
+                        if (folders.toFile().isFile())
+                            logger.error("recursive file\t{}", folders.toFile().getPath());
+                        else
+                            logger.error("recursive folder\t{}", folders.toFile().getPath());
+                    });
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONResponse("recursive scan completed"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONErrorResponse(e, "error scanning recursively"));
+        }
+    }
 }
