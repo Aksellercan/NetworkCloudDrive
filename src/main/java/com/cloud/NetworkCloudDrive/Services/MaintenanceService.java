@@ -136,7 +136,14 @@ public class MaintenanceService {
         );
     }
 
-    public boolean recursiveImplementation(int index, List<Path> fileList, long currentDirectory, String startingPath, ScanOptions scanOptions, File lastFile) throws IOException, SQLException {
+    public boolean recursiveImplementation(
+            int index,
+            List<Path> fileList,
+            long currentDirectory,
+            String startingPath,
+            ScanOptions scanOptions,
+            File lastFile
+    ) throws IOException, SQLException {
         if (index >= fileList.size()) return true;
         logger.info("index: {}", index);
         File currentFile = fileList.get(index).toFile();
