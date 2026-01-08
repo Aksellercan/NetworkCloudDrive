@@ -47,7 +47,7 @@ public class MaintenanceService {
                 logger.info("File exists {}", encodingUtility.decodedBase32SplitArray(file.getName())[1]);
                 return null;
             }
-            logger.info("File does not exist {}", file.getName());
+            logger.info("Files does not exist {}", file.getName());
         }
         logger.info("-> FILE {}", file.getPath());
         FileMetadata metadata =
