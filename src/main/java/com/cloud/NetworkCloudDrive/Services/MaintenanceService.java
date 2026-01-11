@@ -76,10 +76,10 @@ public class MaintenanceService {
         logger.info("STARTING FOLDER -> {}", startingPath);
         File lastFolder = new File("");
         List<Path> fileList = fileUtility.walkFsTree(startingPath.toPath(), false);
-        for (Path orgPath : fileList) {
-            File currentFile = orgPath.toFile();
+        for (int i = 0; i < fileList.size(); i++) {
+            File currentFile = fileList.get(i).toFile();
             if (scanOptions == ScanOptions.ONLY_FILES) {
-                scanFilesInDirectory(fileUtility.returnFilesInDirectory(orgPath, false,
+                scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(i), false,
                         file -> file.toFile().isFile()), startingDirectoryId);
                 break;
             }
@@ -111,15 +111,15 @@ public class MaintenanceService {
                 }
                 currentFolderMetadata = handleFolderScan(currentFolderId, currentFile.getName(), currentFile);
                 logger.info("Created folder metadata ID {} NAME {}", currentFolderMetadata.getId(), currentFolderMetadata.getName());
-                fileList = fileUtility.walkFsTree(orgPath, false); //update entries
+                fileList = fileUtility.walkFsTree(fileList.get(i), false); //update entries
             }
             currentFolderId = currentFolderMetadata.getId();
-            logger.info("CURRENT FOLDER -> {}", orgPath);
+            logger.info("CURRENT FOLDER -> {}", fileList.get(i));
             logger.info("CURRENT ID -> {}", currentFolderId);
             // get current folder Id
-            scanFilesInDirectory(fileUtility.returnFilesInDirectory(orgPath, false,
+            scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(i), false,
                     file -> file.toFile().isFile()), currentFolderMetadata.getId());
-            fileList = fileUtility.walkFsTree(orgPath, false);
+            fileList = fileUtility.walkFsTree(fileList.get(i), false);
             lastFolder = currentFile;
         }
     }
@@ -130,7 +130,7 @@ public class MaintenanceService {
                 0,
                 fileUtility.walkFsTree(startingPath.toPath(), false),
                 folderId,
-                startingPath.getPath(),
+                startingPath,
                 scanOptions,
                 new File("")
         );
@@ -140,7 +140,7 @@ public class MaintenanceService {
             int index,
             List<Path> fileList,
             long currentDirectory,
-            String startingPath,
+            File startingPath,
             ScanOptions scanOptions,
             File lastFile
     ) throws IOException, SQLException {
@@ -175,7 +175,7 @@ public class MaintenanceService {
             logger.info("Found folder metadata ID {} NAME {}",
                     currentFolderMetadata.getId(), encodingUtility.decodedBase32SplitArray(currentFolderMetadata.getName())[1]);
         } else {
-            if (currentFile.getParentFile().equals(new File(startingPath))) {
+            if (currentFile.getParentFile().equals(startingPath)) {
                 currentFolderId = 0;
             } else {
                 currentFolderId = Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getParentFile().getName())[0]);
@@ -217,7 +217,6 @@ public class MaintenanceService {
                             currentFile.getName(),
                             folderId,
                             userSession.getId(),
-                            //BROKEN
                             fileUtility.useTikaCoreMimeTypeFromExtension(currentFile),
                             currentFile.getTotalSpace());
             sqLiteDAO.persistObjects(metadata);
@@ -243,9 +242,9 @@ public class MaintenanceService {
         createdFolder.setName(encodingUtility.encodeBase32FolderName(createdFolder.getId(), folderName, userSession.getId()));
         sqLiteDAO.saveFolder(createdFolder);
         // changing in loop causes it to fail but rerunning scan makes it work
-        logger.info("mutated path {}", Path.of(Path.of(currentFolder.getPath()).getParent() + File.separator + createdFolder.getName()));
+        logger.info("mutated path {}", Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
         Files.move(
-                currentFolder.toPath(), Path.of(Path.of(currentFolder.getPath()).getParent() + File.separator + createdFolder.getName()));
+                currentFolder.toPath(), Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
         return createdFolder;
     }
 }

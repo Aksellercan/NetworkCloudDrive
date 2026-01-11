@@ -66,3 +66,6 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
+
+### OS X ###
+.DS_Store

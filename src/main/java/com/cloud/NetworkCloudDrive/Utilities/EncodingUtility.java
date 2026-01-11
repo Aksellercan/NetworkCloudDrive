@@ -75,7 +75,7 @@ public class EncodingUtility {
             logger.info("trial of id parsing {} from {}", tryIdParse, tryDecoding);
             return !tryDecoding.isEmpty();
         } catch (IllegalArgumentException e) {
-            logger.error("Failed to parse concluding as not BASE32 for string {}", name);
+            logger.warn("Failed to parse concluding as not BASE32 for string {}", name);
             return false;
         }
     }
