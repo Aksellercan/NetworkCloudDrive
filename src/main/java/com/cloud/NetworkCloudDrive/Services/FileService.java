@@ -3,6 +3,7 @@ package com.cloud.NetworkCloudDrive.Services;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
+import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -27,6 +28,7 @@ import java.util.*;
 @Service
 public class FileService implements FileRepository {
     private final FileStorageProperties fileStorageProperties;
+    private final IgnoreFileListProperties ignoreFileListProperties;
     private final SQLiteDAO sqLiteDAO;
     private final EntityManager entityManager;
     private final UserSession userSession;
@@ -37,11 +39,13 @@ public class FileService implements FileRepository {
 
     public FileService(
             FileStorageProperties fileStorageProperties,
+            IgnoreFileListProperties ignoreFileListProperties,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             EntityManager entityManager) {
+        this.ignoreFileListProperties = ignoreFileListProperties;
         this.sqLiteDAO = sqLiteDAO;
         this.entityManager = entityManager;
         this.userSession = userSession;
@@ -63,10 +67,17 @@ public class FileService implements FileRepository {
         for (MultipartFile file : sortedBySize) {
             String fileName = file.getOriginalFilename();
             //check for duplicates at destination
-            if (filesInside.stream().anyMatch(dup -> encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(fileName))) {
+            if (filesInside.stream().anyMatch(dup -> {
+                        if (ignoreFileListProperties.isInIgnoreList(dup.toFile().getName())) {
+                            return false;
+                        }
+                        return encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(fileName);
+                    }
+            )) {
                 logger.info("duplicate {}", file.getOriginalFilename());
                 continue;
             }
+
             // Construct file metadata
             FileMetadata metadata = new FileMetadata(fileName, folderId, userSession.getId(), file.getContentType(), file.getSize());
             entityManager.persist(metadata);
