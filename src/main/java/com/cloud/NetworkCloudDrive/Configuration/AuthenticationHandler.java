@@ -5,8 +5,6 @@ import com.cloud.NetworkCloudDrive.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,10 +39,8 @@ public class AuthenticationHandler implements AuthenticationSuccessHandler, Auth
         UserEntity user = sqLiteDAO.findUserByMail(authentication.getName());
         user.setLastLogin(new Date().toInstant());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        UserEntity user = sqLiteDAO.findUserByMail(authentication.getName());
         user.setLastLogin(new Date().toInstant());
         response.getWriter().print(new ObjectMapper()
-                .registerModule(new JavaTimeModule())
                 .writeValueAsString(new JSONObjectResponse(new CurrentUserDTO(sqLiteDAO.saveUser(user)), "Login Success")));
         response.flushBuffer();
     }
