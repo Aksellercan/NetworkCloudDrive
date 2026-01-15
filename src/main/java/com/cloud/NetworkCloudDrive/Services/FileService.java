@@ -3,6 +3,7 @@ package com.cloud.NetworkCloudDrive.Services;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
+import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -25,6 +26,7 @@ import java.util.*;
 @Service
 public class FileService implements FileRepository {
     private final FileStorageProperties fileStorageProperties;
+    private final IgnoreFileListProperties ignoreFileListProperties;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
     private final Path rootPath;
@@ -34,10 +36,12 @@ public class FileService implements FileRepository {
 
     public FileService(
             FileStorageProperties fileStorageProperties,
+            IgnoreFileListProperties ignoreFileListProperties,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility) {
+        this.ignoreFileListProperties = ignoreFileListProperties;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
         this.fileStorageProperties = fileStorageProperties;
@@ -48,7 +52,6 @@ public class FileService implements FileRepository {
 
     @Override
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
-        String storagePath;
         List<String> storagePathList = new ArrayList<>();
         List<FileMetadata> uploadedFiles = new ArrayList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(folderPath);
@@ -57,7 +60,11 @@ public class FileService implements FileRepository {
         for (MultipartFile file : sortedBySize) {
             String fileName = file.getOriginalFilename();
             //check for duplicates at destination
-            if (filesInside.stream().anyMatch(dup -> encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(fileName))) {
+            if (filesInside.stream().anyMatch(dup ->
+                    !ignoreFileListProperties.isInIgnoreList(dup.toFile().getName())
+                            &&
+                            encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(fileName)
+            )) {
                 logger.info("duplicate {}", file.getOriginalFilename());
                 continue;
             }
@@ -67,11 +74,10 @@ public class FileService implements FileRepository {
             // Encode in BASE32
             String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), fileName, userSession.getId());
             try (InputStream inputStream = file.getInputStream()) {
-                storagePath = storeFile(inputStream, encodedFileName, folderPath);
+                storagePathList.add(storeFile(inputStream, encodedFileName, folderPath));
             }
             metadata.setName(encodedFileName);
             uploadedFiles.add(metadata);
-            storagePathList.add(storagePath);
         }
         if (storagePathList.isEmpty())
             throw new FileAlreadyExistsException("File(s) already exists at destination");
@@ -90,7 +96,7 @@ public class FileService implements FileRepository {
 
     @Override
     public Resource getFile(FileMetadata file, String path) throws Exception {
-        Path filePath = Path.of(fileStorageProperties.getBasePath() + File.separator + path + File.separator + file.getName());
+        Path filePath = Path.of(fileStorageProperties.getFullPath(path) + File.separator + file.getName());
         logger.info("file service path: {}", filePath);
         Path normalizedRoot = rootPath.normalize().toAbsolutePath();
         if (filePath.startsWith(normalizedRoot))
