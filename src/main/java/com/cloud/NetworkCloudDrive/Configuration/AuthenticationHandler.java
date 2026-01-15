@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Date;
@@ -40,6 +41,8 @@ public class AuthenticationHandler implements AuthenticationSuccessHandler, Auth
         UserEntity user = sqLiteDAO.findUserByMail(authentication.getName());
         user.setLastLogin(new Date().toInstant());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        UserEntity user = sqLiteDAO.findUserByMail(authentication.getName());
+        user.setLastLogin(new Date().toInstant());
         response.getWriter().print(new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .writeValueAsString(new JSONObjectResponse(new CurrentUserDTO(sqLiteDAO.saveUser(user)), "Login Success")));

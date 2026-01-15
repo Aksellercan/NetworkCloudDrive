@@ -68,6 +68,7 @@ public class FileService implements FileRepository {
                 logger.info("duplicate {}", file.getOriginalFilename());
                 continue;
             }
+
             // Construct file metadata
             FileMetadata metadata = new FileMetadata(fileName, folderId, userSession.getId(), file.getContentType(), file.getSize());
             sqLiteDAO.persistObjects(metadata);
