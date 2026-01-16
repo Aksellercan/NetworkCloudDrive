@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.DTO;
+package com.cloud.NetworkCloudDrive.Models.DTO;
 
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 

@@ -1,7 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services;
 
-import com.cloud.NetworkCloudDrive.DTO.FileListItemDTO;
-import com.cloud.NetworkCloudDrive.DTO.FolderListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;

@@ -2,8 +2,10 @@ package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
+import com.cloud.NetworkCloudDrive.Models.DTO.ScanMetadata;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
@@ -25,176 +27,83 @@ public class MaintenanceService {
     private final EncodingUtility encodingUtility;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
+    private final IgnoreFileListProperties ignoreFileListProperties;
 
     public MaintenanceService(
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
-            UserSession userSession) {
+            UserSession userSession, IgnoreFileListProperties ignoreFileListProperties) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
+        this.ignoreFileListProperties = ignoreFileListProperties;
     }
 
-    public Path handleFileMetadata(File file, long folderId) throws IOException {
-        logger.info("CURRENT FILE -> {}", file.getName());
-        if (encodingUtility.isBase32Decodable(file.getName())) {
-            //if its base32 decodable check if its in db
-            // we can also decode Base32 and get id to search by ID index could be more performant
-            if (sqLiteDAO.fileMetadataByNameExists(file.getName())) {
-                //skip
-                logger.info("File exists {}", encodingUtility.decodedBase32SplitArray(file.getName())[1]);
-                return null;
-            }
-            logger.info("Files does not exist {}", file.getName());
-        }
-        logger.info("-> FILE {}", file.getPath());
-        FileMetadata metadata =
-                new FileMetadata(
-                        file.getName(),
-                        //try
-                        folderId,
-                        userSession.getId(),
-                        //BROKEN
-                        fileUtility.guessMimeTypeFromExtension(file),
-                        file.getTotalSpace());
-        sqLiteDAO.persistObjects(metadata);
-        String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), file.getName(), userSession.getId());
-        metadata.setName(encodedFileName);
-        sqLiteDAO.saveFile(metadata);
-        logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
-                metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
-        return Files.move(file.toPath(), Path.of(file.getParentFile().getPath() + File.separator + metadata.getName()));
-    }
-
-    // a recursive way maybe???
-    public void scanFoldersAndFiles(long startingDirectoryId, ScanOptions scanOptions) throws IOException, SQLException {
+    // Global search
+    public void scanFoldersAndFiles(long startingDirectoryId) throws IOException, SQLException {
         // alternative algorithm to walk file tree
-        // for maintenance features
         logger.info("STARTING IMPERATIVE");
         File startingPath = fileUtility.returnFileIfItExists(fileUtility.getFolderPath(startingDirectoryId));
         logger.info("STARTING FOLDER -> {}", startingPath);
         File lastFolder = new File("");
+        int count = 0;
         List<Path> fileList = fileUtility.walkFsTree(startingPath.toPath(), false);
         for (int i = 0; i < fileList.size(); i++) {
+            count++;
             File currentFile = fileList.get(i).toFile();
-            if (scanOptions == ScanOptions.ONLY_FILES) {
-                scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(i), false,
-                        file -> file.toFile().isFile()), startingDirectoryId);
-                break;
-            }
-            if (currentFile.isFile() || lastFolder.equals(currentFile)) {
-                continue;
-            }
+//            if (scanOptions == ScanOptions.ONLY_FILES) {
+//                scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(i), false,
+//                        file -> file.toFile().isFile()), startingDirectoryId);
+//                break;
+//            }
+//            if (currentFile.isFile() || lastFolder.equals(currentFile)) {
+//                logger.info("Is a file or same as last folder");
+//                continue;
+//            }
+            if (ignoreFileListProperties.isInIgnoreList(currentFile.getName())) continue;
             if (currentFile.equals(startingPath)) {
                 logger.info("Skip starting path");
                 continue;
             }
-            if (scanOptions == ScanOptions.DONT_GO_INTO_FOLDERS) {
-                if (currentFile.getParentFile().equals(startingPath)) {
-                    logger.info("Exit loop because {}", ScanOptions.DONT_GO_INTO_FOLDERS);
-                    break;
-                }
-            }
-            FolderMetadata currentFolderMetadata;
-            long currentFolderId;
-            if (encodingUtility.isBase32Decodable(currentFile.getName())) {
-                currentFolderMetadata = sqLiteDAO.queryFolderMetadata(
-                        Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getName())[0]), userSession.getId());
-                logger.info("Found folder metadata ID {} NAME {}",
-                        currentFolderMetadata.getId(), encodingUtility.decodedBase32SplitArray(currentFolderMetadata.getName())[1]);
-            } else {
-                if (currentFile.getParentFile().equals(startingPath)) {
-                    currentFolderId = 0;
-                } else {
-                    currentFolderId = Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getParentFile().getName())[0]);
-                }
-                currentFolderMetadata = handleFolderScan(currentFolderId, currentFile.getName(), currentFile);
-                logger.info("Created folder metadata ID {} NAME {}", currentFolderMetadata.getId(), currentFolderMetadata.getName());
-                fileList = fileUtility.walkFsTree(fileList.get(i), false); //update entries
-            }
-            currentFolderId = currentFolderMetadata.getId();
             logger.info("CURRENT FOLDER -> {}", fileList.get(i));
-            logger.info("CURRENT ID -> {}", currentFolderId);
-            // get current folder Id
+            ScanMetadata<FolderMetadata> progress = getCurrentFolderId(currentFile, startingPath);
+            logger.info("CURRENT ID -> {}", progress.getMetadata().getId());
+            if (progress.isUpdated()) {
+                // get current folder Id
+                fileList = fileUtility.walkFsTree(fileList.get(i), false);
+            }
             scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(i), false,
-                    file -> file.toFile().isFile()), currentFolderMetadata.getId());
-            fileList = fileUtility.walkFsTree(fileList.get(i), false);
+                    file -> file.toFile().isFile()), progress.getMetadata().getId());
             lastFolder = currentFile;
         }
+        logger.info("Count {}", count);
     }
 
-    public boolean callRecursive(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
-        logger.info("START RECURSIVE");
-        File startingPath = fileUtility.returnFileIfItExists(fileUtility.getFolderPath(folderId));
-        return recursiveImplementation(
-                0,
-                fileUtility.walkFsTree(startingPath.toPath(), false),
-                folderId,
-                startingPath,
-                scanOptions,
-                new File("")
-        );
-    }
-
-    public boolean recursiveImplementation(
-            int index,
-            List<Path> fileList,
-            long currentDirectory,
-            File startingPath,
-            ScanOptions scanOptions,
-            File lastFile
-    ) throws IOException, SQLException {
-        if (index >= fileList.size()) return true;
-        logger.info("index: {}", index);
-        File currentFile = fileList.get(index).toFile();
-        if (scanOptions == ScanOptions.ONLY_FILES) {
-            scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(index), false,
-                    file -> file.toFile().isFile()), currentDirectory);
-            return true;
-        }
-        if (currentFile.isFile() || lastFile.equals(currentFile)) {
-            index++;
-            return recursiveImplementation(index, fileList, currentDirectory, startingPath, scanOptions, lastFile);
-        }
-        if (currentFile.equals(startingPath)) {
-            logger.info("Skip starting path");
-            index++;
-            return recursiveImplementation(index, fileList, currentDirectory, startingPath, scanOptions, lastFile);
-        }
-        if (scanOptions == ScanOptions.DONT_GO_INTO_FOLDERS) {
-            if (currentFile.getParentFile().equals(startingPath)) {
-                logger.info("Exit loop because {}", ScanOptions.DONT_GO_INTO_FOLDERS);
-                return true;
-            }
-        }
-        FolderMetadata currentFolderMetadata;
+    public ScanMetadata<FolderMetadata> getCurrentFolderId(File currentFolder, File startingPath) throws SQLException, IOException {
         long currentFolderId;
-        if (encodingUtility.isBase32Decodable(currentFile.getName())) {
-            currentFolderMetadata = sqLiteDAO.queryFolderMetadata(
-                    Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getName())[0]), userSession.getId());
+        ScanMetadata<FolderMetadata> scanMetadata = new ScanMetadata<>();
+        if (encodingUtility.isBase32Decodable(currentFolder.getName())) {
+            scanMetadata.setMetadata(sqLiteDAO.queryFolderMetadata(
+                    Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFolder.getName())[0]), userSession.getId()));
             logger.info("Found folder metadata ID {} NAME {}",
-                    currentFolderMetadata.getId(), encodingUtility.decodedBase32SplitArray(currentFolderMetadata.getName())[1]);
+                    scanMetadata.getMetadata().getId(), encodingUtility.decodedBase32SplitArray(scanMetadata.getMetadata().getName())[1]);
         } else {
-            if (currentFile.getParentFile().equals(startingPath)) {
+            logger.info("ELSE");
+            if (currentFolder.getParentFile().equals(startingPath)) {
                 currentFolderId = 0;
+                logger.info("ELSE 1");
             } else {
-                currentFolderId = Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFile.getParentFile().getName())[0]);
+                logger.info("ELSE 2");
+                currentFolderId = Long.parseLong(encodingUtility.decodedBase32SplitArray(currentFolder.getParentFile().getName())[0]);
             }
-            currentFolderMetadata = handleFolderScan(currentFolderId, currentFile.getName(), currentFile);
-            logger.info("Created folder metadata ID {} NAME {}", currentFolderMetadata.getId(), currentFolderMetadata.getName());
-            fileList = fileUtility.walkFsTree(fileList.get(index), false); //update entries
+            logger.info("ELSE 3");
+            scanMetadata.setMetadata(handleFolderScan(currentFolderId, currentFolder.getName(), currentFolder));
+            scanMetadata.setUpdated(true);
         }
-        currentFolderId = currentFolderMetadata.getId();
-        logger.info("CURRENT FOLDER -> {}", fileList.get(index));
-        logger.info("CURRENT ID -> {}", currentFolderId);
-        // get current folder Id
-        scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(index), false,
-                file -> file.toFile().isFile()), currentFolderMetadata.getId());
-        index++;
-        return recursiveImplementation(index, fileUtility.walkFsTree(fileList.get(index), false)
-                , currentDirectory, startingPath, scanOptions, currentFile);
+        logger.info("Metadata name {} is updated? {}", scanMetadata.getMetadata().getName(), scanMetadata.isUpdated());
+        return scanMetadata;
     }
 
     public void scanFilesInDirectory(List<Path> currentDir, long folderId) throws IOException {
@@ -202,6 +111,7 @@ public class MaintenanceService {
             boolean filenameIsBase32Encoded = false;
             File currentFile = paths.toFile();
             logger.info("CURRENT FILE -> {}", currentFile.getName());
+            if (ignoreFileListProperties.isInIgnoreList(currentFile.getName())) continue;
             if (encodingUtility.isBase32Decodable(currentFile.getName())) {
                 //if its base32 decodable check if its in db
                 // we can also decode Base32 and get id to search by ID index could be more performant
@@ -247,6 +157,7 @@ public class MaintenanceService {
         logger.info("mutated path {}", Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
         Files.move(
                 currentFolder.toPath(), Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
+        logger.info("Created folder metadata ID {} NAME {}", createdFolder.getId(), createdFolder.getName());
         return createdFolder;
     }
 }

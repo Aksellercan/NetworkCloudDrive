@@ -1,7 +1,7 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;

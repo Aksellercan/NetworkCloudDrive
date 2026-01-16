@@ -1,8 +1,8 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.DTO.UpdateUserDTO;
-import com.cloud.NetworkCloudDrive.DTO.UserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.UpdateUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.*;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;

@@ -24,9 +24,9 @@ public class MaintenanceController {
     }
 
     @GetMapping("scan")
-    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
+    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam long folderid) {
         try {
-            maintenanceService.scanFoldersAndFiles(folderid, scanOptions);
+            maintenanceService.scanFoldersAndFiles(folderid);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONResponse("scan completed"));
         } catch (Exception e) {
@@ -48,7 +48,7 @@ public class MaintenanceController {
 //                    });
 //            maintenanceService.recursivelyScanFilesAndFolders(
 //                    fileUtility.getFileAndFolderPathsFromFolder(fileUtility.getFolderPath(folderid)), folderid);
-            logger.info("result {}", maintenanceService.callRecursive(folderid, scanOptions));
+//            logger.info("result {}", maintenanceService.callRecursive(folderid, scanOptions));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONResponse("recursive scan completed"));
         } catch (Exception e) {

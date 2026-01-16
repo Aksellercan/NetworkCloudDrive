@@ -229,7 +229,7 @@ public class FileUtility {
     }
 
     /**
-     * Returns MimeType of file uses Apache Tika Core dependency
+     * Returns MimeType of file uses Apache Tika-Core dependency
      * @param file  File object
      * @return  MimeType of file
      * @throws IOException  If an I/O error occurs
@@ -277,7 +277,7 @@ public class FileUtility {
      * @return  Folder Metadata that matches target ID
      */
     private FolderMetadata getFolderMetadataByIdFromList(List<FolderMetadata> list, long targetId) {
-        return list.stream().filter(metadata -> metadata.getId() == targetId).toList().getFirst();
+        return list.stream().filter(metadata -> metadata.getId() == targetId).toList().get(0);
     }
 
     /**

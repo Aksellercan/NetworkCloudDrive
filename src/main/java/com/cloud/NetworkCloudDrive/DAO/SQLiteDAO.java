@@ -1,6 +1,6 @@
 package com.cloud.NetworkCloudDrive.DAO;
 
-import com.cloud.NetworkCloudDrive.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
