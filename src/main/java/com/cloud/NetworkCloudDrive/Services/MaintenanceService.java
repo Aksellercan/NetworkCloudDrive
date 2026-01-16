@@ -72,6 +72,7 @@ public class MaintenanceService {
     public void scanFoldersAndFiles(long startingDirectoryId, ScanOptions scanOptions) throws IOException, SQLException {
         // alternative algorithm to walk file tree
         // for maintenance features
+        logger.info("STARTING IMPERATIVE");
         File startingPath = fileUtility.returnFileIfItExists(fileUtility.getFolderPath(startingDirectoryId));
         logger.info("STARTING FOLDER -> {}", startingPath);
         File lastFolder = new File("");
@@ -125,6 +126,7 @@ public class MaintenanceService {
     }
 
     public boolean callRecursive(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
+        logger.info("START RECURSIVE");
         File startingPath = fileUtility.returnFileIfItExists(fileUtility.getFolderPath(folderId));
         return recursiveImplementation(
                 0,

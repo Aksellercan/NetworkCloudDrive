@@ -203,24 +203,37 @@ public class FileUtility {
         return fileList;
     }
 
-    //TODO Bug inside probeContentType() it cant detect 'yaml' format returns null instead of document of type
-    //TODO consider tika-core
     /**
      * Returns MimeType of file
      * @param filePath  Path of file
      * @return  MimeType of file
-     * @throws IOException  if an I/O error occurs
+     * @throws IOException  If an I/O error occurs
      */
+    @Deprecated
     public String getMimeTypeFromExtension(Path filePath) throws IOException {
-        logger.debug("File at path absolute {}, {}", filePath.toAbsolutePath(), filePath);
+        logger.debug("[PROBE] File at path absolute {}, {}", filePath.toAbsolutePath(), filePath);
+        //Bug inside probeContentType() it cant detect 'yaml' format returns null instead of document of type
         return Files.probeContentType(filePath);
     }
 
+    /**
+     * Returns MimeType of file by guessing maybe inaccurate
+     * @param file  File object
+     * @return  MimeType of file
+     * @throws IOException  If an I/O error occurs
+     */
+    @Deprecated
     public String guessMimeTypeFromExtension(File file) throws IOException {
-        logger.debug("[GUESS] File at path absolute {}, {}", file.getPath(), file);
+        logger.debug("[GUESS-CONTENT] File at path absolute {}, {}", file.getPath(), file);
         return URLConnection.guessContentTypeFromStream(new BufferedInputStream(new FileInputStream(file)));
     }
 
+    /**
+     * Returns MimeType of file uses Apache Tika Core dependency
+     * @param file  File object
+     * @return  MimeType of file
+     * @throws IOException  If an I/O error occurs
+     */
     public String useTikaCoreMimeTypeFromExtension(File file) throws IOException {
         logger.debug("[TIKA-CORE] File at path absolute {}, {}", file.getPath(), file);
         return new Tika().detect(file);
@@ -257,7 +270,6 @@ public class FileUtility {
                 anyMatch(file -> encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
     }
 
-    //TODO Can be replaced with Streams().AnyMatches()
     /**
      * Returns Folder Metadata that matches target ID
      * @param list  list to loop
@@ -265,11 +277,7 @@ public class FileUtility {
      * @return  Folder Metadata that matches target ID
      */
     private FolderMetadata getFolderMetadataByIdFromList(List<FolderMetadata> list, long targetId) {
-        for (FolderMetadata folderMetadata : list) {
-            if (targetId == folderMetadata.getId())
-                return folderMetadata;
-        }
-        return null;
+        return list.stream().filter(metadata -> metadata.getId() == targetId).toList().getFirst();
     }
 
     /**
