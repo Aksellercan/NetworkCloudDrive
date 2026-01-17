@@ -151,7 +151,7 @@ public class FileSystemService implements FileSystemRepository {
             throw new FileSystemException(String.format("Failed to rename the file to %s", renamedFile.getName()));
         // get ready for transaction
         // mimetype has bug in the library (cant detect types such as YAML)
-        String newMimeType = fileUtility.getMimeTypeFromExtension(newUpdatedPath); /* <- get new mimetype of file */
+        String newMimeType = fileUtility.useTikaCoreMimeTypeFromExtension(newUpdatedPath.toFile()); /* <- get new mimetype of file */
         //set new name and path
         file.setName(encodeBase32FolderName);
         file.setMimiType(newMimeType != null ? newMimeType : file.getMimiType());

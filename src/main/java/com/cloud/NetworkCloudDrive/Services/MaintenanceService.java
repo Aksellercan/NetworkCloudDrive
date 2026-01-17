@@ -160,11 +160,11 @@ public class MaintenanceService {
 
     public boolean betterScan(File startingPath) {
         try {
-            logger.info("Start better scan function");
-            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath.getPath());
+            logger.info("Start better scan function at {}", startingPath.getPath());
+            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath);
             for (Path files : folders) {
                 File currentFolder = files.toFile();
-                logger.info("currently on: {}", currentFolder.getName());
+                logger.info("currently on {}: {}", (currentFolder.isFile() ? "FILE" : "FOLDER"), currentFolder.getName());
                 if (ignoreFileListProperties.isInIgnoreList(currentFolder.getName())) {
                     logger.info("Skip ignorable file or folder {}", currentFolder.getName());
                     continue;
@@ -177,11 +177,14 @@ public class MaintenanceService {
                 }
                 if (encodingUtility.isBase32Decodable(currentFolder.getName())) {
                     logger.info("decodable skip");
+                    if (!currentFolder.isFile()) {
+                        betterScan(currentFolder);
+                    }
                     continue;
                 }
                 long folderid = (encodingUtility.isEncodedStringUserDirectory(currentFolder.getParentFile().getName()) ? 0L : fileUtility.getFolderMetadataFromEncoding(currentFolder.getParentFile().getName()).getId());
                 logger.info("enter folder handling folderid {}", folderid);
-                handleFolderCheck(currentFolder, folderid);
+                betterScan(handleFolderCheck(currentFolder, folderid));
             }
             return true;
         } catch (Exception e) {
@@ -224,7 +227,7 @@ public class MaintenanceService {
         Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
     }
 
-    public void handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException {
+    public File handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException {
         FolderMetadata createdFolder = new FolderMetadata();
         sqLiteDAO.persistObjects(createdFolder);
         createdFolder.setPath(fileUtility.getIdPath(currentFolderId) + "/" + createdFolder.getId());
@@ -233,8 +236,9 @@ public class MaintenanceService {
         sqLiteDAO.saveFolder(createdFolder);
         // changing in loop causes it to fail but rerunning scan makes it work
         logger.info("mutated path {}", Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
-        Files.move(
+        Path result = Files.move(
                 currentFolder.toPath(), Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
         logger.info("Created folder metadata ID {} NAME {}", createdFolder.getId(), createdFolder.getName());
+        return result.toFile();
     }
 }

@@ -195,13 +195,14 @@ public class FileUtility {
 
     /**
      * List of folders and files inside a directory
-     * @param folderPath    parent folder path to check
+     * @param file    parent folder path to list
      * @return  List of paths for files and folders
      * @throws IOException  if path is invalid
      */
-    public List<Path> getFileAndFolderPathsFromFolder(String folderPath) throws IOException {
+    public List<Path> getFileAndFolderPathsFromFolder(File file) throws IOException {
         List<Path> fileList;
-        try (Stream<Path> stream = Files.list(Path.of(fileStorageProperties.getFullPath(folderPath)))) {
+        logger.info("full path {}", file.getPath());
+        try (Stream<Path> stream = Files.list(file.toPath())) {
             fileList = stream.toList();
         }
         return fileList;
@@ -270,7 +271,7 @@ public class FileUtility {
      * @throws IOException  if filepath is invalid
      */
     public boolean checkIfFileExistsDecodeNames(String filePath, String decodedFileName) throws IOException {
-        return getFileAndFolderPathsFromFolder(filePath).stream().
+        return getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(filePath))).stream().
                 anyMatch(file -> encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
     }
 

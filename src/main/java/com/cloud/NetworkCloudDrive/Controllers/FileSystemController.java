@@ -8,6 +8,7 @@ import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderPathDTO;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
+import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Services.FileSystemService;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.nio.file.FileSystemException;
 import java.nio.file.Path;
 import java.util.List;
@@ -33,17 +35,19 @@ public class FileSystemController {
     private final UserSession userSession;
     private final Logger logger = LoggerFactory.getLogger(FileSystemController.class);
     private final EncodingUtility encodingUtility;
+    private final FileStorageProperties fileStorageProperties;
 
     public FileSystemController(
             FileSystemService fileSystemService,
             InformationService informationService,
             UserSession userSession,
-            FileUtility fileUtility, EncodingUtility encodingUtility) {
+            FileUtility fileUtility, EncodingUtility encodingUtility, FileStorageProperties fileStorageProperties) {
         this.fileSystemService = fileSystemService;
         this.informationService = informationService;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
+        this.fileStorageProperties = fileStorageProperties;
     }
 
     @PostMapping(value = "file/rename", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -148,7 +152,7 @@ public class FileSystemController {
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid) {
         try {
-            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(fileUtility.getFolderPath(folderid));
+            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderid))));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(fileSystemService.getListOfMetadataFromPath(fileList));
         } catch (FileSystemException fileSystemException) {
