@@ -48,12 +48,13 @@ public class MaintenanceService {
     //controller for scan options
     public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
         File startingDirectory = new File(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderId)));
+        logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:
                 betterScan(startingDirectory, path -> path.toFile().exists(), true);
                 break;
             case ONLY_FILES:
-                betterScan(startingDirectory,path -> path.toFile().isFile(), true);
+                betterScan(startingDirectory,path -> path.toFile().isFile(), false);
                 break;
             case ONLY_FOLDERS:
                 betterScan(startingDirectory, path -> !path.toFile().isFile(), true);
