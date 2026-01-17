@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
+import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
@@ -24,23 +25,23 @@ public class MaintenanceController {
         this.fileStorageProperties = fileStorageProperties;
     }
 
-    @GetMapping("scan")
-    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam long folderid) {
-        try {
-            maintenanceService.scanFoldersAndFiles(folderid);
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONResponse("scan completed"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONErrorResponse(e, "error scanning"));
-        }
-    }
-
-    @GetMapping("better-scan")
-    public @ResponseBody ResponseEntity<?> betterScanDirectory(@RequestParam long folderid) {
+    @GetMapping(value = "scan", params = "folderid")
+    public @ResponseBody ResponseEntity<?> scanDirectoryNestedFolders(@RequestParam long folderid) {
         try {
             if (!maintenanceService.betterScan(new File(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderid)))))
                 throw new RuntimeException("Scan stopped");
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONResponse("Scan completed"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONErrorResponse(e, "Error scanning"));
+        }
+    }
+
+    @GetMapping(value = "scan", params = {"folderid", "scanOptions"})
+    public @ResponseBody ResponseEntity<?> scanDirectoryOptions(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
+        try {
+            maintenanceService.betterScan(new File(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderid))));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONResponse("scan completed"));
         } catch (Exception e) {

@@ -41,7 +41,9 @@ public class FileSystemController {
             FileSystemService fileSystemService,
             InformationService informationService,
             UserSession userSession,
-            FileUtility fileUtility, EncodingUtility encodingUtility, FileStorageProperties fileStorageProperties) {
+            FileUtility fileUtility,
+            EncodingUtility encodingUtility,
+            FileStorageProperties fileStorageProperties) {
         this.fileSystemService = fileSystemService;
         this.informationService = informationService;
         this.userSession = userSession;

@@ -5,5 +5,5 @@ public enum ScanOptions {
     DONT_GO_INTO_FOLDERS,
     ONLY_FOLDERS,
     ONLY_FILES,
-    BOTH
+    NORMAL
 }
