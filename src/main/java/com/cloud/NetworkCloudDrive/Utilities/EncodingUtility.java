@@ -48,6 +48,18 @@ public class EncodingUtility {
         return Long.parseLong(decodedBase32SplitArray(base32String)[0]);
     }
 
+    public boolean isEncodedStringUserDirectory(String encodedString) {
+        try {
+            long checkLastIndexType /* should be long */ = Long.parseLong(decodedBase32SplitArray(encodedString)[2]);
+            //if successful parse MOST likely its not user directory
+            logger.warn("Most likely NOT user directory");
+            return false;
+        } catch (/* throws */ NumberFormatException e) {
+            logger.warn("Most likely user directory");
+            return true;
+        }
+    }
+
     /**
      * Encode Folder names in BASE32
      * @param folderId  folder's ID

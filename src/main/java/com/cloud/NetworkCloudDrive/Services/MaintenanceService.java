@@ -158,7 +158,7 @@ public class MaintenanceService {
         return createdFolder;
     }
 
-    public boolean betterSearch(File startingPath) {
+    public boolean betterScan(File startingPath) {
         try {
             logger.info("Start better scan function");
             List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath.getPath());
@@ -170,22 +170,18 @@ public class MaintenanceService {
                     continue;
                 }
                 if (currentFolder.isFile()) {
-                    logger.info("enter file handling");
-                    handleFileCheck(currentFolder, fileUtility.getFolderMetadataFromEncoding(currentFolder.getParentFile().getName()).getId());
+                    long folderid = (encodingUtility.isEncodedStringUserDirectory(currentFolder.getParentFile().getName()) ? 0L : fileUtility.getFolderMetadataFromEncoding(currentFolder.getParentFile().getName()).getId());
+                    logger.info("enter file handling folderid {}", folderid);
+                    handleFileCheck(currentFolder, folderid);
                     continue;
                 }
                 if (encodingUtility.isBase32Decodable(currentFolder.getName())) {
                     logger.info("decodable skip");
                     continue;
                 }
-                long folderId;
-                if (currentFolder.getParentFile().equals(startingPath)) {
-                    folderId = 0L;
-                } else {
-                    folderId = fileUtility.getFolderMetadataFromEncoding(currentFolder.getParentFile().getName()).getId();
-                }
-                logger.info("enter folder handling folderid {}", folderId);
-                handleFolderCheck(currentFolder, folderId);
+                long folderid = (encodingUtility.isEncodedStringUserDirectory(currentFolder.getParentFile().getName()) ? 0L : fileUtility.getFolderMetadataFromEncoding(currentFolder.getParentFile().getName()).getId());
+                logger.info("enter folder handling folderid {}", folderid);
+                handleFolderCheck(currentFolder, folderid);
             }
             return true;
         } catch (Exception e) {

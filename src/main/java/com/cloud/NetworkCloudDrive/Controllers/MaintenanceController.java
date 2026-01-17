@@ -36,7 +36,7 @@ public class MaintenanceController {
     @GetMapping("better-scan")
     public @ResponseBody ResponseEntity<?> betterScanDirectory(@RequestParam long folderid) {
         try {
-            if (!maintenanceService.betterSearch(new File(fileUtility.getFolderPath(folderid))))
+            if (!maintenanceService.betterScan(new File(fileUtility.getFolderPath(folderid))))
                 throw new RuntimeException("Scan stopped");
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONResponse("scan completed"));
