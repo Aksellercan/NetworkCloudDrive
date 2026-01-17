@@ -1,9 +1,10 @@
 package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
+import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.function.Predicate;
 
 @Service
 public class MaintenanceService {
@@ -27,47 +29,49 @@ public class MaintenanceService {
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
     private final IgnoreFileListProperties ignoreFileListProperties;
+    private final FileStorageProperties fileStorageProperties;
 
     public MaintenanceService(
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
-            IgnoreFileListProperties ignoreFileListProperties) {
+            IgnoreFileListProperties ignoreFileListProperties, FileStorageProperties fileStorageProperties) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
         this.ignoreFileListProperties = ignoreFileListProperties;
+        this.fileStorageProperties = fileStorageProperties;
     }
 
     //controller for scan options
-
-    public void scanOptionsController(File startingDirectory, ScanOptions scanOptions) throws IOException {
-        List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingDirectory);
+    public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
+        File startingDirectory = new File(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderId)));
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:
-                betterScan(startingDirectory, folders, scanOptions, true);
+                betterScan(startingDirectory, path -> path.toFile().exists(), true);
                 break;
             case ONLY_FILES:
-                betterScan(startingDirectory, folders.stream().filter(path -> path.toFile().isFile()).toList(), scanOptions, true);
+                betterScan(startingDirectory,path -> path.toFile().isFile(), true);
                 break;
             case ONLY_FOLDERS:
-                betterScan(startingDirectory, folders.stream().filter(path -> !path.toFile().isFile()).toList(), scanOptions, false);
+                betterScan(startingDirectory, path -> !path.toFile().isFile(), true);
                 break;
             case DONT_GO_INTO_FOLDERS:
-                betterScan(startingDirectory, folders, scanOptions, false);
+                betterScan(startingDirectory, path -> path.toFile().exists(), false);
                 break;
         }
     }
+
     private long getFolderId(File parentFolder) throws SQLException {
         return (encodingUtility.isEncodedStringUserDirectory(parentFolder.getName()) ? 0L : fileUtility.getFolderMetadataFromEncoding(parentFolder.getName()).getId());
     }
 
-    public boolean betterScan(File startingPath) {
+    public boolean betterScan(File startingPath, Predicate<Path> filter, boolean useRecursion) {
         try {
             logger.info("Start better scan function at {}", startingPath.getPath());
-            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath);
+            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().filter(filter).toList();
             for (Path files : folders) {
                 File currentFolder = files.toFile();
                 logger.info("Currently on {}: {}", (currentFolder.isFile() ? "FILE" : "FOLDER"), currentFolder.getName());
@@ -84,13 +88,20 @@ public class MaintenanceService {
                 if (encodingUtility.isBase32Decodable(currentFolder.getName())) {
                     logger.info("decodable skipping");
                     if (!currentFolder.isFile()) {
-                        betterScan(currentFolder);
+                        if (useRecursion) {
+                            if (!betterScan(currentFolder, filter, useRecursion))
+                                throw new RuntimeException("Failed to enter folder");
+                        }
                     }
                     continue;
                 }
                 long folderId = getFolderId(currentFolder.getParentFile());
                 logger.info("Enter folder handling FolderID {}", folderId);
-                betterScan(handleFolderCheck(currentFolder, folderId));
+                File createdFolder = handleFolderCheck(currentFolder, folderId);
+                if (useRecursion) {
+                    if (!betterScan(createdFolder, filter, useRecursion))
+                        throw new RuntimeException("Failed to enter created folder");
+                }
             }
             return true;
         } catch (Exception e) {

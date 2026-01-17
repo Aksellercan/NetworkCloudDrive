@@ -1,7 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
-import com.cloud.NetworkCloudDrive.Enum.UserRole;
+import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Repositories.UserRepository;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;

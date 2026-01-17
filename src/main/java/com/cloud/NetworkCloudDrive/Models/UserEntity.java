@@ -1,6 +1,6 @@
 package com.cloud.NetworkCloudDrive.Models;
 
-import com.cloud.NetworkCloudDrive.Enum.UserRole;
+import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 

@@ -2,7 +2,7 @@ package com.cloud.NetworkCloudDrive.Sessions;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
-import com.cloud.NetworkCloudDrive.Enum.UserRole;
+import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Enum;
+package com.cloud.NetworkCloudDrive.Models.Enum;
 
 public enum ScanOptions {
     GO_INTO_FOLDERS,
