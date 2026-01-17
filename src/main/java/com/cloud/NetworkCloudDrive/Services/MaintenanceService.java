@@ -1,7 +1,6 @@
 package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.DTO.ScanMetadata;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
@@ -53,16 +52,14 @@ public class MaintenanceService {
         for (int i = 0; i < fileList.size(); i++) {
             count++;
             File currentFile = fileList.get(i).toFile();
-//            if (scanOptions == ScanOptions.ONLY_FILES) {
-//                scanFilesInDirectory(fileUtility.returnFilesInDirectory(fileList.get(i), false,
-//                        file -> file.toFile().isFile()), startingDirectoryId);
-//                break;
-//            }
-//            if (currentFile.isFile() || lastFolder.equals(currentFile)) {
-//                logger.info("Is a file or same as last folder");
-//                continue;
-//            }
-            if (ignoreFileListProperties.isInIgnoreList(currentFile.getName())) continue;
+            if (currentFile.isFile() || lastFolder.equals(currentFile)) {
+                logger.info("Is a file or same as last folder");
+                continue;
+            }
+            if (ignoreFileListProperties.isInIgnoreList(currentFile.getName())) {
+                logger.info("In ignore list skipping...");
+                continue;
+            }
             if (currentFile.equals(startingPath)) {
                 logger.info("Skip starting path");
                 continue;
@@ -159,5 +156,89 @@ public class MaintenanceService {
                 currentFolder.toPath(), Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
         logger.info("Created folder metadata ID {} NAME {}", createdFolder.getId(), createdFolder.getName());
         return createdFolder;
+    }
+
+    public boolean betterSearch(File startingPath) {
+        try {
+            logger.info("Start better scan function");
+            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath.getPath());
+            for (Path files : folders) {
+                File currentFolder = files.toFile();
+                logger.info("currently on: {}", currentFolder.getName());
+                if (ignoreFileListProperties.isInIgnoreList(currentFolder.getName())) {
+                    logger.info("Skip ignorable file or folder {}", currentFolder.getName());
+                    continue;
+                }
+                if (currentFolder.isFile()) {
+                    logger.info("enter file handling");
+                    handleFileCheck(currentFolder, fileUtility.getFolderMetadataFromEncoding(currentFolder.getParentFile().getName()).getId());
+                    continue;
+                }
+                if (encodingUtility.isBase32Decodable(currentFolder.getName())) {
+                    logger.info("decodable skip");
+                    continue;
+                }
+                long folderId;
+                if (currentFolder.getParentFile().equals(startingPath)) {
+                    folderId = 0L;
+                } else {
+                    folderId = fileUtility.getFolderMetadataFromEncoding(currentFolder.getParentFile().getName()).getId();
+                }
+                logger.info("enter folder handling folderid {}", folderId);
+                handleFolderCheck(currentFolder, folderId);
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception occurred {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public void handleFileCheck(File currentFile, long folderId) throws IOException {
+        boolean filenameIsBase32Encoded = false;
+        if (encodingUtility.isBase32Decodable(currentFile.getName())) {
+            //if its base32 decodable check if its in db
+            // we can also decode Base32 and get id to search by ID index could be more performant
+            if (sqLiteDAO.fileMetadataByNameExists(currentFile.getName())) {
+                //skip
+                logger.info("File exists {}", encodingUtility.decodedBase32SplitArray(currentFile.getName())[1]);
+                return;
+            }
+            logger.info("File does not exist {}", currentFile.getName());
+            filenameIsBase32Encoded = true;
+        }
+        logger.info("-> FILE {}", currentFile.getPath());
+        FileMetadata metadata =
+                new FileMetadata(
+                        currentFile.getName(),
+                        folderId,
+                        userSession.getId(),
+                        fileUtility.useTikaCoreMimeTypeFromExtension(currentFile),
+                        currentFile.getTotalSpace());
+        sqLiteDAO.persistObjects(metadata);
+        if (!filenameIsBase32Encoded) {
+            // Encode in BASE32
+            String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
+            metadata.setName(encodedFileName);
+        }
+        logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
+                metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
+        sqLiteDAO.saveFile(metadata);
+        // changing in loop causes it to fail but rerunning scan makes it work
+        Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
+    }
+
+    public void handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException {
+        FolderMetadata createdFolder = new FolderMetadata();
+        sqLiteDAO.persistObjects(createdFolder);
+        createdFolder.setPath(fileUtility.getIdPath(currentFolderId) + "/" + createdFolder.getId());
+        createdFolder.setUserid(userSession.getId());
+        createdFolder.setName(encodingUtility.encodeBase32FolderName(createdFolder.getId(), currentFolder.getName(), userSession.getId()));
+        sqLiteDAO.saveFolder(createdFolder);
+        // changing in loop causes it to fail but rerunning scan makes it work
+        logger.info("mutated path {}", Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
+        Files.move(
+                currentFolder.toPath(), Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
+        logger.info("Created folder metadata ID {} NAME {}", createdFolder.getId(), createdFolder.getName());
     }
 }

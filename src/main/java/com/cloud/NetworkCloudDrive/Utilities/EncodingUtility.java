@@ -44,6 +44,10 @@ public class EncodingUtility {
         return decodeBase32StringNoPadding(base32String).split(":");
     }
 
+    public long getMetadataIDFromEncodedBase32(String base32String) {
+        return Long.parseLong(decodedBase32SplitArray(base32String)[0]);
+    }
+
     /**
      * Encode Folder names in BASE32
      * @param folderId  folder's ID

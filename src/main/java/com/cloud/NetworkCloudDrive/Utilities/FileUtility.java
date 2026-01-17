@@ -133,6 +133,10 @@ public class FileUtility {
         return folderId != 0 ? sqLiteDAO.queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
     }
 
+    public FolderMetadata getFolderMetadataFromEncoding(String encodedFolderName) throws SQLException {
+        return sqLiteDAO.queryFolderMetadata(encodingUtility.getMetadataIDFromEncodedBase32(encodedFolderName), userSession.getId());
+    }
+
     /**
      * Returns file if it's not a duplicate
      * @param path  file path to check

@@ -1,26 +1,24 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
-import com.cloud.NetworkCloudDrive.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Services.MaintenanceService;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
+
 @RestController
 @RequestMapping(path = "/api/maintenance")
 public class MaintenanceController {
-    private final Logger logger = LoggerFactory.getLogger(MaintenanceController.class);
-    private final FileUtility fileUtility;
     private final MaintenanceService maintenanceService;
+    private final FileUtility fileUtility;
 
-    public MaintenanceController(FileUtility fileUtility, MaintenanceService maintenanceService) {
-        this.fileUtility = fileUtility;
+    public MaintenanceController(MaintenanceService maintenanceService, FileUtility fileUtility) {
         this.maintenanceService = maintenanceService;
+        this.fileUtility = fileUtility;
     }
 
     @GetMapping("scan")
@@ -35,25 +33,16 @@ public class MaintenanceController {
         }
     }
 
-    @GetMapping("scan-recursive")
-    public @ResponseBody ResponseEntity<?> scanDirectoryRecursively(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
+    @GetMapping("better-scan")
+    public @ResponseBody ResponseEntity<?> betterScanDirectory(@RequestParam long folderid) {
         try {
-//            maintenanceService.recursivelyScanFilesAndFolders(
-//                            fileUtility.getFileAndFolderPathsFromFolder(fileUtility.getFolderPath(folderid)), 0)
-//                    .forEach(folders -> {
-//                        if (folders.toFile().isFile())
-//                            logger.error("recursive file\t{}", folders.toFile().getPath());
-//                        else
-//                            logger.error("recursive folder\t{}", folders.toFile().getPath());
-//                    });
-//            maintenanceService.recursivelyScanFilesAndFolders(
-//                    fileUtility.getFileAndFolderPathsFromFolder(fileUtility.getFolderPath(folderid)), folderid);
-//            logger.info("result {}", maintenanceService.callRecursive(folderid, scanOptions));
+            if (!maintenanceService.betterSearch(new File(fileUtility.getFolderPath(folderid))))
+                throw new RuntimeException("Scan stopped");
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONResponse("recursive scan completed"));
+                    .body(new JSONResponse("scan completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONErrorResponse(e, "error scanning recursively"));
+                    .body(new JSONErrorResponse(e, "error scanning"));
         }
     }
 }
