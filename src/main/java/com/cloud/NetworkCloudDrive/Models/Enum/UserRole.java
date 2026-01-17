@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Enum;
+package com.cloud.NetworkCloudDrive.Models.Enum;
 
 public enum UserRole {
     ADMIN,

@@ -1,6 +1,6 @@
-package com.cloud.NetworkCloudDrive.DTO;
+package com.cloud.NetworkCloudDrive.Models.DTO;
 
-import com.cloud.NetworkCloudDrive.Enum.UserRole;
+import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 
 import java.time.Instant;

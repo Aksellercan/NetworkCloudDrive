@@ -1,14 +1,13 @@
 package com.cloud.NetworkCloudDrive.DAO;
 
-import com.cloud.NetworkCloudDrive.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
-import com.cloud.NetworkCloudDrive.Repositories.SQLiteFileRepository;
-import com.cloud.NetworkCloudDrive.Repositories.SQLiteFolderRepository;
-import com.cloud.NetworkCloudDrive.Repositories.SQLiteUserEntityRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFileRepository;
+import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFolderRepository;
+import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteUserEntityRepository;
+import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Example;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
 // Basically DAO but for multiple types*
 @Component
 public class SQLiteDAO {
-    private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
+    private final EntityManager entityManager;
     private final SQLiteFolderRepository sqLiteFolderRepository;
     private final SQLiteFileRepository sqLiteFileRepository;
     private final SQLiteUserEntityRepository sqLiteUserEntityRepository;
@@ -31,10 +30,12 @@ public class SQLiteDAO {
     public SQLiteDAO(
             SQLiteFolderRepository sqLiteFolderRepository,
             SQLiteFileRepository sqLiteFileRepository,
-            SQLiteUserEntityRepository sqLiteUserEntityRepository) {
+            SQLiteUserEntityRepository sqLiteUserEntityRepository,
+            EntityManager entityManager) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
+        this.entityManager = entityManager;
     }
 
     // DAO stuff
@@ -95,6 +96,27 @@ public class SQLiteDAO {
     }
 
     // Database service layer
+
+    @Transactional
+    public List<FileMetadata> searchFileMetadataByName(String name) {
+        return sqLiteFileRepository.searchFileMetadataByName(name);
+    }
+
+    @Transactional
+    public boolean fileMetadataByNameExists(String name) {
+        return sqLiteFileRepository.existsFileMetadataByName(name);
+    }
+
+    @Transactional
+    public boolean folderMetadataByNameExists(String name) {
+        return sqLiteFolderRepository.existsFolderMetadataByName(name);
+    }
+
+    // to avoid putting @Transactional annotation
+    @Transactional
+    public void persistObjects(Object object) {
+        entityManager.persist(object);
+    }
 
     @Transactional
     public CurrentUserDTO getUserIDNameAndRoleByMail(String mail) {

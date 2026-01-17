@@ -5,19 +5,21 @@ import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
+import java.net.URLConnection;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
@@ -54,7 +56,10 @@ public class FileUtility {
         }
     }
 
-    //WHAT A MESS
+    public List<Path> returnFilesInDirectory(Path dir, boolean reverse, Predicate<Path> pathFilter) throws IOException {
+        return walkFsTree(dir, reverse).stream().filter(pathFilter).collect(Collectors.toList());
+    }
+
     //TODO instead of generating Id paths use startsWith from DAO and filter files by found folders id's then delete them both from db and system
     public void deleteFsTree(Path dir, String startingIdPath) throws IOException {
         logger.info("Start File Tree deletion operation");
@@ -71,7 +76,6 @@ public class FileUtility {
                 continue;
             }
             if (file.isFile()) {
-                // use deleteIfExists at prod
                 String parentFolderIdPath = generateIdPaths(file.getParentFile().getPath(), startingIdPath);
                 logger.debug("generated file path: {}", parentFolderIdPath);
                 FolderMetadata folderMetadata =
@@ -85,12 +89,10 @@ public class FileUtility {
                 logger.debug("File metadata: name {} path {} Id {}", output.getName(), output.getFolderId(), output.getId());
                 continue;
             }
-            // some progress
             String parentFolderIdPath = generateIdPaths(file.getPath(), startingIdPath);
             logger.debug("generated folder path: {}", parentFolderIdPath);
             FolderMetadata folderMetadata = sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getName(), userSession.getId());
             // manage folders here
-            //temporary comment out to test
             if (!Files.deleteIfExists(file.toPath())) {
                 errorCount++;
                 continue;
@@ -117,6 +119,7 @@ public class FileUtility {
         for (FolderMetadata folderMetadata : folderList) {
             folderMetadata.setPath(folderMetadata.getPath().replaceAll(oldPrefix, newPrefix));
         }
+//        folderList.forEach(folderMetadata -> folderMetadata.setName(folderMetadata.getPath().replaceAll(oldPrefix, newPrefix)));
         return result;
     }
 
@@ -128,6 +131,10 @@ public class FileUtility {
      */
     public String getIdPath(long folderId) throws SQLException {
         return folderId != 0 ? sqLiteDAO.queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
+    }
+
+    public FolderMetadata getFolderMetadataFromEncoding(String encodedFolderName) throws SQLException {
+        return sqLiteDAO.queryFolderMetadata(encodingUtility.getMetadataIDFromEncodedBase32(encodedFolderName), userSession.getId());
     }
 
     /**
@@ -188,29 +195,53 @@ public class FileUtility {
 
     /**
      * List of folders and files inside a directory
-     * @param folderPath    parent folder path to check
+     * @param file    parent folder path to list
      * @return  List of paths for files and folders
      * @throws IOException  if path is invalid
      */
-    public List<Path> getFileAndFolderPathsFromFolder(String folderPath) throws IOException {
+    public List<Path> getFileAndFolderPathsFromFolder(File file) throws IOException {
         List<Path> fileList;
-        try (Stream<Path> stream = Files.list(Path.of(fileStorageProperties.getFullPath(folderPath)))) {
+        logger.info("full path {}", file.getPath());
+        try (Stream<Path> stream = Files.list(file.toPath())) {
             fileList = stream.toList();
         }
         return fileList;
     }
 
-    //TODO Bug inside probeContentType() it cant detect 'yaml' format returns null instead of document of type
-    //TODO consider tika-core
     /**
      * Returns MimeType of file
      * @param filePath  Path of file
      * @return  MimeType of file
-     * @throws IOException  if an I/O error occurs
+     * @throws IOException  If an I/O error occurs
      */
+    @Deprecated
     public String getMimeTypeFromExtension(Path filePath) throws IOException {
-        logger.info("File at path absolute {}, {}", filePath.toAbsolutePath(), filePath);
+        logger.debug("[PROBE] File at path absolute {}, {}", filePath.toAbsolutePath(), filePath);
+        //Bug inside probeContentType() it cant detect 'yaml' format returns null instead of document of type
         return Files.probeContentType(filePath);
+    }
+
+    /**
+     * Returns MimeType of file by guessing maybe inaccurate
+     * @param file  File object
+     * @return  MimeType of file
+     * @throws IOException  If an I/O error occurs
+     */
+    @Deprecated
+    public String guessMimeTypeFromExtension(File file) throws IOException {
+        logger.debug("[GUESS-CONTENT] File at path absolute {}, {}", file.getPath(), file);
+        return URLConnection.guessContentTypeFromStream(new BufferedInputStream(new FileInputStream(file)));
+    }
+
+    /**
+     * Returns MimeType of file uses Apache Tika-Core dependency
+     * @param file  File object
+     * @return  MimeType of file
+     * @throws IOException  If an I/O error occurs
+     */
+    public String useTikaCoreMimeTypeFromExtension(File file) throws IOException {
+        logger.debug("[TIKA-CORE] File at path absolute {}, {}", file.getPath(), file);
+        return new Tika().detect(file);
     }
 
     /**
@@ -240,11 +271,10 @@ public class FileUtility {
      * @throws IOException  if filepath is invalid
      */
     public boolean checkIfFileExistsDecodeNames(String filePath, String decodedFileName) throws IOException {
-        return getFileAndFolderPathsFromFolder(filePath).stream().
+        return getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(filePath))).stream().
                 anyMatch(file -> encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
     }
 
-    //TODO Can be replaced with Streams().AnyMatches()
     /**
      * Returns Folder Metadata that matches target ID
      * @param list  list to loop
@@ -252,11 +282,7 @@ public class FileUtility {
      * @return  Folder Metadata that matches target ID
      */
     private FolderMetadata getFolderMetadataByIdFromList(List<FolderMetadata> list, long targetId) {
-        for (FolderMetadata folderMetadata : list) {
-            if (targetId == folderMetadata.getId())
-                return folderMetadata;
-        }
-        return null;
+        return list.stream().filter(metadata -> metadata.getId() == targetId).toList().get(0);
     }
 
     /**
@@ -388,55 +414,5 @@ public class FileUtility {
         Path updatedName = Files.move(oldPath.toPath(), userDirectory.toPath());
         if (Files.notExists(updatedName))
             throw new FileSystemException("Failed to update user directory name");
-    }
-
-    // alternative algorithm to walk file tree
-    // for maintenance features
-    public String traverseFileTree(Path startingPath) throws IOException {
-        int skippedFileCount = 0, skippedFolderCountInside = 0, skippedDuplicateCount = 0, discoveredFolderCount = 0, discoveredFileCount = 0;
-        File lastFolder = new File("");
-        List<Path> fileList = walkFsTree(startingPath, false);
-        for (Path orgPath : fileList) {
-            if (orgPath.toFile().isFile()) {
-                skippedFileCount++;
-                continue;
-            }
-            if (lastFolder.equals(orgPath.toFile())) {
-                skippedDuplicateCount++;
-                continue;
-            }
-            logger.info("CURRENT FOLDER -> {}", orgPath);
-            discoveredFolderCount++;
-            List<Path> returns = walkFsTree(orgPath, false);
-            for (Path paths : returns) {
-                if (!paths.toFile().isFile()) {
-                    skippedFolderCountInside++;
-                    continue;
-                }
-                logger.info("-> FILE {}", paths);
-                discoveredFileCount++;
-            }
-            lastFolder = orgPath.toFile();
-        }
-        logger.info("""
-                        Traversal complete, results:\
-                        
-                        Skipped File count: {}\
-                        
-                        Skipped Folder Count Inside: {}\
-                        
-                        Skipped duplicate count: {}\
-                        
-                        Discovered Folder Count: {}\
-                        
-                        Discovered File Count: {}""",
-                skippedFileCount, skippedFolderCountInside, skippedDuplicateCount, discoveredFolderCount, discoveredFileCount);
-        return String.format("Traversal complete, results:" +
-                        " Skipped File count: %d" +
-                        " Skipped Folder Count Inside: %d" +
-                        " Skipped duplicate count: %d" +
-                        " Discovered Folder Count: %d" +
-                        " Discovered File Count: %d",
-                skippedFileCount, skippedFolderCountInside, skippedDuplicateCount, discoveredFolderCount, discoveredFileCount);
     }
 }

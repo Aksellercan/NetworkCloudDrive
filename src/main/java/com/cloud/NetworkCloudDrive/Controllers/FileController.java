@@ -1,7 +1,8 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
-import com.cloud.NetworkCloudDrive.DTO.CreateFolderDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.CreateFolderDTO;
 import com.cloud.NetworkCloudDrive.Models.*;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Services.FileService;
 import com.cloud.NetworkCloudDrive.Services.FileSystemService;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
@@ -34,7 +35,8 @@ public class FileController {
             FileSystemService fileSystemService,
             FileService fileService,
             InformationService informationService,
-            FileUtility fileUtility, EncodingUtility encodingUtility) {
+            FileUtility fileUtility,
+            EncodingUtility encodingUtility) {
         this.fileService = fileService;
         this.fileSystemService = fileSystemService;
         this.informationService = informationService;

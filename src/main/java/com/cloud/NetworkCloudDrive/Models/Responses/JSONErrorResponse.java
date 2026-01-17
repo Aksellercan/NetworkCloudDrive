@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Models;
+package com.cloud.NetworkCloudDrive.Models.Responses;
 
 public class JSONErrorResponse extends JSONResponse {
     private String exception_type;

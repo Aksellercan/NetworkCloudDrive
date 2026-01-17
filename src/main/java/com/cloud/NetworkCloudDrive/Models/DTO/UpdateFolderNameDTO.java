@@ -1,10 +1,10 @@
-package com.cloud.NetworkCloudDrive.DTO;
+package com.cloud.NetworkCloudDrive.Models.DTO;
 
-public class CreateFolderDTO {
+public class UpdateFolderNameDTO {
     private long folder_id;
     private String name;
 
-    public CreateFolderDTO() {}
+    public UpdateFolderNameDTO() {}
 
     public long getFolder_id() {
         return folder_id;
@@ -13,9 +13,9 @@ public class CreateFolderDTO {
         this.folder_id = folder_id;
     }
     public String getName() {
-        return name;
+        return this.name;
     }
-    public void getPath(String name) {
+    public void setName(String name) {
         this.name = name;
     }
 }

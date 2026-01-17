@@ -1,44 +1,43 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Models.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Models.JSONResponse;
-import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
-import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
+import com.cloud.NetworkCloudDrive.Services.MaintenanceService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.Path;
-
 @RestController
 @RequestMapping(path = "/api/maintenance")
 public class MaintenanceController {
-    private final Logger logger = LoggerFactory.getLogger(MaintenanceController.class);
-    private final UserSession userSession;
-    private final SQLiteDAO sqLiteDAO;
-    private final FileUtility fileUtility;
-    private final FileStorageProperties fileStorageProperties;
+    private final MaintenanceService maintenanceService;
 
-    public MaintenanceController(UserSession userSession, SQLiteDAO sqLiteDAO, FileUtility fileUtility, FileStorageProperties fileStorageProperties) {
-        this.userSession = userSession;
-        this.sqLiteDAO = sqLiteDAO;
-        this.fileUtility = fileUtility;
-        this.fileStorageProperties = fileStorageProperties;
+    public MaintenanceController(MaintenanceService maintenanceService) {
+        this.maintenanceService = maintenanceService;
     }
 
-    @GetMapping("scan")
-    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam long folderid) {
+    @GetMapping(value = "scan", params = "folderid")
+    public @ResponseBody ResponseEntity<?> scanDirectoryNestedFolders(@RequestParam long folderid) {
         try {
+            maintenanceService.scanOptionsController(folderid, ScanOptions.NORMAL);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONResponse(fileUtility.traverseFileTree(
-                            Path.of(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderid))))));
+                    .body(new JSONResponse("Scan completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONErrorResponse(e, "error scanning"));
+                    .body(new JSONErrorResponse(e, "Error scanning"));
+        }
+    }
+
+    @GetMapping(value = "scan", params = {"folderid", "scanOptions"})
+    public @ResponseBody ResponseEntity<?> scanDirectoryOptions(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
+        try {
+            maintenanceService.scanOptionsController(folderid, scanOptions);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONResponse("Scan completed"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONErrorResponse(e, "Error scanning"));
         }
     }
 }

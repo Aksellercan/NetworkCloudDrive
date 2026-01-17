@@ -1,9 +1,9 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.DTO.CurrentUserDTO;
-import com.cloud.NetworkCloudDrive.Models.JSONObjectResponse;
-import com.cloud.NetworkCloudDrive.Models.JSONResponse;
+import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,8 +36,9 @@ public class AuthenticationHandler implements AuthenticationSuccessHandler, Auth
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
             throws IOException, ServletException {
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         UserEntity user = sqLiteDAO.findUserByMail(authentication.getName());
+        user.setLastLogin(new Date().toInstant());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         user.setLastLogin(new Date().toInstant());
         response.getWriter().print(new ObjectMapper()
                 .writeValueAsString(new JSONObjectResponse(new CurrentUserDTO(sqLiteDAO.saveUser(user)), "Login Success")));
