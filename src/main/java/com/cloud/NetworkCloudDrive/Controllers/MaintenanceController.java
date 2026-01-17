@@ -17,7 +17,7 @@ public class MaintenanceController {
         this.maintenanceService = maintenanceService;
     }
 
-    @GetMapping(value = "scan", params = "folderid")
+    @PostMapping(value = "scan", params = "folderid")
     public @ResponseBody ResponseEntity<?> scanDirectoryNestedFolders(@RequestParam long folderid) {
         try {
             maintenanceService.scanOptionsController(folderid, ScanOptions.NORMAL);
@@ -29,7 +29,7 @@ public class MaintenanceController {
         }
     }
 
-    @GetMapping(value = "scan", params = {"folderid", "scanOptions"})
+    @PostMapping(value = "scan", params = {"folderid", "scanOptions"})
     public @ResponseBody ResponseEntity<?> scanDirectoryOptions(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
         try {
             maintenanceService.scanOptionsController(folderid, scanOptions);

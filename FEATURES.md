@@ -53,4 +53,7 @@ Use PUT if request body is same as route's accepted model. PATCH if parts of rou
 
 ## Maintenance Endpoints
 
-coming soon...
+| Method | 	Route                                                        | 	Description      | Working            |
+|--------|---------------------------------------------------------------|-------------------|--------------------|
+| POST   | 	api/maintenance/scan?folderid={id}                           | Normal scan       | :heavy_check_mark: |
+| POST   | 	api/maintenance/scan?folderid={id}&scanOptions={ScanOptions} | Scan with options | :heavy_check_mark: |
