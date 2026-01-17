@@ -13,7 +13,11 @@ public class IgnoreFileListProperties {
     public IgnoreFileListProperties() {
         this.ignoreFileList = List.of(
                 //ignore MacOS generated file
-                ".DS_Store"
+                ".DS_Store",
+                //ignore thumbnails folder in user dir
+                ".thumbnails",
+                //ignore compression folder in user dir
+                ".compression"
         );
     }
 

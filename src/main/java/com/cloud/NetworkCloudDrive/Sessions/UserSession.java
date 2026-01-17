@@ -1,8 +1,8 @@
 package com.cloud.NetworkCloudDrive.Sessions;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.DTO.CurrentUserDTO;
-import com.cloud.NetworkCloudDrive.Enum.UserRole;
+import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +13,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.annotation.RequestScope;
-import org.springframework.web.context.annotation.SessionScope;
 
-import java.security.Principal;
-
-@RequestScope //TODO temporarily use RequestScope instead of SessionScope
+//TODO temporarily use RequestScope instead of SessionScope (Reason: Session won't update on Postman/Yaak/Bruno. Should work for browser)
+@RequestScope
+//@SessionScope
 @Component
 public class UserSession {
     private long id;
@@ -39,6 +38,7 @@ public class UserSession {
     public CurrentUserDTO initializeUserSessionDetails() throws UsernameNotFoundException {
         if (Boolean.parseBoolean(env.getProperty("unit-test"))) return new CurrentUserDTO();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) throw new UsernameNotFoundException("Invalid authentication");
         if (this.name != null) {
             if (this.name.equals(auth.getName())) {
                 return new CurrentUserDTO(this.id, this.name, this.mail, this.role);

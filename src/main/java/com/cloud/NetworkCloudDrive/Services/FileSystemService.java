@@ -1,7 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services;
 
-import com.cloud.NetworkCloudDrive.DTO.FileListItemDTO;
-import com.cloud.NetworkCloudDrive.DTO.FolderListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
@@ -10,11 +10,9 @@ import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,7 +27,6 @@ import java.util.Map;
 @Service
 public class FileSystemService implements FileSystemRepository {
     private final FileStorageProperties fileStorageProperties;
-    private final EntityManager entityManager;
     private final FileUtility fileUtility;
     private final UserSession userSession;
     private final SQLiteDAO sqLiteDAO;
@@ -38,13 +35,11 @@ public class FileSystemService implements FileSystemRepository {
 
     public FileSystemService(
             FileStorageProperties fileStorageProperties,
-            EntityManager entityManager,
             UserSession userSession,
             FileUtility fileUtility,
             SQLiteDAO sqLiteDAO,
             EncodingUtility encodingUtility) {
         this.fileStorageProperties = fileStorageProperties;
-        this.entityManager = entityManager;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.sqLiteDAO = sqLiteDAO;
@@ -57,6 +52,8 @@ public class FileSystemService implements FileSystemRepository {
         List<FolderListItemDTO> folderList = new ArrayList<>();
         for (Path path : filePaths) {
             File file = path.toFile();
+            //ignore dotfiles
+            if (file.getName().startsWith(".")) continue;
             logger.info("file/folder in queue {}", file);
             String[] arrayString = encodingUtility.decodedBase32SplitArray(file.getName());
             long actualFileId = Long.parseLong(arrayString[0]);
@@ -154,7 +151,7 @@ public class FileSystemService implements FileSystemRepository {
             throw new FileSystemException(String.format("Failed to rename the file to %s", renamedFile.getName()));
         // get ready for transaction
         // mimetype has bug in the library (cant detect types such as YAML)
-        String newMimeType = fileUtility.getMimeTypeFromExtension(newUpdatedPath); /* <- get new mimetype of file */
+        String newMimeType = fileUtility.useTikaCoreMimeTypeFromExtension(newUpdatedPath.toFile()); /* <- get new mimetype of file */
         //set new name and path
         file.setName(encodeBase32FolderName);
         file.setMimiType(newMimeType != null ? newMimeType : file.getMimiType());
@@ -229,7 +226,6 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     @Override
-    @Transactional
     public FolderMetadata createFolder(String folderName, long folderId) throws Exception {
         // Paths
         String idPath = fileUtility.getIdPath(folderId);
@@ -237,7 +233,7 @@ public class FileSystemService implements FileSystemRepository {
         String fullPath = fileStorageProperties.getFullPath(userFolder);
         // Folder metadata
         FolderMetadata createdFolder = new FolderMetadata();
-        entityManager.persist(createdFolder);
+        sqLiteDAO.persistObjects(createdFolder);
         String encodedFolderName = encodingUtility.encodeBase32FolderName(createdFolder.getId(), folderName, userSession.getId());
         createdFolder.setPath(idPath + "/" + createdFolder.getId());
         createdFolder.setUserid(userSession.getId());

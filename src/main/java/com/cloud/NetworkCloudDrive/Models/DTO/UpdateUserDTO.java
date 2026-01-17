@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.DTO;
+package com.cloud.NetworkCloudDrive.Models.DTO;
 
 public class UpdateUserDTO {
     private String update;
