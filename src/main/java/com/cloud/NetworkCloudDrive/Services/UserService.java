@@ -80,6 +80,7 @@ public class UserService implements UserRepository {
         return new CurrentUserDTO(user.getId(), user.getName(), user.getMail(), user.getRole(), user.getLastLogin());
     }
 
+    //TODO delete function should delete user folder
     @Override
     public void deleteUser(UserEntity user) {
         sqLiteDAO.deleteUser(user);

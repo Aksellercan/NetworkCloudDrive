@@ -62,7 +62,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("update/mail")
+    @PatchMapping("update/mail")
     public @ResponseBody ResponseEntity<?> updateMail(@RequestBody UpdateUserDTO updateUserDTO) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
@@ -76,7 +76,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("update/name")
+    @PatchMapping("update/name")
     public @ResponseBody ResponseEntity<?> updateName(@RequestBody UpdateUserDTO updateUserDTO) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
@@ -89,7 +89,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("update/password")
+    @PatchMapping("update/password")
     public @ResponseBody ResponseEntity<?> updatePassword(@RequestBody UpdateUserDTO updateUserDTO) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
