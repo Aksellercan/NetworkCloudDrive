@@ -1,8 +1,11 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
 import com.cloud.NetworkCloudDrive.Utilities.SecurityUtility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
@@ -24,9 +27,12 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
     private final SecurityUtility securityUtility;
+    private final Environment env;
+    private final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
-    public SecurityConfig(SecurityUtility securityUtility) {
+    public SecurityConfig(SecurityUtility securityUtility, Environment env) {
         this.securityUtility = securityUtility;
+        this.env = env;
     }
 
     @Bean
@@ -38,9 +44,7 @@ public class SecurityConfig {
                                 // but require authentication for any other endpoint
                                 .anyRequest()
                                 .authenticated()
-                        // temporarily disable csrf protection
                 )
-//                .httpBasic(Customizer.withDefaults())
                 .formLogin(formLogin ->
                         formLogin.successHandler(authenticationHandler())
                                 .failureHandler(authenticationHandler())) // Use both BASIC and FORM logins
@@ -48,6 +52,10 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 // give everyone access to log out
                 .logout(LogoutConfigurer::permitAll);
+        if (Boolean.parseBoolean(env.getProperty("use-http-basic-authentication"))) {
+            logger.warn("HTTP Basic authentication is enabled");
+            http.httpBasic(Customizer.withDefaults());
+        }
         return http.build();
     }
 
