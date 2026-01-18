@@ -6,6 +6,7 @@ import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
+import com.cloud.NetworkCloudDrive.Repositories.MaintenanceRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
@@ -22,7 +23,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 @Service
-public class MaintenanceService {
+public class MaintenanceService implements MaintenanceRepository {
     private final Logger logger = LoggerFactory.getLogger(MaintenanceService.class);
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
@@ -36,7 +37,8 @@ public class MaintenanceService {
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
-            IgnoreFileListProperties ignoreFileListProperties, FileStorageProperties fileStorageProperties) {
+            IgnoreFileListProperties ignoreFileListProperties,
+            FileStorageProperties fileStorageProperties) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
@@ -51,16 +53,16 @@ public class MaintenanceService {
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:
-                betterScan(startingDirectory, path -> path.toFile().exists(), true);
+                scanDirectory(startingDirectory, path -> path.toFile().exists(), true);
                 break;
             case ONLY_FILES:
-                betterScan(startingDirectory,path -> path.toFile().isFile(), false);
+                scanDirectory(startingDirectory,path -> path.toFile().isFile(), false);
                 break;
             case ONLY_FOLDERS:
-                betterScan(startingDirectory, path -> !path.toFile().isFile(), true);
+                scanDirectory(startingDirectory, path -> !path.toFile().isFile(), true);
                 break;
             case DONT_GO_INTO_FOLDERS:
-                betterScan(startingDirectory, path -> path.toFile().exists(), false);
+                scanDirectory(startingDirectory, path -> path.toFile().exists(), false);
                 break;
         }
     }
@@ -69,7 +71,7 @@ public class MaintenanceService {
         return (encodingUtility.isEncodedStringUserDirectory(parentFolder.getName()) ? 0L : fileUtility.getFolderMetadataFromEncoding(parentFolder.getName()).getId());
     }
 
-    public boolean betterScan(File startingPath, Predicate<Path> filter, boolean useRecursion) {
+    public boolean scanDirectory(File startingPath, Predicate<Path> filter, boolean useRecursion) {
         try {
             logger.info("Start better scan function at {}", startingPath.getPath());
             List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().filter(filter).toList();
@@ -90,7 +92,7 @@ public class MaintenanceService {
                     logger.info("decodable skipping");
                     if (!currentFolder.isFile()) {
                         if (useRecursion) {
-                            if (!betterScan(currentFolder, filter, useRecursion))
+                            if (!scanDirectory(currentFolder, filter, useRecursion))
                                 throw new RuntimeException("Failed to enter folder");
                         }
                     }
@@ -100,7 +102,7 @@ public class MaintenanceService {
                 logger.info("Enter folder handling FolderID {}", folderId);
                 File createdFolder = handleFolderCheck(currentFolder, folderId);
                 if (useRecursion) {
-                    if (!betterScan(createdFolder, filter, useRecursion))
+                    if (!scanDirectory(createdFolder, filter, useRecursion))
                         throw new RuntimeException("Failed to enter created folder");
                 }
             }
