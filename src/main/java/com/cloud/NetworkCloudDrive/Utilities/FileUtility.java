@@ -15,6 +15,7 @@ import java.net.URLConnection;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Predicate;
@@ -136,6 +137,20 @@ public class FileUtility {
         if (Files.exists(checkDuplicate.toPath()))
             throw new FileNotFoundException(String.format("%s with name %s already exists at %s",
                     (checkDuplicate.isFile() ? "File" : "Folder"), checkDuplicate.getName(), checkDuplicate.getPath()));
+        return checkDuplicate;
+    }
+
+    /**
+     * Returns file if it's not a duplicate
+     * @param path  file path to check
+     * @return  file if it's not a duplicate
+     * @throws FileNotFoundException    if file is a duplicate or not found
+     */
+    public Path returnPathIfItsNotADuplicate(String path) throws FileNotFoundException {
+        Path checkDuplicate = Paths.get(path);
+        if (Files.exists(checkDuplicate))
+            throw new FileNotFoundException(String.format("%s with name %s already exists at %s",
+                    (Files.isRegularFile(checkDuplicate) ? "File" : "Folder"), checkDuplicate.getFileName(), checkDuplicate));
         return checkDuplicate;
     }
 
