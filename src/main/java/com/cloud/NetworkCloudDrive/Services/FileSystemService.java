@@ -200,11 +200,15 @@ public class FileSystemService implements FileSystemRepository {
     @Override
     public String moveFolder(FolderMetadata folder, long destinationFolderId) throws Exception {
         String sourcePath = fileUtility.getFolderPath(folder.getId());
+        logger.warn("source path {}", sourcePath);
         // check if source folder exists
         Path sourceFolder = fileUtility.returnPathIfItExists(sourcePath);
+        logger.warn("sourcefolder path {}", sourceFolder);
         // check if destination folder exists
         Path destinationFolder = fileUtility.returnPathIfItExists(fileUtility.getFolderPath(destinationFolderId));
+        logger.warn("destinationfolder path {}", destinationFolder);
         // Get folders inside source folder
+        logger.warn("prefix {}", folder.getPath() + "/");
         List<FolderMetadata> folderMetadataList = sqLiteDAO.findAllStartsWithIdPath(folder.getPath() + "/");
         // Update ID paths of folders affected
         folderMetadataList =

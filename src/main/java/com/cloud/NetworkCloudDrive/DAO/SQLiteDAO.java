@@ -9,6 +9,9 @@ import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFolderRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteUserEntityRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import jakarta.persistence.EntityManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.actuate.logging.LoggersEndpoint;
 import org.springframework.data.domain.Example;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
@@ -28,6 +31,7 @@ public class SQLiteDAO {
     private final SQLiteFileRepository sqLiteFileRepository;
     private final SQLiteUserEntityRepository sqLiteUserEntityRepository;
     private final UserSession userSession;
+    private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
 
     public SQLiteDAO(
             SQLiteFolderRepository sqLiteFolderRepository,
@@ -249,7 +253,7 @@ public class SQLiteDAO {
     @Transactional
     public List<FolderMetadata> findAllStartsWithIdPath(String prefixIdPath) {
         return sqLiteFolderRepository.findAll()
-                .stream().filter(fl -> fl.getPath().startsWith(prefixIdPath))
+                .stream().filter(fl -> fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId())
                 .collect(Collectors.toList());
     }
 
