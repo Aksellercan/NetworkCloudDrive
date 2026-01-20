@@ -1,19 +1,31 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
+import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
+import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.util.Base64;
 
 @Component
 public class EncodingUtility {
     private final Logger logger = LoggerFactory.getLogger(EncodingUtility.class);
+    private final UserSession userSession;
+    private final SQLiteDAO sQLiteDAO;
 
-    public EncodingUtility() {}
+    public EncodingUtility(UserSession userSession, SQLiteDAO sQLiteDAO) {
+        this.userSession = userSession;
+        this.sQLiteDAO = sQLiteDAO;
+    }
 
     /**
      * Encode User folder using BASE32
@@ -47,6 +59,11 @@ public class EncodingUtility {
     public long getMetadataIDFromEncodedBase32(String base32String) {
         return Long.parseLong(decodedBase32SplitArray(base32String)[0]);
     }
+
+    public FolderMetadata getFolderMetadataFromEncoding(String encodedFolderName) throws SQLException {
+        return sQLiteDAO.queryFolderMetadata(getMetadataIDFromEncodedBase32(encodedFolderName), userSession.getId());
+    }
+
 
     public boolean isEncodedStringUserDirectory(String encodedString) {
         try {

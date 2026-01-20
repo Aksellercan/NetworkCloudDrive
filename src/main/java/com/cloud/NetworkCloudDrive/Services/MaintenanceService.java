@@ -68,9 +68,10 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     private long getFolderId(File parentFolder) throws SQLException {
-        return (encodingUtility.isEncodedStringUserDirectory(parentFolder.getName()) ? 0L : fileUtility.getFolderMetadataFromEncoding(parentFolder.getName()).getId());
+        return (encodingUtility.isEncodedStringUserDirectory(parentFolder.getName()) ? 0L : encodingUtility.getFolderMetadataFromEncoding(parentFolder.getName()).getId());
     }
 
+    @Override
     public boolean scanDirectory(File startingPath, Predicate<Path> filter, boolean useRecursion) {
         try {
             logger.info("Start better scan function at {}", startingPath.getPath());
@@ -113,6 +114,7 @@ public class MaintenanceService implements MaintenanceRepository {
         }
     }
 
+    @Override
     public void handleFileCheck(File currentFile, long folderId) throws IOException {
         boolean filenameIsBase32Encoded = false;
         if (encodingUtility.isBase32Decodable(currentFile.getName())) {
@@ -132,7 +134,7 @@ public class MaintenanceService implements MaintenanceRepository {
                         currentFile.getName(),
                         folderId,
                         userSession.getId(),
-                        fileUtility.useTikaCoreMimeTypeFromExtension(currentFile),
+                        fileUtility.getMimeTypeFromExtensionUsingTikaCore(currentFile),
                         currentFile.getTotalSpace());
         sqLiteDAO.persistObjects(metadata);
         if (!filenameIsBase32Encoded) {
@@ -147,10 +149,11 @@ public class MaintenanceService implements MaintenanceRepository {
         Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
     }
 
+    @Override
     public File handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException {
         FolderMetadata createdFolder = new FolderMetadata();
         sqLiteDAO.persistObjects(createdFolder);
-        createdFolder.setPath(fileUtility.getIdPath(currentFolderId) + "/" + createdFolder.getId());
+        createdFolder.setPath(sqLiteDAO.getIdPath(currentFolderId) + "/" + createdFolder.getId());
         createdFolder.setUserid(userSession.getId());
         createdFolder.setName(encodingUtility.encodeBase32FolderName(createdFolder.getId(), currentFolder.getName(), userSession.getId()));
         sqLiteDAO.saveFolder(createdFolder);

@@ -29,16 +29,18 @@ public class FileUtility {
     private final UserSession userSession;
     private final EncodingUtility encodingUtility;
     private final Logger logger = LoggerFactory.getLogger(FileUtility.class);
+    private final UserUtility userUtility;
 
     public FileUtility(
             SQLiteDAO sqLiteDAO,
             FileStorageProperties fileStorageProperties,
             UserSession userSession,
-            EncodingUtility encodingUtility) {
+            EncodingUtility encodingUtility, UserUtility userUtility) {
         this.fileStorageProperties = fileStorageProperties;
         this.userSession = userSession;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
+        this.userUtility = userUtility;
     }
 
     /**
@@ -67,7 +69,7 @@ public class FileUtility {
         List<Path> fileTreeStream = walkFsTree(dir, true);
         for (Path path : fileTreeStream) {
             File file = path.toFile();
-            if (file.getParentFile().equals(returnUserFolder())) {
+            if (file.getParentFile().equals(userUtility.returnUserFolder())) {
                 logger.debug("Skipped base path");
                 continue;
             }
@@ -124,20 +126,6 @@ public class FileUtility {
     }
 
     /**
-     * Returns ID path of folder with folderId
-     * @param folderId  folderId of folder
-     * @return  if folderId is not 0 returns folder's ID path else "0"
-     * @throws SQLException if folder with folderId is not found
-     */
-    public String getIdPath(long folderId) throws SQLException {
-        return folderId != 0 ? sqLiteDAO.queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
-    }
-
-    public FolderMetadata getFolderMetadataFromEncoding(String encodedFolderName) throws SQLException {
-        return sqLiteDAO.queryFolderMetadata(encodingUtility.getMetadataIDFromEncodedBase32(encodedFolderName), userSession.getId());
-    }
-
-    /**
      * Returns file if it's not a duplicate
      * @param path  file path to check
      * @return  file if it's not a duplicate
@@ -162,6 +150,32 @@ public class FileUtility {
         if (!Files.exists(checkExists.toPath()))
             throw new FileNotFoundException(String.format("%s does not exist at path %s",
                     (checkExists.isFile() ? "File" : "Folder"),checkExists.getPath()));
+        return checkExists;
+    }
+
+    /**
+     * Checks if file is a duplicate
+     * @param filePath  filepath to start decoding from
+     * @param decodedFileName   decoded filename
+     * @return  true if no match found, otherwise false
+     * @throws IOException  if filepath is invalid
+     */
+    public boolean checkIfFileExistsDecodeNames(String filePath, String decodedFileName) throws IOException {
+        return getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(filePath))).stream().
+                anyMatch(file -> encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
+    }
+
+    /**
+     * Returns if file exists at path uses NIO instead of IO
+     * @param path  file path to check
+     * @return  file if it exists
+     * @throws FileNotFoundException    if file does not exist at path
+     */
+    public Path returnPathIfItExists(String path) throws FileNotFoundException {
+        Path checkExists = Path.of(fileStorageProperties.getFullPath(path));
+        if (!Files.exists(checkExists))
+            throw new FileNotFoundException(String.format("%s does not exist at path %s",
+                    (Files.isRegularFile(checkExists) ? "File" : "Folder"),checkExists));
         return checkExists;
     }
 
@@ -209,37 +223,12 @@ public class FileUtility {
     }
 
     /**
-     * Returns MimeType of file
-     * @param filePath  Path of file
-     * @return  MimeType of file
-     * @throws IOException  If an I/O error occurs
-     */
-    @Deprecated
-    public String getMimeTypeFromExtension(Path filePath) throws IOException {
-        logger.debug("[PROBE] File at path absolute {}, {}", filePath.toAbsolutePath(), filePath);
-        //Bug inside probeContentType() it cant detect 'yaml' format returns null instead of document of type
-        return Files.probeContentType(filePath);
-    }
-
-    /**
-     * Returns MimeType of file by guessing maybe inaccurate
-     * @param file  File object
-     * @return  MimeType of file
-     * @throws IOException  If an I/O error occurs
-     */
-    @Deprecated
-    public String guessMimeTypeFromExtension(File file) throws IOException {
-        logger.debug("[GUESS-CONTENT] File at path absolute {}, {}", file.getPath(), file);
-        return URLConnection.guessContentTypeFromStream(new BufferedInputStream(new FileInputStream(file)));
-    }
-
-    /**
      * Returns MimeType of file uses Apache Tika-Core dependency
      * @param file  File object
      * @return  MimeType of file
      * @throws IOException  If an I/O error occurs
      */
-    public String useTikaCoreMimeTypeFromExtension(File file) throws IOException {
+    public String getMimeTypeFromExtensionUsingTikaCore(File file) throws IOException {
         logger.debug("[TIKA-CORE] File at path absolute {}, {}", file.getPath(), file);
         return new Tika().detect(file);
     }
@@ -261,18 +250,6 @@ public class FileUtility {
      */
     public boolean hasFileExtension(String filename) {
         return !getFileExtension(filename).isEmpty();
-    }
-
-    /**
-     * Checks if file is a duplicate
-     * @param filePath  filepath to start decoding from
-     * @param decodedFileName   decoded filename
-     * @return  true if no match found, otherwise false
-     * @throws IOException  if filepath is invalid
-     */
-    public boolean checkIfFileExistsDecodeNames(String filePath, String decodedFileName) throws IOException {
-        return getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(filePath))).stream().
-                anyMatch(file -> encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
     }
 
     /**
@@ -306,7 +283,7 @@ public class FileUtility {
      * @return  system path
      * @throws FileSystemException  if no match found for one of the ID's in list
      */
-    private String appendFolderNames(List<Long> folderIdList) throws FileSystemException {
+    protected String appendFolderNames(List<Long> folderIdList) throws FileSystemException {
         StringBuilder fullPath = new StringBuilder();
         List<FolderMetadata> folderMetadataListById = sqLiteDAO.findAllByIdInSQLFolderMetadata(folderIdList, userSession.getId());
         logger.debug("size {}", folderMetadataListById.size());
@@ -339,7 +316,7 @@ public class FileUtility {
     // TODO can be replaced using StartsWith function in SQLiteDAO just like in moveFolders()
     public String generateIdPaths(String filePath, String startingIdPath) throws IOException {
         String[] folders =
-                filePath.replaceAll(Pattern.quote(returnUserFolder().getPath() + returnCorrectSeparatorRegex()), "")
+                filePath.replaceAll(Pattern.quote(userUtility.returnUserFolder().getPath() + returnCorrectSeparatorRegex()), "")
                         .split(returnCorrectSeparatorRegex());
         StringBuilder idPath = new StringBuilder();
         //HOPEFULLY generate ID path starting from '0/'
@@ -364,55 +341,5 @@ public class FileUtility {
         }
         idPath.setLength(idPath.length() - 1);
         return idPath.toString();
-    }
-
-    /**
-     * Creates User directory upon register, encodes folder name with BASE32 made up of userID, username and mail
-     * @param userId    currently logged-in user's ID
-     * @param username  currently logged-in user's name
-     * @param mail  currently logged-in user's MAIL
-     * @return  user folder
-     * @throws IOException  if there was an error while creating directory
-     */
-    public File createUserDirectory(long userId, String username, String mail) throws IOException {
-        String encodedUserFolder = encodingUtility.encodeBase32UserFolderName(userId, username, mail);
-        File userDirectory = new File(fileStorageProperties.getFullPath(encodedUserFolder));
-        if (Files.notExists(userDirectory.toPath())) {
-            Files.createDirectories(userDirectory.toPath());
-            if (!Files.exists(userDirectory.toPath())) {
-                throw new FileSystemException("Could not create user directory");
-            }
-        }
-        return userDirectory;
-    }
-
-    /**
-     * Returns user folder, if it doesn't exist creates it
-     * @return  user folder
-     * @throws IOException  if there was an error while creating directory
-     */
-    public File returnUserFolder() throws IOException {
-        return createUserDirectory(userSession.getId(), userSession.getName(), userSession.getMail());
-    }
-
-    /**
-     * Updates User Folder's encoding
-     * @param userId    currently logged-in user's ID
-     * @param username  currently logged-in user's name
-     * @param mail  currently logged-in user's mail
-     * @param oldBase32 old BASE32 encoding of user folder
-     * @throws IOException  if there was an error while updating the folder name or the folder doesn't exist
-     */
-    public void updateUserDirectoryName(long userId, String username, String mail, String oldBase32) throws IOException {
-        File oldPath = new File(fileStorageProperties.getFullPath(oldBase32));
-        logger.debug("Old path user Path: {}", oldPath);
-        if (Files.notExists(oldPath.toPath()))
-            throw new FileSystemException("User directory does not exist");
-        String encodedUserFolder = encodingUtility.encodeBase32UserFolderName(userId, username, mail);
-        File userDirectory = new File(fileStorageProperties.getFullPath(encodedUserFolder));
-        logger.debug("User Path: {}", userDirectory);
-        Path updatedName = Files.move(oldPath.toPath(), userDirectory.toPath());
-        if (Files.notExists(updatedName))
-            throw new FileSystemException("Failed to update user directory name");
     }
 }

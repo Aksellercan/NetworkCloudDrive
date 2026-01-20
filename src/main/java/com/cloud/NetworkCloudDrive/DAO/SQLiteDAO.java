@@ -7,6 +7,7 @@ import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFileRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFolderRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteUserEntityRepository;
+import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Example;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,16 +27,19 @@ public class SQLiteDAO {
     private final SQLiteFolderRepository sqLiteFolderRepository;
     private final SQLiteFileRepository sqLiteFileRepository;
     private final SQLiteUserEntityRepository sqLiteUserEntityRepository;
+    private final UserSession userSession;
 
     public SQLiteDAO(
             SQLiteFolderRepository sqLiteFolderRepository,
             SQLiteFileRepository sqLiteFileRepository,
             SQLiteUserEntityRepository sqLiteUserEntityRepository,
-            EntityManager entityManager) {
+            EntityManager entityManager,
+            UserSession userSession) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
         this.entityManager = entityManager;
+        this.userSession = userSession;
     }
 
     // DAO stuff
@@ -247,5 +251,16 @@ public class SQLiteDAO {
         return sqLiteFolderRepository.findAll()
                 .stream().filter(fl -> fl.getPath().startsWith(prefixIdPath))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns ID path of folder with folderId
+     * @param folderId  folderId of folder
+     * @return  if folderId is not 0 returns folder's ID path else "0"
+     * @throws SQLException if folder with folderId is not found
+     */
+    @Transactional
+    public String getIdPath(long folderId) throws SQLException {
+        return folderId != 0 ? queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
     }
 }

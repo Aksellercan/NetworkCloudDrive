@@ -11,6 +11,7 @@ import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Services.UserService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -28,13 +29,17 @@ public class UserController {
     private final UserService userService;
     private final UserSession userSession;
     private final SQLiteDAO sqLiteDAO;
-    private final FileUtility fileUtility;
+    private final UserUtility userUtility;
 
-    public UserController(UserService userService, UserSession userSession, SQLiteDAO sqLiteDAO, FileUtility fileUtility) {
+    public UserController(
+            UserService userService,
+            UserSession userSession,
+            SQLiteDAO sqLiteDAO,
+            UserUtility userUtility) {
         this.userService = userService;
         this.userSession = userSession;
         this.sqLiteDAO = sqLiteDAO;
-        this.fileUtility = fileUtility;
+        this.userUtility = userUtility;
     }
 
     @PostMapping("register")
@@ -42,7 +47,7 @@ public class UserController {
         try {
             UserEntity registeredUserEntity = userService.registerUser(userDTO.getName(), userDTO.getMail(), userDTO.getPassword());
             //create user directory
-            fileUtility.createUserDirectory(registeredUserEntity.getId(), registeredUserEntity.getName(), registeredUserEntity.getMail());
+            userUtility.createUserDirectory(registeredUserEntity.getId(), registeredUserEntity.getName(), registeredUserEntity.getMail());
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONMapResponse(Map.of(
                             "id", registeredUserEntity.getId(),
