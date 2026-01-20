@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-//TODO Migrate from io to nio for thread safety
 @Service
 public class FileSystemService implements FileSystemRepository {
     private final FileStorageProperties fileStorageProperties;
