@@ -5,6 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
+import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileSystemRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -32,19 +33,23 @@ public class FileSystemService implements FileSystemRepository {
     private final Logger logger = LoggerFactory.getLogger(FileSystemService.class);
     private final EncodingUtility encodingUtility;
     private final UserUtility userUtility;
+    private final IgnoreFileListProperties ignoreFileListProperties;
 
     public FileSystemService(
             FileStorageProperties fileStorageProperties,
             UserSession userSession,
             FileUtility fileUtility,
             SQLiteDAO sqLiteDAO,
-            EncodingUtility encodingUtility, UserUtility userUtility) {
+            EncodingUtility encodingUtility,
+            UserUtility userUtility,
+            IgnoreFileListProperties ignoreFileListProperties) {
         this.fileStorageProperties = fileStorageProperties;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.encodingUtility = encodingUtility;
         this.userUtility = userUtility;
+        this.ignoreFileListProperties = ignoreFileListProperties;
     }
 
     @Override
@@ -53,8 +58,11 @@ public class FileSystemService implements FileSystemRepository {
         List<FolderListItemDTO> folderList = new ArrayList<>();
         for (Path file : filePaths) {
             //ignore dotfiles
-            if (file.getFileName().startsWith(".")) continue;
-            logger.info("file/folder in queue {}", file);
+            if (ignoreFileListProperties.isInIgnoreList(file.getFileName().toString())) {
+                logger.debug("file skip {}", file.getFileName());
+                continue;
+            }
+            logger.debug("file/folder in queue {}", file);
             String[] arrayString = encodingUtility.decodedBase32SplitArray(file.getFileName().toString());
             long actualFileId = Long.parseLong(arrayString[0]);
             String actualFileName = arrayString[1];
