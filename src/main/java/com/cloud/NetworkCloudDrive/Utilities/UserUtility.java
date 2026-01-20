@@ -58,6 +58,15 @@ public class UserUtility {
     }
 
     /**
+     * Returns user folder as Path, if it doesn't exist creates it
+     * @return  user folder
+     * @throws IOException  if there was an error while creating directory
+     */
+    public Path returnUserFolderasPath() throws IOException {
+        return createUserDirectory(userSession.getId(), userSession.getName(), userSession.getMail()).toPath();
+    }
+
+    /**
      * Updates User Folder's encoding
      * @param userId    currently logged-in user's ID
      * @param username  currently logged-in user's name

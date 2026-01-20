@@ -10,8 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.io.*;
-import java.net.URLConnection;
+import java.io.IOException;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,83 +62,6 @@ public class FileUtility {
 
     public List<Path> returnFilesInDirectory(Path dir, boolean reverse, Predicate<Path> pathFilter) throws IOException {
         return walkFsTree(dir, reverse).stream().filter(pathFilter).collect(Collectors.toList());
-    }
-
-    //TODO instead of generating Id paths use startsWith from DAO and filter files by found folders id's then delete them both from db and system
-    public void deleteFsTree(Path dir, String startingIdPath) throws IOException {
-        logger.info("Start File Tree deletion operation");
-        long errorCount = 0;
-        List<Path> fileTreeStream = walkFsTree(dir, true);
-        for (Path path : fileTreeStream) {
-            File file = path.toFile();
-            if (file.getParentFile().equals(userUtility.returnUserFolder())) {
-                logger.debug("Skipped base path");
-                continue;
-            }
-            if (!Files.exists(file.toPath())) {
-                errorCount++;
-                continue;
-            }
-            if (file.isFile()) {
-                String parentFolderIdPath = generateIdPaths(file.getParentFile().getPath(), startingIdPath);
-                logger.debug("generated file path: {}", parentFolderIdPath);
-                FolderMetadata folderMetadata =
-                        sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getParentFile().getName(), userSession.getId());
-                FileMetadata output = sqLiteDAO.getFileMetadataByFolderIdNameAndUserId(folderMetadata.getId(), file.getName(), userSession.getId());
-                if (!Files.deleteIfExists(file.toPath())) {
-                    errorCount++;
-                    continue;
-                }
-                sqLiteDAO.deleteFile(sqLiteDAO.getFileMetadataByFolderIdNameAndUserId(folderMetadata.getId(), file.getName(), userSession.getId()));
-                logger.debug("File metadata: name {} path {} Id {}", output.getName(), output.getFolderId(), output.getId());
-                continue;
-            }
-            String parentFolderIdPath = generateIdPaths(file.getPath(), startingIdPath);
-            logger.debug("generated folder path: {}", parentFolderIdPath);
-            FolderMetadata folderMetadata = sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getName(), userSession.getId());
-            // manage folders here
-            if (!Files.deleteIfExists(file.toPath())) {
-                errorCount++;
-                continue;
-            }
-            sqLiteDAO.deleteFolder(folderMetadata);
-            //check if it's correct
-            logger.debug("Folder metadata: name {} path {} Id {}", folderMetadata.getName(), folderMetadata.getPath(), folderMetadata.getId());
-        }
-        if (errorCount == 0)
-            logger.info("Completed file tree deletion operation. Error count {}", errorCount);
-        else
-            logger.warn("Completed file tree deletion operation with some errors. Error count {}", errorCount);
-    }
-
-    /**
-     * Updates List of Folder Metadata's ID paths with prefix
-     * @param folderList    list of Folder Metadata
-     * @param oldPrefix old prefix to replace
-     * @param newPrefix new prefix to replace old prefix with
-     * @return  updated Folder Metadata List
-     */
-    public List<FolderMetadata> updateFolderIdPaths(List<FolderMetadata> folderList, String oldPrefix, String newPrefix) {
-        List<FolderMetadata> result = new ArrayList<>();
-        for (FolderMetadata folderMetadata : folderList) {
-            folderMetadata.setPath(folderMetadata.getPath().replaceAll(oldPrefix, newPrefix));
-        }
-//        folderList.forEach(folderMetadata -> folderMetadata.setName(folderMetadata.getPath().replaceAll(oldPrefix, newPrefix)));
-        return result;
-    }
-
-    /**
-     * Returns file if it's not a duplicate
-     * @param path  file path to check
-     * @return  file if it's not a duplicate
-     * @throws FileNotFoundException    if file is a duplicate or not found
-     */
-    public File returnIfItsNotADuplicate(String path) throws FileNotFoundException {
-        File checkDuplicate = new File(path);
-        if (Files.exists(checkDuplicate.toPath()))
-            throw new FileNotFoundException(String.format("%s with name %s already exists at %s",
-                    (checkDuplicate.isFile() ? "File" : "Folder"), checkDuplicate.getName(), checkDuplicate.getPath()));
-        return checkDuplicate;
     }
 
     /**

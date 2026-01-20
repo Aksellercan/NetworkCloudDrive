@@ -49,20 +49,20 @@ public class MaintenanceService implements MaintenanceRepository {
 
     //controller for scan options
     public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
-        File startingDirectory = new File(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderId)));
+        Path startingDirectory = Path.of(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderId)));
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:
-                scanDirectory(startingDirectory, path -> path.toFile().exists(), true);
+                scanDirectory(startingDirectory, Files::exists, true);
                 break;
             case ONLY_FILES:
-                scanDirectory(startingDirectory,path -> path.toFile().isFile(), false);
+                scanDirectory(startingDirectory,Files::isRegularFile, false);
                 break;
             case ONLY_FOLDERS:
-                scanDirectory(startingDirectory, path -> !path.toFile().isFile(), true);
+                scanDirectory(startingDirectory, Files::isDirectory, true);
                 break;
             case DONT_GO_INTO_FOLDERS:
-                scanDirectory(startingDirectory, path -> path.toFile().exists(), false);
+                scanDirectory(startingDirectory, Files::exists, false);
                 break;
         }
     }
@@ -72,38 +72,37 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     @Override
-    public boolean scanDirectory(File startingPath, Predicate<Path> filter, boolean useRecursion) {
+    public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion) {
         try {
-            logger.info("Start better scan function at {}", startingPath.getPath());
-            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().filter(filter).toList();
+            logger.info("Start better scan function at {}", startingPath);
+            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(/*temporary*/startingPath.toFile()).stream().filter(filter).toList();
             for (Path files : folders) {
-                File currentFolder = files.toFile();
-                logger.info("Currently on {}: {}", (currentFolder.isFile() ? "FILE" : "FOLDER"), currentFolder.getName());
-                if (ignoreFileListProperties.isInIgnoreList(currentFolder.getName())) {
-                    logger.info("Skip ignorable file or folder {}", currentFolder.getName());
+                logger.info("Currently on {}: {}", (Files.isRegularFile(files) ? "FILE" : "FOLDER"), files.getFileName());
+                if (ignoreFileListProperties.isInIgnoreList(files.getFileName().toString())) {
+                    logger.info("Skip ignorable file or folder {}", files.getFileName().toString());
                     continue;
                 }
-                if (currentFolder.isFile()) {
-                    long folderId = getFolderId(currentFolder.getParentFile());
+                if (Files.isRegularFile(files)) {
+                    long folderId = getFolderId(files.getParent().toFile());
                     logger.debug("Enter file handling. Current Folder ID {}", folderId);
-                    handleFileCheck(currentFolder, folderId);
+                    handleFileCheck(files.toFile(), folderId);
                     continue;
                 }
-                if (encodingUtility.isBase32Decodable(currentFolder.getName())) {
+                if (encodingUtility.isBase32Decodable(files.getFileName().toString())) {
                     logger.info("decodable skipping");
-                    if (!currentFolder.isFile()) {
+                    if (Files.isDirectory(files)) {
                         if (useRecursion) {
-                            if (!scanDirectory(currentFolder, filter, useRecursion))
+                            if (!scanDirectory(files, filter, useRecursion))
                                 throw new RuntimeException("Failed to enter folder");
                         }
                     }
                     continue;
                 }
-                long folderId = getFolderId(currentFolder.getParentFile());
+                long folderId = getFolderId(files.getParent().toFile());
                 logger.info("Enter folder handling FolderID {}", folderId);
-                File createdFolder = handleFolderCheck(currentFolder, folderId);
+                File createdFolder = handleFolderCheck(files.toFile(), folderId);
                 if (useRecursion) {
-                    if (!scanDirectory(createdFolder, filter, useRecursion))
+                    if (!scanDirectory(createdFolder.toPath(), filter, useRecursion))
                         throw new RuntimeException("Failed to enter created folder");
                 }
             }

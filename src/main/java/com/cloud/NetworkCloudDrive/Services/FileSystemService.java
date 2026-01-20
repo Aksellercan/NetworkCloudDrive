@@ -10,6 +10,7 @@ import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -30,18 +31,20 @@ public class FileSystemService implements FileSystemRepository {
     private final SQLiteDAO sqLiteDAO;
     private final Logger logger = LoggerFactory.getLogger(FileSystemService.class);
     private final EncodingUtility encodingUtility;
+    private final UserUtility userUtility;
 
     public FileSystemService(
             FileStorageProperties fileStorageProperties,
             UserSession userSession,
             FileUtility fileUtility,
             SQLiteDAO sqLiteDAO,
-            EncodingUtility encodingUtility) {
+            EncodingUtility encodingUtility, UserUtility userUtility) {
         this.fileStorageProperties = fileStorageProperties;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.encodingUtility = encodingUtility;
+        this.userUtility = userUtility;
     }
 
     @Override
@@ -90,11 +93,57 @@ public class FileSystemService implements FileSystemRepository {
         //find folder
         Path checkExists = fileUtility.returnPathIfItExists(pathToRemove);
         //remove Folder
-        fileUtility.deleteFsTree(checkExists, folder.getPath());
+        deleteFsTree(checkExists, folder.getPath());
         if (!Files.deleteIfExists(checkExists))
             throw new IOException("Failed to remove parent folder");
         sqLiteDAO.deleteFolder(folder);
         return checkExists.toString();
+    }
+
+    //TODO instead of generating Id paths use startsWith from DAO and filter files by found folders id's then delete them both from db and system
+    private void deleteFsTree(Path dir, String startingIdPath) throws IOException {
+        logger.info("Start File Tree deletion operation");
+        long errorCount = 0;
+        List<Path> fileTreeStream = fileUtility.walkFsTree(dir, true);
+        for (Path file : fileTreeStream) {
+            if (file.getParent().equals(userUtility.returnUserFolderasPath())) {
+                logger.debug("Skipped base path");
+                continue;
+            }
+            if (!Files.exists(file)) {
+                errorCount++;
+                continue;
+            }
+            if (Files.exists(file)) {
+                String parentFolderIdPath = fileUtility.generateIdPaths(file.getParent().toString(), startingIdPath);
+                logger.debug("generated file path: {}", parentFolderIdPath);
+                FolderMetadata folderMetadata =
+                        sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getParent().getFileName().toString(), userSession.getId());
+                FileMetadata output = sqLiteDAO.getFileMetadataByFolderIdNameAndUserId(folderMetadata.getId(), file.getFileName().toString(), userSession.getId());
+                if (!Files.deleteIfExists(file)) {
+                    errorCount++;
+                    continue;
+                }
+                sqLiteDAO.deleteFile(sqLiteDAO.getFileMetadataByFolderIdNameAndUserId(folderMetadata.getId(), file.getFileName().toString(), userSession.getId()));
+                logger.debug("File metadata: name {} path {} Id {}", output.getName(), output.getFolderId(), output.getId());
+                continue;
+            }
+            String parentFolderIdPath = fileUtility.generateIdPaths(file.toString(), startingIdPath);
+            logger.debug("generated folder path: {}", parentFolderIdPath);
+            FolderMetadata folderMetadata = sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getFileName().toString(), userSession.getId());
+            // manage folders here
+            if (!Files.deleteIfExists(file)) {
+                errorCount++;
+                continue;
+            }
+            sqLiteDAO.deleteFolder(folderMetadata);
+            //check if it's correct
+            logger.debug("Folder metadata: name {} path {} Id {}", folderMetadata.getName(), folderMetadata.getPath(), folderMetadata.getId());
+        }
+        if (errorCount == 0)
+            logger.info("Completed file tree deletion operation. Error count {}", errorCount);
+        else
+            logger.warn("Completed file tree deletion operation with some errors. Error count {}", errorCount);
     }
 
     @Override
@@ -186,6 +235,21 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     /**
+     * Updates List of Folder Metadata's ID paths with prefix
+     * @param folderList    list of Folder Metadata
+     * @param oldPrefix old prefix to replace
+     * @param newPrefix new prefix to replace old prefix with
+     * @return  updated Folder Metadata List
+     */
+    private List<FolderMetadata> updateFolderIdPaths(List<FolderMetadata> folderList, String oldPrefix, String newPrefix) {
+        List<FolderMetadata> result = new ArrayList<>();
+        for (FolderMetadata folderMetadata : folderList) {
+            folderMetadata.setPath(folderMetadata.getPath().replaceAll(oldPrefix, newPrefix));
+        }
+        return result;
+    }
+
+    /**
      * <p>Moves folder(s) to new location.</p>
      *
      * <p>How it works:</p>
@@ -210,9 +274,8 @@ public class FileSystemService implements FileSystemRepository {
         logger.warn("prefix {}", folder.getPath() + "/");
         List<FolderMetadata> folderMetadataList = sqLiteDAO.findAllStartsWithIdPath(folder.getPath() + "/");
         // Update ID paths of folders affected
-        folderMetadataList =
-                fileUtility.updateFolderIdPaths(folderMetadataList, folder.getPath(),
-                        sqLiteDAO.getIdPath(destinationFolderId) + "/" + folder.getId());
+        folderMetadataList = updateFolderIdPaths(folderMetadataList, folder.getPath(),
+                sqLiteDAO.getIdPath(destinationFolderId) + "/" + folder.getId());
         // Update ID path of source folder individually
         folder.setPath(
                 folder.getPath().replaceAll(folder.getPath(), sqLiteDAO.getIdPath(destinationFolderId) + "/" + folder.getId()));

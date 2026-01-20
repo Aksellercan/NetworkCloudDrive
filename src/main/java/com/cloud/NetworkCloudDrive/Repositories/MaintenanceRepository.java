@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 
 @Repository
 public interface MaintenanceRepository {
-    boolean scanDirectory(File startingPath, Predicate<Path> filter, boolean useRecursion);
+    boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion);
     void handleFileCheck(File currentFile, long folderId) throws IOException;
     File handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException;
 }
