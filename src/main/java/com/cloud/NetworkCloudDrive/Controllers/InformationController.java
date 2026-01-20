@@ -7,6 +7,7 @@ import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -23,16 +24,19 @@ public class InformationController {
     private final InformationService informationService;
     private final Logger logger = LoggerFactory.getLogger(InformationController.class);
     private final EncodingUtility encodingUtility;
+    private final UserUtility userUtility;
 
     public InformationController(
             FileUtility fileUtility,
             InformationService informationService,
             UserSession userSession,
-            EncodingUtility encodingUtility) {
+            EncodingUtility encodingUtility,
+            UserUtility userUtility) {
         this.fileUtility = fileUtility;
         this.informationService = informationService;
         this.userSession = userSession;
         this.encodingUtility = encodingUtility;
+        this.userUtility = userUtility;
     }
 
     @GetMapping(value = "get/filemetadata", produces = MediaType.ALL_VALUE)
@@ -58,7 +62,7 @@ public class InformationController {
                 folderMetadata = informationService.getFolderMetadata(folderid);
                 folderMetadata.setPath(fileUtility.resolvePathFromIdString(folderMetadata.getPath()));
             } else {
-                File folderRootMetadata = fileUtility.returnUserFolder();
+                File folderRootMetadata = userUtility.returnUserFolder();
                 folderMetadata = new FolderMetadata(folderRootMetadata.getName(), folderRootMetadata.getPath());
                 folderMetadata.setId(folderid);
                 folderMetadata.setUserid(userSession.getId());

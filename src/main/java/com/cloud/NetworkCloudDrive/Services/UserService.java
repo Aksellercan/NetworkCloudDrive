@@ -7,6 +7,7 @@ import com.cloud.NetworkCloudDrive.Repositories.UserRepository;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +20,18 @@ public class UserService implements UserRepository {
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
     private final PasswordEncoder passwordEncoder;
+    private final UserUtility userUtility;
 
     public UserService(
             SQLiteDAO sqLiteDAO,
             PasswordEncoder passwordEncoder,
             FileUtility fileUtility,
-            EncodingUtility encodingUtility) {
+            EncodingUtility encodingUtility, UserUtility userUtility) {
         this.sqLiteDAO = sqLiteDAO;
         this.encodingUtility = encodingUtility;
         this.passwordEncoder = passwordEncoder;
         this.fileUtility = fileUtility;
+        this.userUtility = userUtility;
     }
 
     @Override
@@ -66,7 +69,7 @@ public class UserService implements UserRepository {
     public CurrentUserDTO updateName(UserEntity user, String newName) throws IOException {
         String oldEncoding = encodingUtility.encodeBase32UserFolderName(user.getId(), user.getName(), user.getMail());
         user.setName(newName);
-        fileUtility.updateUserDirectoryName(user.getId(), user.getName(), user.getMail(), oldEncoding);
+        userUtility.updateUserDirectoryName(user.getId(), user.getName(), user.getMail(), oldEncoding);
         sqLiteDAO.saveUser(user);
         return new CurrentUserDTO(user.getId(), user.getName(), user.getMail(), user.getRole(), user.getLastLogin());
     }
@@ -75,7 +78,7 @@ public class UserService implements UserRepository {
     public CurrentUserDTO updateMail(UserEntity user, String newMail) throws IOException {
         String oldEncoding = encodingUtility.encodeBase32UserFolderName(user.getId(), user.getName(), user.getMail());
         user.setMail(newMail);
-        fileUtility.updateUserDirectoryName(user.getId(), user.getName(), user.getMail(), oldEncoding);
+        userUtility.updateUserDirectoryName(user.getId(), user.getName(), user.getMail(), oldEncoding);
         sqLiteDAO.saveUser(user);
         return new CurrentUserDTO(user.getId(), user.getName(), user.getMail(), user.getRole(), user.getLastLogin());
     }

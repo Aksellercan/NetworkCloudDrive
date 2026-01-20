@@ -36,7 +36,7 @@ public class InformationService implements InformationRepository {
     @Override
     public FolderMetadata getFolderMetadataByFolderIdAndName(long folderId, String name, List<Long> skipList)
             throws FileSystemException, SQLException {
-        String idPath = fileUtility.getIdPath(folderId);
+        String idPath = sqLiteDAO.getIdPath(folderId);
         List<FolderMetadata> findAllByPathList = sqLiteDAO.findAllContainingSectionOfIdPathIgnoreCase(idPath, userSession.getId());
         if (findAllByPathList.isEmpty())
             throw new FileSystemException("Can't resolve path");
