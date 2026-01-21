@@ -21,6 +21,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -39,7 +42,7 @@ public class SecurityConfig {
     protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests((requests) -> requests
-                                // give everyone access to these 2 endpoints
+                                // give everyone access to register endpoint
                                 .requestMatchers("/api/user/register").permitAll()
                                 // but require authentication for any other endpoint
                                 .anyRequest()
@@ -48,13 +51,19 @@ public class SecurityConfig {
                 .formLogin(formLogin ->
                         formLogin.successHandler(authenticationHandler())
                                 .failureHandler(authenticationHandler())) // Use both BASIC and FORM logins
-                .csrf(AbstractHttpConfigurer::disable) // blocks POST and cross-platform attacks
                 .cors(Customizer.withDefaults())
                 // give everyone access to log out
                 .logout(LogoutConfigurer::permitAll);
         if (Boolean.parseBoolean(env.getProperty("use-http-basic-authentication"))) {
             logger.warn("HTTP Basic authentication is enabled");
+            // also allow http basic authentication if set
             http.httpBasic(Customizer.withDefaults());
+        }
+
+        if (Boolean.parseBoolean(env.getProperty("disable-csrf-protection"))) {
+            logger.warn("CSRF protection is disabled");
+            // disable csrf if set
+            http.csrf(AbstractHttpConfigurer::disable); // blocks POST and cross-platform attacks
         }
         return http.build();
     }
@@ -77,16 +86,33 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
 
+    private List<List<String>> setupCors() {
+        List<String> properties = List.of(
+                env.getProperty("cors-allowed-origins-patterns", ""),
+                env.getProperty("cors-allowed-headers", ""),
+                env.getProperty("cors-allowed-methods", ""),
+                env.getProperty("cors-exposed-headers", "")
+        );
+        List<List<String>> collect = new ArrayList<>();
+        for (String property : properties) {
+            collect.add(Arrays.asList(property.replaceAll("\"", "").split(",")));
+        }
+        return collect;
+    }
+
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000", "http://192.168.1.*:3000", "http://localhost:5173", "http://192.168.1.*:5173"));
-        configuration.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "responseType", "Authorization"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "OPTIONS", "DELETE"));
+        // Apply CORS settings
+        List<List<String>> corsSettings = setupCors();
+
+        //TODO fix magic numbers maybe?
+        configuration.setAllowedOriginPatterns(corsSettings.get(0));
+        configuration.setAllowedHeaders(corsSettings.get(1));
+        configuration.setAllowedMethods(corsSettings.get(2));
         configuration.setMaxAge(3600L);
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Content-Disposition")); //expose disposition for JS to see
+        configuration.setExposedHeaders(corsSettings.get(3)); //expose headers for JS to see
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return new CorsFilter(source);
