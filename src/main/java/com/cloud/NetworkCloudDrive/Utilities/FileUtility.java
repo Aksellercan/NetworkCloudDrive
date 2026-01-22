@@ -209,7 +209,7 @@ public class FileUtility {
      */
     public String resolvePathFromIdString(String idString) throws FileSystemException {
         String[] splitLine = idString.split("/");
-        List<Long> idList = new ArrayList<>();
+        List<Long> idList = new LinkedList<>();
         for (String idAsString : splitLine) {
             idList.add(Long.parseLong(idAsString));
         }
