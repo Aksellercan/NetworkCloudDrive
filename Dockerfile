@@ -2,6 +2,9 @@ FROM amazoncorretto:17-alpine
 
 # Set volumes and work directory
 VOLUME /tmp
+VOLUME /app/root
+
+# Set work directory
 WORKDIR /app
 
 # Update repos and install maven (alpine apk)
