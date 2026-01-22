@@ -4,6 +4,7 @@ import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
+import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -33,6 +34,8 @@ public class FileService implements FileRepository {
     private final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
+    private final ThumbnailProperties thumbnailProperties;
+    private final ThumbnailService thumbnailService;
 
     public FileService(
             FileStorageProperties fileStorageProperties,
@@ -40,7 +43,7 @@ public class FileService implements FileRepository {
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             FileUtility fileUtility,
-            EncodingUtility encodingUtility) {
+            EncodingUtility encodingUtility, ThumbnailProperties thumbnailProperties, ThumbnailService thumbnailService) {
         this.ignoreFileListProperties = ignoreFileListProperties;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
@@ -48,6 +51,8 @@ public class FileService implements FileRepository {
         this.rootPath = Paths.get(fileStorageProperties.getBasePath());
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
+        this.thumbnailProperties = thumbnailProperties;
+        this.thumbnailService = thumbnailService;
     }
 
     @Override
@@ -65,7 +70,7 @@ public class FileService implements FileRepository {
                             &&
                             encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(fileName)
             )) {
-                logger.info("duplicate {}", file.getOriginalFilename());
+                logger.warn("duplicate {}", file.getOriginalFilename());
                 continue;
             }
 
@@ -79,6 +84,9 @@ public class FileService implements FileRepository {
             }
             metadata.setName(encodedFileName);
             uploadedFiles.add(metadata);
+            if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
+                thumbnailService.createThumbnailOfAnImage()
+            }
         }
         if (storagePathList.isEmpty())
             throw new FileAlreadyExistsException("File(s) already exists at destination");
