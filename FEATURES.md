@@ -55,3 +55,10 @@
 |--------|---------------------------------------------------------------|-------------------|--------------------|
 | POST   | 	api/maintenance/scan?folderid={id}                           | Normal scan       | :heavy_check_mark: |
 | POST   | 	api/maintenance/scan?folderid={id}&scanOptions={ScanOptions} | Scan with options | :heavy_check_mark: |
+
+## Thumbnail Endpoints
+
+| Method | 	Route                                                       | 	Description                          | Working            |
+|--------|--------------------------------------------------------------|---------------------------------------|--------------------|
+| GET    | 	api/thumbnails/scan?folderid={id}                           | Get thumbnail of file with file ID    | :heavy_minus_sign: |
+| POST   | 	api/thumbnails/scan?folderid={id}&scanOptions={ScanOptions} | Create thumbnail of file with file ID | :heavy_minus_sign: |
