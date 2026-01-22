@@ -36,12 +36,12 @@ public class UserUtility {
      * @return  user folder
      * @throws IOException  if there was an error while creating directory
      */
-    public File createUserDirectory(long userId, String username, String mail) throws IOException {
+    public Path createUserDirectory(long userId, String username, String mail) throws IOException {
         String encodedUserFolder = encodingUtility.encodeBase32UserFolderName(userId, username, mail);
-        File userDirectory = new File(fileStorageProperties.getFullPath(encodedUserFolder));
-        if (Files.notExists(userDirectory.toPath())) {
-            Files.createDirectories(userDirectory.toPath());
-            if (!Files.exists(userDirectory.toPath())) {
+        Path userDirectory = Path.of(fileStorageProperties.getFullPath(encodedUserFolder));
+        if (Files.notExists(userDirectory)) {
+            Files.createDirectories(userDirectory);
+            if (!Files.exists(userDirectory)) {
                 throw new FileSystemException("Could not create user directory");
             }
         }
@@ -54,7 +54,7 @@ public class UserUtility {
      * @throws IOException  if there was an error while creating directory
      */
     public File returnUserFolder() throws IOException {
-        return createUserDirectory(userSession.getId(), userSession.getName(), userSession.getMail());
+        return createUserDirectory(userSession.getId(), userSession.getName(), userSession.getMail()).toFile();
     }
 
     /**
@@ -63,7 +63,7 @@ public class UserUtility {
      * @throws IOException  if there was an error while creating directory
      */
     public Path returnUserFolderasPath() throws IOException {
-        return createUserDirectory(userSession.getId(), userSession.getName(), userSession.getMail()).toPath();
+        return createUserDirectory(userSession.getId(), userSession.getName(), userSession.getMail());
     }
 
     /**
