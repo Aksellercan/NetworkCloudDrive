@@ -14,6 +14,7 @@ import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -36,6 +37,7 @@ public class FileSystemController {
     private final Logger logger = LoggerFactory.getLogger(FileSystemController.class);
     private final EncodingUtility encodingUtility;
     private final FileStorageProperties fileStorageProperties;
+    private final PathUtility pathUtility;
 
     public FileSystemController(
             FileSystemService fileSystemService,
@@ -43,13 +45,15 @@ public class FileSystemController {
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
-            FileStorageProperties fileStorageProperties) {
+            FileStorageProperties fileStorageProperties,
+            PathUtility pathUtility) {
         this.fileSystemService = fileSystemService;
         this.informationService = informationService;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.fileStorageProperties = fileStorageProperties;
+        this.pathUtility = pathUtility;
     }
 
     @PatchMapping(value = "file/rename", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -89,7 +93,7 @@ public class FileSystemController {
     public @ResponseBody ResponseEntity<JSONResponse> moveFile(@RequestBody UpdateFolderPathDTO updateFolderPathDTO) {
         try {
             FolderMetadata folderToMove = informationService.getFolderMetadata(updateFolderPathDTO.getFormer_folder_id());
-            String oldPath = fileUtility.resolvePathFromIdString(folderToMove.getPath());
+            String oldPath = pathUtility.resolvePathFromIdString(folderToMove.getPath());
             String newPath = fileSystemService.moveFolder(folderToMove, updateFolderPathDTO.getDestination_folder_id());
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONMapResponse(
@@ -108,7 +112,7 @@ public class FileSystemController {
         try {
             FileMetadata fileToMove = informationService.getFileMetadata(updateFilePathDTO.getFile_id());
             String oldPath = (updateFilePathDTO.getFolder_id() != 0 ?
-                    fileUtility.resolvePathFromIdString(informationService.getFolderMetadata(updateFilePathDTO.getFolder_id()).getPath())
+                    pathUtility.resolvePathFromIdString(informationService.getFolderMetadata(updateFilePathDTO.getFolder_id()).getPath())
                     :
                     userSession.getName());
             logger.info("old path controller {}", oldPath);
@@ -154,7 +158,7 @@ public class FileSystemController {
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid) {
         try {
-            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderid))));
+            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(pathUtility.getFolderPath(folderid))));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(fileSystemService.getListOfMetadataFromPath(fileList));
         } catch (FileSystemException fileSystemException) {

@@ -6,6 +6,7 @@ import com.cloud.NetworkCloudDrive.Repositories.InformationRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -24,12 +25,14 @@ public class InformationService implements InformationRepository {
     private final FileUtility fileUtility;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
+    private final PathUtility pathUtility;
 
 
-    public InformationService(FileUtility fileUtility, SQLiteDAO sqLiteDAO, UserSession userSession) {
+    public InformationService(FileUtility fileUtility, SQLiteDAO sqLiteDAO, UserSession userSession, PathUtility pathUtility) {
         this.fileUtility = fileUtility;
         this.userSession = userSession;
         this.sqLiteDAO = sqLiteDAO;
+        this.pathUtility = pathUtility;
     }
 
     @Transactional
@@ -59,7 +62,7 @@ public class InformationService implements InformationRepository {
     public FileMetadata getFileMetadata(long id) throws FileNotFoundException, SQLException, FileSystemException {
         FileMetadata retrievedFile = sqLiteDAO.queryFileMetadata(id, userSession.getId());
         File fileCheck = fileUtility.returnFileIfItExists(
-                fileUtility.getFolderPath(retrievedFile.getFolderId()) + File.separator + retrievedFile.getName());
+                pathUtility.getFolderPath(retrievedFile.getFolderId()) + File.separator + retrievedFile.getName());
         retrievedFile.setSize(fileCheck.length()); //bytes
         return retrievedFile;
     }
@@ -67,7 +70,7 @@ public class InformationService implements InformationRepository {
     @Override
     public FolderMetadata getFolderMetadata(long folderId) throws IOException, SQLException {
         FolderMetadata folder = sqLiteDAO.queryFolderMetadata(folderId, userSession.getId());
-        File getFolder = fileUtility.returnFileIfItExists(fileUtility.resolvePathFromIdString(folder.getPath()));
+        File getFolder = fileUtility.returnFileIfItExists(pathUtility.resolvePathFromIdString(folder.getPath()));
         logger.info("Folder: Id: {} Path: {}", folderId, getFolder);
         return folder;
     }

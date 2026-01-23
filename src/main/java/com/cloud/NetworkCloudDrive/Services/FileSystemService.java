@@ -35,6 +35,7 @@ public class FileSystemService implements FileSystemRepository {
     private final EncodingUtility encodingUtility;
     private final UserUtility userUtility;
     private final IgnoreFileListProperties ignoreFileListProperties;
+    private final PathUtility pathUtility;
 
     public FileSystemService(
             FileStorageProperties fileStorageProperties,
@@ -43,7 +44,7 @@ public class FileSystemService implements FileSystemRepository {
             SQLiteDAO sqLiteDAO,
             EncodingUtility encodingUtility,
             UserUtility userUtility,
-            IgnoreFileListProperties ignoreFileListProperties) {
+            IgnoreFileListProperties ignoreFileListProperties, PathUtility pathUtility) {
         this.fileStorageProperties = fileStorageProperties;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
@@ -51,6 +52,7 @@ public class FileSystemService implements FileSystemRepository {
         this.encodingUtility = encodingUtility;
         this.userUtility = userUtility;
         this.ignoreFileListProperties = ignoreFileListProperties;
+        this.pathUtility = pathUtility;
     }
 
     @Override
@@ -86,7 +88,7 @@ public class FileSystemService implements FileSystemRepository {
     public String removeFile(FileMetadata file) throws Exception {
         //find folder
         Path checkExists = fileUtility.returnPathIfItExists(Paths.get(
-                fileUtility.getFolderPath(file.getFolderId()), file.getName()).toString());
+                pathUtility.getFolderPath(file.getFolderId()), file.getName()).toString());
         //remove Folder
         // use nio instead
         if (!Files.deleteIfExists(checkExists))
@@ -97,7 +99,7 @@ public class FileSystemService implements FileSystemRepository {
 
     @Override
     public String removeFolder(FolderMetadata folder) throws IOException {
-        String pathToRemove = fileUtility.resolvePathFromIdString(folder.getPath());
+        String pathToRemove = pathUtility.resolvePathFromIdString(folder.getPath());
         logger.info("pathToRemove = {}", pathToRemove);
         //find folder
         Path checkExists = fileUtility.returnPathIfItExists(pathToRemove);
@@ -124,7 +126,7 @@ public class FileSystemService implements FileSystemRepository {
                 continue;
             }
             if (Files.exists(file)) {
-                String parentFolderIdPath = fileUtility.generateIdPaths(file.getParent().toString(), startingIdPath);
+                String parentFolderIdPath = pathUtility.generateIdPaths(file.getParent().toString(), startingIdPath);
                 logger.debug("generated file path: {}", parentFolderIdPath);
                 FolderMetadata folderMetadata =
                         sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getParent().getFileName().toString(), userSession.getId());
@@ -137,7 +139,7 @@ public class FileSystemService implements FileSystemRepository {
                 logger.debug("File metadata: name {} path {} Id {}", output.getName(), output.getFolderId(), output.getId());
                 continue;
             }
-            String parentFolderIdPath = fileUtility.generateIdPaths(file.toString(), startingIdPath);
+            String parentFolderIdPath = pathUtility.generateIdPaths(file.toString(), startingIdPath);
             logger.debug("generated folder path: {}", parentFolderIdPath);
             FolderMetadata folderMetadata = sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getFileName().toString(), userSession.getId());
             // manage folders here
@@ -158,9 +160,9 @@ public class FileSystemService implements FileSystemRepository {
     @Override
     public String updateFolderName(String newName, FolderMetadata folder) throws Exception {
         //find file
-        Path checkExists = fileUtility.returnPathIfItExists(fileUtility.resolvePathFromIdString(folder.getPath()));
+        Path checkExists = fileUtility.returnPathIfItExists(pathUtility.resolvePathFromIdString(folder.getPath()));
         //check duplicate
-        if (fileUtility.checkIfFileExistsDecodeNames(fileUtility.returnParentFolderPathFromFolderID(folder.getId()), newName))
+        if (fileUtility.checkIfFileExistsDecodeNames(pathUtility.returnParentFolderPathFromFolderID(folder.getId()), newName))
             throw new FileAlreadyExistsException(String.format("Folder with name %s already exists", newName));
         // Encode newName in BASE32
         String encodeBase32FolderName = encodingUtility.encodeBase32FolderName(folder.getId(), newName, folder.getUserid());
@@ -183,7 +185,7 @@ public class FileSystemService implements FileSystemRepository {
 
     @Override
     public String updateFileName(String newName, FileMetadata file) throws Exception {
-        String folderPath = fileStorageProperties.getFullPath(fileUtility.getFolderPath(file.getFolderId()));
+        String folderPath = fileStorageProperties.getFullPath(pathUtility.getFolderPath(file.getFolderId()));
         //find file
         Path checkExists = Paths.get(folderPath, file.getName());
         if (!Files.exists(checkExists, LinkOption.NOFOLLOW_LINKS))
@@ -198,7 +200,7 @@ public class FileSystemService implements FileSystemRepository {
         String encodeBase32FolderName = encodingUtility.encodeBase32FolderName(file.getId(), newName, file.getUserid());
         //rename file
         Path renamedFile = Paths.get(folderPath, encodeBase32FolderName);
-        if (fileUtility.checkIfFileExistsDecodeNames(fileUtility.getFolderPath(file.getFolderId()), newName))
+        if (fileUtility.checkIfFileExistsDecodeNames(pathUtility.getFolderPath(file.getFolderId()), newName))
             throw new FileAlreadyExistsException(String.format("File with name %s already exists", newName));
         // Perform movement
         Path newUpdatedPath = Files.move(checkExists, renamedFile);
@@ -218,8 +220,8 @@ public class FileSystemService implements FileSystemRepository {
 
     @Override
     public String moveFile(FileMetadata targetFile, long folderId) throws Exception {
-        String destinationFolder = fileStorageProperties.getBasePath() + fileUtility.getFolderPath(folderId);
-        String currentFolder = fileUtility.getFolderPath(targetFile.getFolderId());
+        String destinationFolder = fileStorageProperties.getBasePath() + pathUtility.getFolderPath(folderId);
+        String currentFolder = pathUtility.getFolderPath(targetFile.getFolderId());
         String newPath = Paths.get(destinationFolder, targetFile.getName()).toString();
         logger.info("new file path = {}", newPath);
         //find file
@@ -273,13 +275,13 @@ public class FileSystemService implements FileSystemRepository {
      */
     @Override
     public String moveFolder(FolderMetadata folder, long destinationFolderId) throws Exception {
-        String sourcePath = fileUtility.getFolderPath(folder.getId());
+        String sourcePath = pathUtility.getFolderPath(folder.getId());
         logger.warn("source path {}", sourcePath);
         // check if source folder exists
         Path sourceFolder = fileUtility.returnPathIfItExists(sourcePath);
         logger.warn("sourcefolder path {}", sourceFolder);
         // check if destination folder exists
-        Path destinationFolder = fileUtility.returnPathIfItExists(fileUtility.getFolderPath(destinationFolderId));
+        Path destinationFolder = fileUtility.returnPathIfItExists(pathUtility.getFolderPath(destinationFolderId));
         logger.warn("destinationfolder path {}", destinationFolder);
         // Get folders inside source folder
         logger.warn("prefix {}", folder.getPath() + "/");

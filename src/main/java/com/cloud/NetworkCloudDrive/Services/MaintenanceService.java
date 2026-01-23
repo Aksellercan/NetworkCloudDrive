@@ -10,6 +10,7 @@ import com.cloud.NetworkCloudDrive.Repositories.MaintenanceRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class MaintenanceService implements MaintenanceRepository {
     private final UserSession userSession;
     private final IgnoreFileListProperties ignoreFileListProperties;
     private final FileStorageProperties fileStorageProperties;
+    private final PathUtility pathUtility;
 
     public MaintenanceService(
             FileUtility fileUtility,
@@ -38,18 +40,19 @@ public class MaintenanceService implements MaintenanceRepository {
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             IgnoreFileListProperties ignoreFileListProperties,
-            FileStorageProperties fileStorageProperties) {
+            FileStorageProperties fileStorageProperties, PathUtility pathUtility) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
         this.ignoreFileListProperties = ignoreFileListProperties;
         this.fileStorageProperties = fileStorageProperties;
+        this.pathUtility = pathUtility;
     }
 
     //controller for scan options
     public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
-        Path startingDirectory = Path.of(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderId)));
+        Path startingDirectory = Path.of(fileStorageProperties.getFullPath(pathUtility.getFolderPath(folderId)));
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:

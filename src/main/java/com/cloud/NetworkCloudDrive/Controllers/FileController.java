@@ -8,6 +8,7 @@ import com.cloud.NetworkCloudDrive.Services.FileSystemService;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -26,19 +27,19 @@ import java.sql.SQLException;
 public class FileController {
     private final FileService fileService;
     private final InformationService informationService;
-    private final FileUtility fileUtility;
     private final Logger logger = LoggerFactory.getLogger(FileController.class);
     private final EncodingUtility encodingUtility;
+    private final PathUtility pathUtility;
 
     public FileController(
             FileService fileService,
             InformationService informationService,
-            FileUtility fileUtility,
-            EncodingUtility encodingUtility) {
+            EncodingUtility encodingUtility,
+            PathUtility pathUtility) {
         this.fileService = fileService;
         this.informationService = informationService;
-        this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
+        this.pathUtility = pathUtility;
     }
 
     @PostMapping("upload")
@@ -46,7 +47,7 @@ public class FileController {
         try {
             if (files.length == 0)
                 throw new NullPointerException("No file is provided");
-            String folderPath = fileUtility.getFolderPath(folderid);
+            String folderPath = pathUtility.getFolderPath(folderid);
             return ResponseEntity.ok().body(fileService.uploadFiles(files, folderPath, folderid));
         } catch(FileAlreadyExistsException fileAlreadyExistsException) {
             logger.error("File already exists at destination {}", fileAlreadyExistsException.getMessage());
@@ -64,7 +65,7 @@ public class FileController {
     public ResponseEntity<?> downloadFile(@RequestParam long fileid) {
         try {
             FileMetadata metadata = informationService.getFileMetadata(fileid);
-            String actualPath = fileUtility.getFolderPath(metadata.getFolderId());
+            String actualPath = pathUtility.getFolderPath(metadata.getFolderId());
             String decodedFileName = encodingUtility.decodedBase32SplitArray(metadata.getName())[1];
             logger.info("path requested {}", actualPath);
             Resource file = fileService.getFile(metadata, actualPath);
@@ -89,7 +90,7 @@ public class FileController {
     public ResponseEntity<?> createFolder(@RequestBody CreateFolderDTO folderDTO) {
         try {
             FolderMetadata folderMetadata = fileService.createFolder(folderDTO.getName(), folderDTO.getFolder_id());
-            folderMetadata.setPath(fileUtility.resolvePathFromIdString(folderMetadata.getPath()));
+            folderMetadata.setPath(pathUtility.resolvePathFromIdString(folderMetadata.getPath()));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(folderMetadata);
         } catch (FileAlreadyExistsException fae) {
             logger.error("Folder with name {} already exists. {}", folderDTO.getName(), fae.getMessage());
