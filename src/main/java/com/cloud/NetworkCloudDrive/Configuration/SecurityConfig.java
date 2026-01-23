@@ -23,7 +23,6 @@ import org.springframework.web.filter.CorsFilter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -39,7 +38,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    protected SecurityFilterChain configure(HttpSecurity http) throws Exception {
+    protected SecurityFilterChain configure(HttpSecurity http) {
         http
                 .authorizeHttpRequests((requests) -> requests
                                 // give everyone access to register endpoint
@@ -106,7 +105,6 @@ public class SecurityConfig {
         // Apply CORS settings
         List<List<String>> corsSettings = setupCors();
 
-        //TODO fix magic numbers maybe?
         configuration.setAllowedOriginPatterns(corsSettings.get(0));
         configuration.setAllowedHeaders(corsSettings.get(1));
         configuration.setAllowedMethods(corsSettings.get(2));

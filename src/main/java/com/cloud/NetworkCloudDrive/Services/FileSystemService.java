@@ -4,7 +4,6 @@ import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileSystemRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
@@ -27,7 +26,6 @@ import java.util.Map;
 
 @Service
 public class FileSystemService implements FileSystemRepository {
-    private final FileStorageProperties fileStorageProperties;
     private final FileUtility fileUtility;
     private final UserSession userSession;
     private final SQLiteDAO sqLiteDAO;
@@ -38,14 +36,13 @@ public class FileSystemService implements FileSystemRepository {
     private final PathUtility pathUtility;
 
     public FileSystemService(
-            FileStorageProperties fileStorageProperties,
             UserSession userSession,
             FileUtility fileUtility,
             SQLiteDAO sqLiteDAO,
             EncodingUtility encodingUtility,
             UserUtility userUtility,
-            IgnoreFileListProperties ignoreFileListProperties, PathUtility pathUtility) {
-        this.fileStorageProperties = fileStorageProperties;
+            IgnoreFileListProperties ignoreFileListProperties,
+            PathUtility pathUtility) {
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.sqLiteDAO = sqLiteDAO;
@@ -185,7 +182,7 @@ public class FileSystemService implements FileSystemRepository {
 
     @Override
     public String updateFileName(String newName, FileMetadata file) throws Exception {
-        String folderPath = fileStorageProperties.getFullPath(pathUtility.getFolderPath(file.getFolderId()));
+        String folderPath = pathUtility.getFullPathToString(pathUtility.getFolderPath(file.getFolderId()));
         //find file
         Path checkExists = Paths.get(folderPath, file.getName());
         if (!Files.exists(checkExists, LinkOption.NOFOLLOW_LINKS))
@@ -220,12 +217,12 @@ public class FileSystemService implements FileSystemRepository {
 
     @Override
     public String moveFile(FileMetadata targetFile, long folderId) throws Exception {
-        String destinationFolder = fileStorageProperties.getBasePath() + pathUtility.getFolderPath(folderId);
+        String destinationFolder = pathUtility.getFullPathToString(pathUtility.getFolderPath(folderId));
         String currentFolder = pathUtility.getFolderPath(targetFile.getFolderId());
         String newPath = Paths.get(destinationFolder, targetFile.getName()).toString();
         logger.info("new file path = {}", newPath);
         //find file
-        String oldPath = Paths.get(fileStorageProperties.getBasePath(), currentFolder, targetFile.getName()).toString();
+        String oldPath = Paths.get(pathUtility.getBasePathToString(), currentFolder, targetFile.getName()).toString();
         logger.info("old path service {}", oldPath);
         Path checkExists = Path.of(oldPath);
         Path checkDestinationExists = Path.of(destinationFolder);

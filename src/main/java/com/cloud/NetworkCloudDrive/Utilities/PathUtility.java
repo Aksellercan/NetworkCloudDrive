@@ -42,6 +42,22 @@ public class PathUtility {
         this.encodingUtility = encodingUtility;
     }
 
+    public String getFullPathToString(String path) {
+        return fileStorageProperties.getFullPath(path);
+    }
+
+    public Path getFullPath(String path) {
+        return Path.of(fileStorageProperties.getFullPath(path));
+    }
+
+    public Path getBasePath() {
+        return Path.of(fileStorageProperties.getBasePath());
+    }
+
+    public String getBasePathToString() {
+        return fileStorageProperties.getBasePath();
+    }
+
     public boolean isPathAllowed(Path path) throws IOException {
         return path.startsWith(userUtility.returnUserFolderasPath());
     }

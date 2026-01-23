@@ -1,6 +1,5 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
-import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
@@ -20,18 +19,18 @@ import java.util.stream.Stream;
 
 @Component
 public class FileUtility {
-    private final FileStorageProperties fileStorageProperties;
     private final EncodingUtility encodingUtility;
     private final Logger logger = LoggerFactory.getLogger(FileUtility.class);
     private final IgnoreFileListProperties ignoreFileListProperties;
+    private final PathUtility pathUtility;
 
     public FileUtility(
-            FileStorageProperties fileStorageProperties,
             EncodingUtility encodingUtility,
-            IgnoreFileListProperties ignoreFileListProperties) {
-        this.fileStorageProperties = fileStorageProperties;
+            IgnoreFileListProperties ignoreFileListProperties,
+            PathUtility pathUtility) {
         this.encodingUtility = encodingUtility;
         this.ignoreFileListProperties = ignoreFileListProperties;
+        this.pathUtility = pathUtility;
     }
 
     /**
@@ -74,11 +73,7 @@ public class FileUtility {
      * @throws FileNotFoundException    if file does not exist at path
      */
     public File returnFileIfItExists(String path) throws FileNotFoundException {
-        File checkExists = new File(fileStorageProperties.getFullPath(path));
-        if (!Files.exists(checkExists.toPath()))
-            throw new FileNotFoundException(String.format("%s does not exist at path %s",
-                    (checkExists.isFile() ? "File" : "Folder"),checkExists.getPath()));
-        return checkExists;
+        return returnPathIfItExists(path).toFile();
     }
 
     /**
@@ -89,7 +84,7 @@ public class FileUtility {
      * @throws IOException  if filepath is invalid
      */
     public boolean checkIfFileExistsDecodeNames(String filePath, String decodedFileName) throws IOException {
-        return getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(filePath))).stream().
+        return getFileAndFolderPathsFromFolder(pathUtility.getFullPath(filePath)).stream().
                 anyMatch(file -> !ignoreFileListProperties.isInIgnoreList(file.toFile().getName())
                         &&
                         encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
@@ -102,7 +97,7 @@ public class FileUtility {
      * @throws FileNotFoundException    if file does not exist at path
      */
     public Path returnPathIfItExists(String path) throws FileNotFoundException {
-        Path checkExists = Path.of(fileStorageProperties.getFullPath(path));
+        Path checkExists = pathUtility.getFullPath(path);
         if (!Files.exists(checkExists))
             throw new FileNotFoundException(String.format("%s does not exist at path %s",
                     (Files.isRegularFile(checkExists) ? "File" : "Folder"),checkExists));
@@ -111,14 +106,14 @@ public class FileUtility {
 
     /**
      * List of folders and files inside a directory
-     * @param file    parent folder path to list
+     * @param folder    parent folder path to list
      * @return  List of paths for files and folders
      * @throws IOException  if path is invalid
      */
-    public List<Path> getFileAndFolderPathsFromFolder(File file) throws IOException {
+    public List<Path> getFileAndFolderPathsFromFolder(Path folder) throws IOException {
         List<Path> fileList;
-        logger.info("full path {}", file.getPath());
-        try (Stream<Path> stream = Files.list(file.toPath())) {
+        logger.info("full path {}", folder);
+        try (Stream<Path> stream = Files.list(folder)) {
             fileList = stream.toList();
         }
         return fileList;

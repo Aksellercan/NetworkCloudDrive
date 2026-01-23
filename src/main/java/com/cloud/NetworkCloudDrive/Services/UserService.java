@@ -6,7 +6,6 @@ import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Repositories.UserRepository;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
-import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ import java.sql.SQLException;
 @Service
 public class UserService implements UserRepository {
     private final SQLiteDAO sqLiteDAO;
-    private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
     private final PasswordEncoder passwordEncoder;
     private final UserUtility userUtility;
@@ -25,12 +23,11 @@ public class UserService implements UserRepository {
     public UserService(
             SQLiteDAO sqLiteDAO,
             PasswordEncoder passwordEncoder,
-            FileUtility fileUtility,
-            EncodingUtility encodingUtility, UserUtility userUtility) {
+            EncodingUtility encodingUtility,
+            UserUtility userUtility) {
         this.sqLiteDAO = sqLiteDAO;
         this.encodingUtility = encodingUtility;
         this.passwordEncoder = passwordEncoder;
-        this.fileUtility = fileUtility;
         this.userUtility = userUtility;
     }
 

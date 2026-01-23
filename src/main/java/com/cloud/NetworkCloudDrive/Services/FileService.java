@@ -3,7 +3,6 @@ package com.cloud.NetworkCloudDrive.Services;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,7 +25,6 @@ import java.util.*;
 
 @Service
 public class FileService implements FileRepository {
-    private final FileStorageProperties fileStorageProperties;
     private final IgnoreFileListProperties ignoreFileListProperties;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
@@ -38,17 +35,16 @@ public class FileService implements FileRepository {
     private final PathUtility pathUtility;
 
     public FileService(
-            FileStorageProperties fileStorageProperties,
             IgnoreFileListProperties ignoreFileListProperties,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             FileUtility fileUtility,
-            EncodingUtility encodingUtility, PathUtility pathUtility) {
+            EncodingUtility encodingUtility,
+            PathUtility pathUtility) {
         this.ignoreFileListProperties = ignoreFileListProperties;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
-        this.fileStorageProperties = fileStorageProperties;
-        this.rootPath = Paths.get(fileStorageProperties.getBasePath());
+        this.rootPath = pathUtility.getBasePath();
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
@@ -58,7 +54,7 @@ public class FileService implements FileRepository {
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
         List<String> storagePathList = new ArrayList<>();
         List<FileMetadata> uploadedFiles = new ArrayList<>();
-        List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(folderPath)));
+        List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();
         for (MultipartFile file : sortedBySize) {
@@ -101,7 +97,7 @@ public class FileService implements FileRepository {
 
     @Override
     public Resource getFile(FileMetadata file, String path) throws Exception {
-        Path filePath = Path.of(fileStorageProperties.getFullPath(path) + File.separator + file.getName());
+        Path filePath = Paths.get(pathUtility.getFullPathToString(path), file.getName());
         logger.info("file service path: {}", filePath);
         Path normalizedRoot = rootPath.normalize().toAbsolutePath();
         if (filePath.startsWith(normalizedRoot))
@@ -116,7 +112,7 @@ public class FileService implements FileRepository {
         // Paths
         String idPath = sqLiteDAO.getIdPath(folderId);
         String userFolder = pathUtility.getFolderPath(folderId);
-        String fullPath = fileStorageProperties.getFullPath(userFolder);
+        String fullPath = pathUtility.getFullPathToString(userFolder);
         if (pathUtility.filenameAllowed(folderName))
             throw new SecurityException("Path is not allowed");
         // Folder metadata

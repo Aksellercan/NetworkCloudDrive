@@ -8,7 +8,6 @@ import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderPathDTO;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
-import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Services.FileSystemService;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
@@ -36,7 +35,6 @@ public class FileSystemController {
     private final UserSession userSession;
     private final Logger logger = LoggerFactory.getLogger(FileSystemController.class);
     private final EncodingUtility encodingUtility;
-    private final FileStorageProperties fileStorageProperties;
     private final PathUtility pathUtility;
 
     public FileSystemController(
@@ -45,14 +43,12 @@ public class FileSystemController {
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
-            FileStorageProperties fileStorageProperties,
             PathUtility pathUtility) {
         this.fileSystemService = fileSystemService;
         this.informationService = informationService;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
-        this.fileStorageProperties = fileStorageProperties;
         this.pathUtility = pathUtility;
     }
 
@@ -158,7 +154,7 @@ public class FileSystemController {
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid) {
         try {
-            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(pathUtility.getFolderPath(folderid))));
+            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(fileSystemService.getListOfMetadataFromPath(fileList));
         } catch (FileSystemException fileSystemException) {

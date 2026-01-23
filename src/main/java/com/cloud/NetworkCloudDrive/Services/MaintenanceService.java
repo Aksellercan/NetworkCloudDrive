@@ -78,7 +78,7 @@ public class MaintenanceService implements MaintenanceRepository {
     public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion) {
         try {
             logger.info("Start better scan function at {}", startingPath);
-            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(/*temporary*/startingPath.toFile()).stream().filter(filter).toList();
+            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().filter(filter).toList();
             for (Path files : folders) {
                 logger.info("Currently on {}: {}", (Files.isRegularFile(files) ? "FILE" : "FOLDER"), files.getFileName());
                 if (ignoreFileListProperties.isInIgnoreList(files.getFileName().toString())) {

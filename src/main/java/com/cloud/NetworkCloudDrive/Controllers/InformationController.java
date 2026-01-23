@@ -6,7 +6,6 @@ import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
-import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
@@ -20,7 +19,6 @@ import java.io.File;
 @RestController
 @RequestMapping(path = "/api/info")
 public class InformationController {
-    private final FileUtility fileUtility;
     private final UserSession userSession;
     private final InformationService informationService;
     private final Logger logger = LoggerFactory.getLogger(InformationController.class);
@@ -29,12 +27,11 @@ public class InformationController {
     private final PathUtility pathUtility;
 
     public InformationController(
-            FileUtility fileUtility,
             InformationService informationService,
             UserSession userSession,
             EncodingUtility encodingUtility,
-            UserUtility userUtility, PathUtility pathUtility) {
-        this.fileUtility = fileUtility;
+            UserUtility userUtility,
+            PathUtility pathUtility) {
         this.informationService = informationService;
         this.userSession = userSession;
         this.encodingUtility = encodingUtility;

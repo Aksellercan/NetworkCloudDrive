@@ -10,7 +10,6 @@ import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Services.UserService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
