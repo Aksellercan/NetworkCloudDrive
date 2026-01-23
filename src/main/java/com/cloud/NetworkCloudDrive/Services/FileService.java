@@ -56,8 +56,8 @@ public class FileService implements FileRepository {
 
     @Override
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
-        List<String> storagePathList = new ArrayList<>();
-        List<FileMetadata> uploadedFiles = new ArrayList<>();
+        List<String> storagePathList = new LinkedList<>();
+        List<FileMetadata> uploadedFiles = new LinkedList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(folderPath)));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();

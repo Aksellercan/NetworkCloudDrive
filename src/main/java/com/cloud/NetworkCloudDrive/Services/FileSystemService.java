@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -57,8 +58,8 @@ public class FileSystemService implements FileSystemRepository {
 
     @Override
     public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws FileSystemException, SQLException {
-        List<FileListItemDTO> fileList = new ArrayList<>();
-        List<FolderListItemDTO> folderList = new ArrayList<>();
+        List<FileListItemDTO> fileList = new LinkedList<>();
+        List<FolderListItemDTO> folderList = new LinkedList<>();
         for (Path file : filePaths) {
             //ignore dotfiles
             if (ignoreFileListProperties.isInIgnoreList(file.getFileName().toString())) {
