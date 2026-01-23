@@ -79,13 +79,16 @@ public class FileService implements FileRepository {
             sqLiteDAO.persistObjects(metadata);
             // Encode in BASE32
             String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), fileName, userSession.getId());
+            Path storagePath;
             try (InputStream inputStream = file.getInputStream()) {
-                storagePathList.add(storeFile(inputStream, encodedFileName, folderPath));
+                storagePath = Path.of(storeFile(inputStream, encodedFileName, folderPath));
+                storagePathList.add(storagePath.toString());
             }
             metadata.setName(encodedFileName);
             uploadedFiles.add(metadata);
             if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
-                thumbnailService.createThumbnailOfAnImage()
+                logger.warn("image path: {}", storagePath);
+                thumbnailService.createThumbnailOfAnImage(storagePath, 0.06);
             }
         }
         if (storagePathList.isEmpty())
