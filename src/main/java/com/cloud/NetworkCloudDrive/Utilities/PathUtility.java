@@ -9,16 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 @Component
 public class PathUtility {
@@ -97,6 +94,16 @@ public class PathUtility {
     }
 
     /**
+     * Returns Folder Metadata that matches target ID
+     * @param list  list to loop
+     * @param targetId  target ID of Folder Metadata to return
+     * @return  Folder Metadata that matches target ID
+     */
+    private FolderMetadata getFolderMetadataByIdFromList(List<FolderMetadata> list, long targetId) {
+        return list.stream().filter(metadata -> metadata.getId() == targetId).toList().get(0);
+    }
+
+    /**
      * Resolves folder path from ID path to system path. Ex. turns 0/1/2 into username/folder1/folder2
      * @param idString  ID Path of the folder
      * @return  full system path of folder
@@ -109,16 +116,6 @@ public class PathUtility {
             idList.add(Long.parseLong(idAsString));
         }
         return appendFolderNames(idList);
-    }
-
-    /**
-     * Returns Folder Metadata that matches target ID
-     * @param list  list to loop
-     * @param targetId  target ID of Folder Metadata to return
-     * @return  Folder Metadata that matches target ID
-     */
-    private FolderMetadata getFolderMetadataByIdFromList(List<FolderMetadata> list, long targetId) {
-        return list.stream().filter(metadata -> metadata.getId() == targetId).toList().get(0);
     }
 
     /**
