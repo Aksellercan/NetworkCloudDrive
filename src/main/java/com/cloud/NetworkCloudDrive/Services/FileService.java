@@ -2,12 +2,14 @@ package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
+import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -33,6 +35,7 @@ public class FileService implements FileRepository {
     private final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
+    private final PathUtility pathUtility;
 
     public FileService(
             FileStorageProperties fileStorageProperties,
@@ -40,7 +43,7 @@ public class FileService implements FileRepository {
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             FileUtility fileUtility,
-            EncodingUtility encodingUtility) {
+            EncodingUtility encodingUtility, PathUtility pathUtility) {
         this.ignoreFileListProperties = ignoreFileListProperties;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
@@ -48,6 +51,7 @@ public class FileService implements FileRepository {
         this.rootPath = Paths.get(fileStorageProperties.getBasePath());
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
+        this.pathUtility = pathUtility;
     }
 
     @Override
@@ -105,5 +109,32 @@ public class FileService implements FileRepository {
         if (!Files.exists(filePath))
             throw new IOException("File does not exist");
         return new UrlResource(filePath.toAbsolutePath().toUri());
+    }
+
+    @Override
+    public FolderMetadata createFolder(String folderName, long folderId) throws Exception {
+        // Paths
+        String idPath = sqLiteDAO.getIdPath(folderId);
+        String userFolder = fileUtility.getFolderPath(folderId);
+        String fullPath = fileStorageProperties.getFullPath(userFolder);
+        if (pathUtility.filenameAllowed(folderName))
+            throw new SecurityException("Path is not allowed");
+        // Folder metadata
+        FolderMetadata createdFolder = new FolderMetadata();
+        sqLiteDAO.persistObjects(createdFolder);
+        String encodedFolderName = encodingUtility.encodeBase32FolderName(createdFolder.getId(), folderName, userSession.getId());
+        createdFolder.setPath(idPath + "/" + createdFolder.getId());
+        createdFolder.setUserid(userSession.getId());
+        createdFolder.setName(encodedFolderName);
+        // Check if duplicate
+        if (fileUtility.checkIfFileExistsDecodeNames(userFolder, folderName))
+            throw new FileAlreadyExistsException(String.format("Folder with name %s already exists at this path %s.", folderName, fullPath));
+        // Create directory
+        Path folder = Paths.get(fullPath, encodedFolderName);
+        Path createdFolderPath = Files.createDirectory(folder);
+        if (Files.notExists(createdFolderPath))
+            throw new IOException(String.format("Cannot create directory, with name %s.", folderName));
+        // save and return metadata
+        return sqLiteDAO.saveFolder(createdFolder);
     }
 }

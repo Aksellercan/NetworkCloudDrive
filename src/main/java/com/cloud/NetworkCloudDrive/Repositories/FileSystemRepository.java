@@ -30,6 +30,5 @@ public interface FileSystemRepository {
      */
     String moveFolder(FolderMetadata folder, long destinationFolderId) throws Exception;
     String moveFile(FileMetadata targetFile, long folderId) throws Exception;
-    FolderMetadata createFolder(String folderName, long folderId) throws Exception;
     Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws FileSystemException, SQLException;
 }

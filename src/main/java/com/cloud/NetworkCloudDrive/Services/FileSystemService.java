@@ -11,6 +11,7 @@ import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -244,10 +245,11 @@ public class FileSystemService implements FileSystemRepository {
 
     /**
      * Updates List of Folder Metadata's ID paths with prefix
-     * @param folderList    list of Folder Metadata
-     * @param oldPrefix old prefix to replace
-     * @param newPrefix new prefix to replace old prefix with
-     * @return  updated Folder Metadata List
+     *
+     * @param folderList list of Folder Metadata
+     * @param oldPrefix  old prefix to replace
+     * @param newPrefix  new prefix to replace old prefix with
+     * @return updated Folder Metadata List
      */
     private List<FolderMetadata> updateFolderIdPaths(List<FolderMetadata> folderList, String oldPrefix, String newPrefix) {
         List<FolderMetadata> result = new ArrayList<>();
@@ -263,10 +265,11 @@ public class FileSystemService implements FileSystemRepository {
      * <p>How it works:</p>
      * Generates Folder ID path if the target is 0 and the source is at 0/1/4/2 then it will be 0/2
      * preceding source will be 0/1/4 if target is 0/5/9 then it will be 0/5/9/2 and contents will be 0/5/9/2/x
-     * @param folder source folder metadata
-     * @param destinationFolderId   destination folder id
-     * @return  updated path
-     * @throws Exception    throws FileSystemException and FileNotFoundException
+     *
+     * @param folder              source folder metadata
+     * @param destinationFolderId destination folder id
+     * @return updated path
+     * @throws Exception throws FileSystemException and FileNotFoundException
      */
     @Override
     public String moveFolder(FolderMetadata folder, long destinationFolderId) throws Exception {
@@ -295,30 +298,5 @@ public class FileSystemService implements FileSystemRepository {
         sqLiteDAO.saveAllFolders(folderMetadataList);
         // return new path
         return updatedPath.toString();
-    }
-
-    @Override
-    public FolderMetadata createFolder(String folderName, long folderId) throws Exception {
-        // Paths
-        String idPath = sqLiteDAO.getIdPath(folderId);
-        String userFolder = fileUtility.getFolderPath(folderId);
-        String fullPath = fileStorageProperties.getFullPath(userFolder);
-        // Folder metadata
-        FolderMetadata createdFolder = new FolderMetadata();
-        sqLiteDAO.persistObjects(createdFolder);
-        String encodedFolderName = encodingUtility.encodeBase32FolderName(createdFolder.getId(), folderName, userSession.getId());
-        createdFolder.setPath(idPath + "/" + createdFolder.getId());
-        createdFolder.setUserid(userSession.getId());
-        createdFolder.setName(encodedFolderName);
-        // Check if duplicate
-        if (fileUtility.checkIfFileExistsDecodeNames(userFolder, folderName))
-            throw new FileAlreadyExistsException(String.format("Folder with name %s already exists at this path %s.", folderName, fullPath));
-        // Create directory
-        Path folder = Paths.get(fullPath, encodedFolderName);
-        Path createdFolderPath = Files.createDirectory(folder);
-        if (Files.notExists(createdFolderPath))
-            throw new IOException(String.format("Cannot create directory, with name %s.", folderName));
-        // save and return metadata
-        return sqLiteDAO.saveFolder(createdFolder);
     }
 }

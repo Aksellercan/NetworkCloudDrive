@@ -52,7 +52,7 @@ public class FileSystemController {
         this.fileStorageProperties = fileStorageProperties;
     }
 
-    @PostMapping(value = "file/rename", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "file/rename", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<JSONResponse> updateFileName(@RequestBody UpdateFileNameDTO updateFileNameDTO) {
         try {
             FileMetadata oldFile = informationService.getFileMetadata(updateFileNameDTO.getFile_id());
@@ -68,7 +68,7 @@ public class FileSystemController {
         }
     }
 
-    @PostMapping(value = "folder/rename", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "folder/rename", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<JSONResponse> updateFolderName(@RequestBody UpdateFolderNameDTO updateFolderNameDTO) {
         try {
             FolderMetadata oldFolder = informationService.getFolderMetadata(updateFolderNameDTO.getFolder_id());
@@ -122,7 +122,7 @@ public class FileSystemController {
         }
     }
 
-    @PostMapping(value = "folder/remove", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "folder/remove", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<JSONResponse> removeFolder(@RequestParam long folderid) {
         try {
             FolderMetadata folderToRemove = informationService.getFolderMetadata(folderid);
@@ -136,7 +136,7 @@ public class FileSystemController {
         }
     }
 
-    @PostMapping(value = "file/remove", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "file/remove", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<JSONResponse> removeFile(@RequestParam long fileid) {
         try {
             FileMetadata fileToRemove = informationService.getFileMetadata(fileid);

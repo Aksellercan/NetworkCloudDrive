@@ -24,7 +24,6 @@ import java.sql.SQLException;
 @RestController
 @RequestMapping(path = "/api/file")
 public class FileController {
-    private final FileSystemService fileSystemService;
     private final FileService fileService;
     private final InformationService informationService;
     private final FileUtility fileUtility;
@@ -32,13 +31,11 @@ public class FileController {
     private final EncodingUtility encodingUtility;
 
     public FileController(
-            FileSystemService fileSystemService,
             FileService fileService,
             InformationService informationService,
             FileUtility fileUtility,
             EncodingUtility encodingUtility) {
         this.fileService = fileService;
-        this.fileSystemService = fileSystemService;
         this.informationService = informationService;
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
@@ -88,21 +85,18 @@ public class FileController {
         }
     }
 
-    /*
-    TODO Security hole when sending a folder with name "../hello" creates above directory. Plus allows you to save files there.
-    Can go further and do more later on...
-    TODO "/../hello" bypasses as well. Another way to go above is to use "../../hello" which goes to $HOME/IdeaProjects/NetworkCloudDrive
-    TODO Fix is to Path.normalize then relativize to check if path is above or below the directory
-     */
     @PostMapping(value = "create/folder", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createFolder(@RequestBody CreateFolderDTO folderDTO) {
         try {
-            FolderMetadata folderMetadata = fileSystemService.createFolder(folderDTO.getName(), folderDTO.getFolder_id());
+            FolderMetadata folderMetadata = fileService.createFolder(folderDTO.getName(), folderDTO.getFolder_id());
             folderMetadata.setPath(fileUtility.resolvePathFromIdString(folderMetadata.getPath()));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(folderMetadata);
         } catch (FileAlreadyExistsException fae) {
             logger.error("Folder with name {} already exists. {}", folderDTO.getName(), fae.getMessage());
             return ResponseEntity.badRequest().body(new JSONErrorResponse(fae));
+        } catch (SecurityException e) {
+            logger.error("Path is not allowed: {}. {}", folderDTO.getName(), e.getMessage());
+            return ResponseEntity.internalServerError().body(new JSONErrorResponse(e, "Security Error"));
         } catch (Exception e) {
             logger.error("Error creating folder with name: {}. {}", folderDTO.getName(), e.getMessage());
             return ResponseEntity.internalServerError().body(new JSONErrorResponse(e, "IO Error"));

@@ -4,6 +4,7 @@ import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
+import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
@@ -32,17 +33,19 @@ public class FileUtility {
     private final EncodingUtility encodingUtility;
     private final Logger logger = LoggerFactory.getLogger(FileUtility.class);
     private final UserUtility userUtility;
+    private final IgnoreFileListProperties ignoreFileListProperties;
 
     public FileUtility(
             SQLiteDAO sqLiteDAO,
             FileStorageProperties fileStorageProperties,
             UserSession userSession,
-            EncodingUtility encodingUtility, UserUtility userUtility) {
+            EncodingUtility encodingUtility, UserUtility userUtility, IgnoreFileListProperties ignoreFileListProperties) {
         this.fileStorageProperties = fileStorageProperties;
         this.userSession = userSession;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userUtility = userUtility;
+        this.ignoreFileListProperties = ignoreFileListProperties;
     }
 
     /**
@@ -101,7 +104,9 @@ public class FileUtility {
      */
     public boolean checkIfFileExistsDecodeNames(String filePath, String decodedFileName) throws IOException {
         return getFileAndFolderPathsFromFolder(new File(fileStorageProperties.getFullPath(filePath))).stream().
-                anyMatch(file -> encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
+                anyMatch(file -> !ignoreFileListProperties.isInIgnoreList(file.toFile().getName())
+                        &&
+                        encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
     }
 
     /**
