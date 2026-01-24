@@ -124,8 +124,9 @@ public class FileService implements FileRepository {
             throw new FileAlreadyExistsException(String.format("Folder with name %s already exists at this path %s.", folderName, fullPath));
         // Create directory
         Path folder = Paths.get(fullPath, encodedFolderName);
-        Path createdFolderPath = Files.createDirectory(folder);
-        if (Files.notExists(createdFolderPath))
+        if (!pathUtility.isPathAllowed(folder))
+            throw new SecurityException("Path out of bounds");
+        if (Files.notExists(Files.createDirectory(folder)))
             throw new IOException(String.format("Cannot create directory, with name %s.", folderName));
         // save and return metadata
         return sqLiteDAO.saveFolder(createdFolder);
