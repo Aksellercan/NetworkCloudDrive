@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,10 @@ public class PathUtility {
     }
 
     public boolean isPathAllowed(Path path) throws IOException {
-        return path.startsWith(userUtility.returnUserFolderasPath());
+        logger.debug("Path check {}", path.normalize().startsWith(userUtility.returnUserFolderasPath()));
+        logger.debug("Path normalize {}", path.normalize());
+        logger.debug("Starts with {}", userUtility.returnUserFolderasPath());
+        return Paths.get(".", path.normalize().toString()).startsWith(userUtility.returnUserFolderasPath());
     }
 
     public boolean filenameAllowed(String filename) {

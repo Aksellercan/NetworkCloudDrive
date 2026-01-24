@@ -8,7 +8,6 @@ import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Services.UserService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
-import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Assertions;
@@ -32,8 +31,6 @@ class NetworkCloudDriveApplicationTests {
     EntityManager entityManager;
     @Autowired
     SQLiteDAO sqLiteDAO;
-    @Autowired
-    FileUtility fileUtility;
     @Autowired
     EncodingUtility encodingUtility;
     @Autowired
@@ -334,5 +331,10 @@ class NetworkCloudDriveApplicationTests {
         Assertions.assertEquals(savedUserEntity.getName(), decodedUserDetails.getName());
         logger.info("MAIL: Expected {} what it is {}", savedUserEntity.getMail(), decodedUserDetails.getMail());
         Assertions.assertEquals(savedUserEntity.getMail(), decodedUserDetails.getMail());
+    }
+
+    @Test
+    public void Path_Utility_Validate_Path() {
+
     }
 }

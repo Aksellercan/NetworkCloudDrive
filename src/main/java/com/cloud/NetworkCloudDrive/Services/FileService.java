@@ -3,7 +3,6 @@ package com.cloud.NetworkCloudDrive.Services;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -25,7 +24,6 @@ import java.util.*;
 
 @Service
 public class FileService implements FileRepository {
-    private final IgnoreFileListProperties ignoreFileListProperties;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
     private final Path rootPath;
@@ -35,13 +33,11 @@ public class FileService implements FileRepository {
     private final PathUtility pathUtility;
 
     public FileService(
-            IgnoreFileListProperties ignoreFileListProperties,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             PathUtility pathUtility) {
-        this.ignoreFileListProperties = ignoreFileListProperties;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
         this.rootPath = pathUtility.getBasePath();
@@ -52,23 +48,23 @@ public class FileService implements FileRepository {
 
     @Override
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
-        List<String> storagePathList = new ArrayList<>();
-        List<FileMetadata> uploadedFiles = new ArrayList<>();
+        List<String> storagePathList = new LinkedList<>();
+        List<FileMetadata> uploadedFiles = new LinkedList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();
         for (MultipartFile file : sortedBySize) {
             String fileName = file.getOriginalFilename();
-            //check for duplicates at destination
-            if (filesInside.stream().anyMatch(dup ->
-                    !ignoreFileListProperties.isInIgnoreList(dup.toFile().getName())
-                            &&
-                            encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(fileName)
-            )) {
-                logger.info("duplicate {}", file.getOriginalFilename());
+            if (fileName == null) continue;
+            if (fileName.startsWith(".")) {
+                logger.warn("Invalid filename {}", fileName);
                 continue;
             }
-
+            //check for duplicates at destination
+            if (fileUtility.checkDuplicate(filesInside, fileName)) {
+                logger.warn("duplicate {}", fileName);
+                continue;
+            }
             // Construct file metadata
             FileMetadata metadata = new FileMetadata(fileName, folderId, userSession.getId(), file.getContentType(), file.getSize());
             sqLiteDAO.persistObjects(metadata);
@@ -89,6 +85,7 @@ public class FileService implements FileRepository {
         Path userDirectory = rootPath.resolve(Path.of(parentPath)); /* To be extended */
         Files.createDirectories(userDirectory);
         Path filePath = userDirectory.resolve(fileName);
+        if (!pathUtility.isPathAllowed(filePath)) throw new IOException("Path not allowed");
         try (OutputStream outputStream = Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW)) {
             StreamUtils.copy(inputStream, outputStream);
         }

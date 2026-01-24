@@ -4,7 +4,6 @@ import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileSystemRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -33,7 +32,6 @@ public class FileSystemService implements FileSystemRepository {
     private final Logger logger = LoggerFactory.getLogger(FileSystemService.class);
     private final EncodingUtility encodingUtility;
     private final UserUtility userUtility;
-    private final IgnoreFileListProperties ignoreFileListProperties;
     private final PathUtility pathUtility;
 
     public FileSystemService(
@@ -42,14 +40,12 @@ public class FileSystemService implements FileSystemRepository {
             SQLiteDAO sqLiteDAO,
             EncodingUtility encodingUtility,
             UserUtility userUtility,
-            IgnoreFileListProperties ignoreFileListProperties,
             PathUtility pathUtility) {
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.encodingUtility = encodingUtility;
         this.userUtility = userUtility;
-        this.ignoreFileListProperties = ignoreFileListProperties;
         this.pathUtility = pathUtility;
     }
 
@@ -59,7 +55,7 @@ public class FileSystemService implements FileSystemRepository {
         List<FolderListItemDTO> folderList = new LinkedList<>();
         for (Path file : filePaths) {
             //ignore dotfiles
-            if (ignoreFileListProperties.isInIgnoreList(file.getFileName().toString())) {
+            if (fileUtility.isIgnoredFile(file.getFileName().toString())) {
                 logger.debug("file skip {}", file.getFileName());
                 continue;
             }

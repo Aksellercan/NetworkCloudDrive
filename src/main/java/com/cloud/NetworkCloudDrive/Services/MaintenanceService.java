@@ -5,7 +5,6 @@ import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
-import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.MaintenanceRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -30,7 +29,6 @@ public class MaintenanceService implements MaintenanceRepository {
     private final EncodingUtility encodingUtility;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
-    private final IgnoreFileListProperties ignoreFileListProperties;
     private final FileStorageProperties fileStorageProperties;
     private final PathUtility pathUtility;
 
@@ -39,13 +37,12 @@ public class MaintenanceService implements MaintenanceRepository {
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
-            IgnoreFileListProperties ignoreFileListProperties,
-            FileStorageProperties fileStorageProperties, PathUtility pathUtility) {
+            FileStorageProperties fileStorageProperties,
+            PathUtility pathUtility) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
-        this.ignoreFileListProperties = ignoreFileListProperties;
         this.fileStorageProperties = fileStorageProperties;
         this.pathUtility = pathUtility;
     }
@@ -81,7 +78,7 @@ public class MaintenanceService implements MaintenanceRepository {
             List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().filter(filter).toList();
             for (Path files : folders) {
                 logger.info("Currently on {}: {}", (Files.isRegularFile(files) ? "FILE" : "FOLDER"), files.getFileName());
-                if (ignoreFileListProperties.isInIgnoreList(files.getFileName().toString())) {
+                if (fileUtility.isIgnoredFile(files.getFileName().toString())) {
                     logger.info("Skip ignorable file or folder {}", files.getFileName().toString());
                     continue;
                 }

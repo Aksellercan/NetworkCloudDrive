@@ -13,8 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
@@ -46,10 +44,6 @@ public class FileUtility {
         } catch (IOException e) {
             throw new IOException("Failed to walk file tree. " + e.getMessage());
         }
-    }
-
-    public List<Path> returnFilesInDirectory(Path dir, boolean reverse, Predicate<Path> pathFilter) throws IOException {
-        return walkFsTree(dir, reverse).stream().filter(pathFilter).collect(Collectors.toList());
     }
 
     /**
@@ -147,5 +141,22 @@ public class FileUtility {
      */
     public boolean hasFileExtension(String filename) {
         return !getFileExtension(filename).isEmpty();
+    }
+
+    public boolean isIgnoredFile(String filename) {
+        return ignoreFileListProperties.isInIgnoreList(filename);
+    }
+
+    /**
+     * Checks if given filename already exists at destination
+     * @param files File stream of destination
+     * @param filename  File name to check
+     * @return  true if file already exists, false otherwise
+     */
+    public boolean checkDuplicate(List<Path> files, String filename) {
+        return files.stream().anyMatch(dup ->
+                !ignoreFileListProperties.isInIgnoreList(dup.toFile().getName())
+                        &&
+                        encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(filename));
     }
 }
