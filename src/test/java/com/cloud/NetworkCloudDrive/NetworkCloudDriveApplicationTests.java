@@ -8,7 +8,7 @@ import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Services.UserService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
-import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,13 +32,13 @@ class NetworkCloudDriveApplicationTests {
     @Autowired
     SQLiteDAO sqLiteDAO;
     @Autowired
-    FileUtility fileUtility;
-    @Autowired
     EncodingUtility encodingUtility;
     @Autowired
     UserService userService;
     @Autowired
     UserSession userSession;
+    @Autowired
+    private PathUtility pathUtility;
 
     @Test
     void contextLoads() {
@@ -207,7 +207,7 @@ class NetworkCloudDriveApplicationTests {
             FolderMetadata savedFolderMetadata =
                     sqLiteDAO.saveFolder(setupFolderMetadataObject(folderNameToAssert, userEntityRegisterDetails.getId()));
             // Act
-            filePath = fileUtility.resolvePathFromIdString(savedFolderMetadata.getPath());
+            filePath = pathUtility.resolvePathFromIdString(savedFolderMetadata.getPath());
         } catch (FileSystemException e) {
             logger.error("File_Utility_Reserve_Path_From_ID_Path_Returns_Path {}", e.getMessage());
             Assertions.fail(e.getMessage());
@@ -234,7 +234,7 @@ class NetworkCloudDriveApplicationTests {
         // Act
         String IdPath = null;
         try {
-            IdPath = fileUtility.generateIdPaths(file.getPath(), "0");
+            IdPath = pathUtility.generateIdPaths(file.getPath(), "0");
         } catch (Exception e) {
             Assertions.fail(e.getMessage());
         }
@@ -331,5 +331,10 @@ class NetworkCloudDriveApplicationTests {
         Assertions.assertEquals(savedUserEntity.getName(), decodedUserDetails.getName());
         logger.info("MAIL: Expected {} what it is {}", savedUserEntity.getMail(), decodedUserDetails.getMail());
         Assertions.assertEquals(savedUserEntity.getMail(), decodedUserDetails.getMail());
+    }
+
+    @Test
+    public void Path_Utility_Validate_Path() {
+
     }
 }

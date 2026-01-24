@@ -5,11 +5,11 @@ import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
-import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Repositories.MaintenanceRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,27 +29,27 @@ public class MaintenanceService implements MaintenanceRepository {
     private final EncodingUtility encodingUtility;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
-    private final IgnoreFileListProperties ignoreFileListProperties;
     private final FileStorageProperties fileStorageProperties;
+    private final PathUtility pathUtility;
 
     public MaintenanceService(
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
-            IgnoreFileListProperties ignoreFileListProperties,
-            FileStorageProperties fileStorageProperties) {
+            FileStorageProperties fileStorageProperties,
+            PathUtility pathUtility) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
-        this.ignoreFileListProperties = ignoreFileListProperties;
         this.fileStorageProperties = fileStorageProperties;
+        this.pathUtility = pathUtility;
     }
 
     //controller for scan options
     public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
-        Path startingDirectory = Path.of(fileStorageProperties.getFullPath(fileUtility.getFolderPath(folderId)));
+        Path startingDirectory = Path.of(fileStorageProperties.getFullPath(pathUtility.getFolderPath(folderId)));
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:
@@ -75,10 +75,10 @@ public class MaintenanceService implements MaintenanceRepository {
     public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion) {
         try {
             logger.info("Start better scan function at {}", startingPath);
-            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(/*temporary*/startingPath.toFile()).stream().filter(filter).toList();
+            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().filter(filter).toList();
             for (Path files : folders) {
                 logger.info("Currently on {}: {}", (Files.isRegularFile(files) ? "FILE" : "FOLDER"), files.getFileName());
-                if (ignoreFileListProperties.isInIgnoreList(files.getFileName().toString())) {
+                if (fileUtility.isIgnoredFile(files.getFileName().toString())) {
                     logger.info("Skip ignorable file or folder {}", files.getFileName().toString());
                     continue;
                 }
