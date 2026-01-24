@@ -12,16 +12,16 @@
 | Method | 	Route                                  | 	Description                                  | Working            |
 |--------|-----------------------------------------|-----------------------------------------------|--------------------|
 | POST   | 	api/filesystem/file/move               | Moves file given Id to another folder by ID   | :heavy_check_mark: |
-| POST   | 	api/filesystem/file/remove?fileid={id} | Removes file by ID                            | :heavy_check_mark: |
-| POST   | 	api/filesystem/file/rename             | Renames file with ID parameter with JSON body | :heavy_check_mark: |
+| DELETE | 	api/filesystem/file/remove?fileid={id} | Removes file by ID                            | :heavy_check_mark: |
+| PATCH  | 	api/filesystem/file/rename             | Renames file with ID parameter with JSON body | :heavy_check_mark: |
 
 ## FileSystem Folder Endpoints
 
 | Method | 	Route                                      | 	Description                                    | Working            |
 |--------|---------------------------------------------|-------------------------------------------------|--------------------|
 | POST   | 	api/filesystem/folder/move                 | Moves folder given Id to another folder by ID   | :heavy_check_mark: |
-| POST   | 	api/filesystem/folder/remove?folderid={id} | Removes folder by ID along with child folders   | :heavy_check_mark: |
-| POST   | 	api/filesystem/folder/rename               | Renames folder with ID parameter with JSON body | :heavy_check_mark: |
+| DELETE | 	api/filesystem/folder/remove?folderid={id} | Removes folder by ID along with child folders   | :heavy_check_mark: |
+| PATCH  | 	api/filesystem/folder/rename               | Renames folder with ID parameter with JSON body | :heavy_check_mark: |
 
 ## File Endpoints
 

@@ -6,7 +6,7 @@ import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
-import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,24 +19,24 @@ import java.io.File;
 @RestController
 @RequestMapping(path = "/api/info")
 public class InformationController {
-    private final FileUtility fileUtility;
     private final UserSession userSession;
     private final InformationService informationService;
     private final Logger logger = LoggerFactory.getLogger(InformationController.class);
     private final EncodingUtility encodingUtility;
     private final UserUtility userUtility;
+    private final PathUtility pathUtility;
 
     public InformationController(
-            FileUtility fileUtility,
             InformationService informationService,
             UserSession userSession,
             EncodingUtility encodingUtility,
-            UserUtility userUtility) {
-        this.fileUtility = fileUtility;
+            UserUtility userUtility,
+            PathUtility pathUtility) {
         this.informationService = informationService;
         this.userSession = userSession;
         this.encodingUtility = encodingUtility;
         this.userUtility = userUtility;
+        this.pathUtility = pathUtility;
     }
 
     @GetMapping(value = "get/filemetadata", produces = MediaType.ALL_VALUE)
@@ -60,7 +60,7 @@ public class InformationController {
             FolderMetadata folderMetadata;
             if (folderid != 0) {
                 folderMetadata = informationService.getFolderMetadata(folderid);
-                folderMetadata.setPath(fileUtility.resolvePathFromIdString(folderMetadata.getPath()));
+                folderMetadata.setPath(pathUtility.resolvePathFromIdString(folderMetadata.getPath()));
             } else {
                 File folderRootMetadata = userUtility.returnUserFolder();
                 folderMetadata = new FolderMetadata(folderRootMetadata.getName(), folderRootMetadata.getPath());
