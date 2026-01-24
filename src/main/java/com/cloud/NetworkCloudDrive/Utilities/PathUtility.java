@@ -56,14 +56,23 @@ public class PathUtility {
         return fileStorageProperties.getBasePath();
     }
 
+    /**
+     * Normalizes path then checks if path starts with user folder path
+     * @param path  Path to validate
+     * @return  true if path is valid (starts with user folder path "./root/userfolderBase32/...") else returns false
+     * @throws IOException When user folder doesn't exist or not found it will create it however will throw IOException if it can't
+     */
     public boolean isPathAllowed(Path path) throws IOException {
-        logger.debug("Path check {}", path.normalize().startsWith(userUtility.returnUserFolderasPath()));
-        logger.debug("Path normalize {}", path.normalize());
-        logger.debug("Starts with {}", userUtility.returnUserFolderasPath());
         return Paths.get(".", path.normalize().toString()).startsWith(userUtility.returnUserFolderasPath());
     }
 
-    public boolean filenameAllowed(String filename) {
+    public boolean isFilenameAllowed(String filename) {
+        if (filename == null || filename.isEmpty()
+                || filename.contains("..")
+                || filename.contains("/")
+                || filename.contains("\\")) {
+            return false;
+        }
         return !filename.startsWith(".");
     }
 

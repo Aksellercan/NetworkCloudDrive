@@ -110,12 +110,16 @@ public class FileService implements FileRepository {
         String idPath = sqLiteDAO.getIdPath(folderId);
         String userFolder = pathUtility.getFolderPath(folderId);
         String fullPath = pathUtility.getFullPathToString(userFolder);
-        if (!pathUtility.filenameAllowed(folderName))
+        if (!pathUtility.isFilenameAllowed(folderName))
             throw new SecurityException("Path is not allowed");
         // Folder metadata
         FolderMetadata createdFolder = new FolderMetadata();
         sqLiteDAO.persistObjects(createdFolder);
         String encodedFolderName = encodingUtility.encodeBase32FolderName(createdFolder.getId(), folderName, userSession.getId());
+        // ensure encoded name is also a single path component
+        if (encodedFolderName.contains("/") || encodedFolderName.contains("\\")) {
+            throw new SecurityException("Invalid encoded folder name");
+        }
         createdFolder.setPath(idPath + "/" + createdFolder.getId());
         createdFolder.setUserid(userSession.getId());
         createdFolder.setName(encodedFolderName);
