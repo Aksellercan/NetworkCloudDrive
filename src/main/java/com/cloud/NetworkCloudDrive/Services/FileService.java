@@ -3,6 +3,7 @@ package com.cloud.NetworkCloudDrive.Services;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -31,24 +32,28 @@ public class FileService implements FileRepository {
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
     private final PathUtility pathUtility;
+    private final ThumbnailProperties thumbnailProperties;
+    private final ThumbnailService thumbnailService;
 
     public FileService(
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
-            PathUtility pathUtility) {
+            PathUtility pathUtility, ThumbnailProperties thumbnailProperties, ThumbnailService thumbnailService) {
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
         this.rootPath = pathUtility.getBasePath();
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
+        this.thumbnailProperties = thumbnailProperties;
+        this.thumbnailService = thumbnailService;
     }
 
     @Override
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
-        List<String> storagePathList = new LinkedList<>();
+        List<Path> storagePathList = new LinkedList<>();
         List<FileMetadata> uploadedFiles = new LinkedList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
@@ -75,21 +80,25 @@ public class FileService implements FileRepository {
             }
             metadata.setName(encodedFileName);
             uploadedFiles.add(metadata);
+            if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
+                thumbnailService.saveThumbnails(thumbnailService.createThumbnailOfAnImageUsingLibrary(storagePathList.get(storagePathList.size()-1), 100, 100), "tester");
+            }
         }
         if (storagePathList.isEmpty())
             throw new FileAlreadyExistsException("File(s) already exists at destination");
         return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList);
     }
 
-    public String storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
+    public Path storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
         Path userDirectory = rootPath.resolve(Path.of(parentPath)); /* To be extended */
         Files.createDirectories(userDirectory);
         Path filePath = userDirectory.resolve(fileName);
-        if (!pathUtility.isPathAllowed(filePath)) throw new IOException("Path not allowed");
+        if (!pathUtility.isPathAllowed(filePath))
+            throw new IOException("Path not allowed");
         try (OutputStream outputStream = Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW)) {
             StreamUtils.copy(inputStream, outputStream);
         }
-        return rootPath.relativize(filePath).toString();
+        return rootPath.relativize(filePath);
     }
 
     @Override

@@ -2,7 +2,9 @@ package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.Repositories.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
+import net.coobird.thumbnailator.Thumbnailator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.nio.file.Files;
 import java.util.LinkedList;
 import java.util.List;
 import java.awt.image.BufferedImage;
@@ -22,18 +25,32 @@ public class ThumbnailService implements ThumbnailRepository {
     private final Logger logger = LoggerFactory.getLogger(ThumbnailService.class);
     private final UserUtility userUtility;
     private final FileUtility fileUtility;
+    private final PathUtility pathUtility;
 
     public ThumbnailService(
             UserUtility userUtility,
-            FileUtility fileUtility) {
+            FileUtility fileUtility,
+            PathUtility pathUtility) {
         this.userUtility = userUtility;
         this.fileUtility = fileUtility;
+        this.pathUtility = pathUtility;
+    }
+
+    public BufferedImage createThumbnailOfAnImageUsingLibrary(Path source, int width, int height) throws IOException {
+        if (source == null)
+            throw new IOException("Image is null");
+        return Thumbnailator.createThumbnail(Path.of(pathUtility.getBasePathToString(),source.toString()).toFile(), width, height);
     }
 
     public String saveThumbnails(BufferedImage thumbnail, String filename) throws IOException {
+        Path thumbnailsFolder = Path.of(userUtility.returnUserFolder().getPath(), ".thumbnails");
+
+        if (!Files.exists(thumbnailsFolder)) {
+            Files.createDirectory(thumbnailsFolder);
+        }
         boolean success = ImageIO.write(thumbnail,
                 "jpg",
-                Path.of(userUtility.returnUserFolder().getPath(), ".thumbnails",
+                Path.of(thumbnailsFolder.toString(),
                                 filename + "_thumbnail." + fileUtility.getFileExtension(filename))
                         .toFile());
         if (!success)
@@ -44,14 +61,15 @@ public class ThumbnailService implements ThumbnailRepository {
     // found on stackoverflow but its kind of slow
     @Override
     public BufferedImage createThumbnailOfAnImage(Path image, double ratio) throws IOException {
-        BufferedImage source = ImageIO.read(image.toFile());
+        logger.warn("path of uploaded image {}", pathUtility.getFullPath(image.toString()));
+        BufferedImage source = ImageIO.read(pathUtility.getFullPath(image.toString()).toFile());
         int w = (int) (source.getWidth() * ratio);
         int h = (int) (source.getHeight() * ratio);
         BufferedImage bi = getCompatibleImage(w, h);
         Graphics2D g2d = bi.createGraphics();
         double xScale = (double) w / source.getWidth();
         double yScale = (double) h / source.getHeight();
-        AffineTransform at = AffineTransform.getScaleInstance(xScale,yScale);
+        AffineTransform at = AffineTransform.getScaleInstance(xScale, yScale);
         g2d.drawRenderedImage(source, at);
         g2d.dispose();
         return bi;
@@ -75,8 +93,10 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public void deleteAllThumbnails() {}
+    public void deleteAllThumbnails() {
+    }
 
     @Override
-    public void deleteThumbnail() {}
+    public void deleteThumbnail() {
+    }
 }

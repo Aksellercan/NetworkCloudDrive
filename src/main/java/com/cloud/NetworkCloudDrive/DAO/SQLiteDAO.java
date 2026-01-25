@@ -103,7 +103,6 @@ public class SQLiteDAO {
     }
 
     // Database service layer
-
     @Transactional
     public List<FileMetadata> searchFileMetadataByName(String name) {
         return sqLiteFileRepository.searchFileMetadataByName(name);
