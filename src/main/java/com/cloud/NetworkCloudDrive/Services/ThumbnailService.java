@@ -43,6 +43,10 @@ public class ThumbnailService implements ThumbnailRepository {
         this.pathUtility = pathUtility;
     }
 
+    public void createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName) throws IOException {
+        saveThumbnails(createThumbnailOfAnImage(filePath, 100, 100), encodedFileName);
+    }
+
     @Override
     public BufferedImage createThumbnailOfAnImage(Path source, int width, int height) throws IOException {
         if (source == null)
@@ -50,6 +54,10 @@ public class ThumbnailService implements ThumbnailRepository {
         return Thumbnailator
                 .createThumbnail(Path.of(pathUtility.getBasePathToString(), source.toString())
                         .toFile(), width, height);
+    }
+
+    public boolean isPortrait(int width, int height) {
+        return height > width;
     }
 
     public String saveThumbnails(BufferedImage thumbnail, String filename) throws IOException {
@@ -67,7 +75,6 @@ public class ThumbnailService implements ThumbnailRepository {
     public List<String> createThumbnailsOfImages(List<Path> images, int width, int height) throws IOException {
         List<String> thumbnailStoragePath = new LinkedList<>();
         for (Path image : images) {
-            //
             thumbnailStoragePath.add(saveThumbnails(createThumbnailOfAnImage(image, width, height), image.getFileName().toString()));
         }
         return thumbnailStoragePath;
@@ -75,11 +82,11 @@ public class ThumbnailService implements ThumbnailRepository {
 
     @Override
     public void deleteAllThumbnails() {
-        sqLiteDAO.findAllThumbnailsByUserID(userSession.getId());
-        sqLiteDAO.deleteT
+        sqLiteDAO.deleteAllThumbnails(sqLiteDAO.findAllThumbnailsByUserID(userSession.getId()));
     }
 
     @Override
-    public void deleteThumbnail() {
+    public void deleteThumbnail(long fileId) {
+//        sqLiteDAO.deleteThumbnail(sqLiteDAO.);
     }
 }
