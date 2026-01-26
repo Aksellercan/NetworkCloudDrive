@@ -3,9 +3,11 @@ package com.cloud.NetworkCloudDrive.DAO;
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFileRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFolderRepository;
+import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteUserEntityRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import jakarta.persistence.EntityManager;
@@ -29,6 +31,7 @@ public class SQLiteDAO {
     private final SQLiteFolderRepository sqLiteFolderRepository;
     private final SQLiteFileRepository sqLiteFileRepository;
     private final SQLiteUserEntityRepository sqLiteUserEntityRepository;
+    private final SQLiteThumbnailRepository sqLiteThumbnailRepository;
     private final UserSession userSession;
     private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
 
@@ -36,11 +39,13 @@ public class SQLiteDAO {
             SQLiteFolderRepository sqLiteFolderRepository,
             SQLiteFileRepository sqLiteFileRepository,
             SQLiteUserEntityRepository sqLiteUserEntityRepository,
+            SQLiteThumbnailRepository sqLiteThumbnailRepository,
             EntityManager entityManager,
             UserSession userSession) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
+        this.sqLiteThumbnailRepository = sqLiteThumbnailRepository;
         this.entityManager = entityManager;
         this.userSession = userSession;
     }
@@ -60,6 +65,10 @@ public class SQLiteDAO {
         return sqLiteFileRepository;
     }
 
+    public SQLiteThumbnailRepository getSqLiteThumbnailRepository() {
+        return sqLiteThumbnailRepository;
+    }
+
     // Delete
     @Transactional
     public void deleteFolder(FolderMetadata folder) {
@@ -74,6 +83,32 @@ public class SQLiteDAO {
     @Transactional
     public void deleteUser(UserEntity userEntity) {
         sqLiteUserEntityRepository.delete(userEntity);
+    }
+
+    @Transactional
+    public void deleteThumbnail(ThumbnailMetadata thumbnail) {
+        sqLiteThumbnailRepository.delete(thumbnail);
+    }
+
+    // Delete collection
+    @Transactional
+    public void deleteAllFolders(List<FolderMetadata> folders) {
+        sqLiteFolderRepository.deleteAllInBatch(folders);
+    }
+
+    @Transactional
+    public void deleteAllFiles(List<FileMetadata> files) {
+        sqLiteFileRepository.deleteAllInBatch(files);
+    }
+
+    @Transactional
+    public void deleteAllUsers(List<UserEntity> userEntities) {
+        sqLiteUserEntityRepository.deleteAllInBatch(userEntities);
+    }
+
+    @Transactional
+    public void deleteAllThumbnails(List<ThumbnailMetadata> thumbnails) {
+        sqLiteThumbnailRepository.deleteAllInBatch(thumbnails);
     }
 
     // Add/Update
@@ -93,6 +128,12 @@ public class SQLiteDAO {
     }
 
     @Transactional
+    public ThumbnailMetadata saveThumbnail(ThumbnailMetadata thumbnail) {
+        return sqLiteThumbnailRepository.save(thumbnail);
+    }
+
+    // Add/Update using collections
+    @Transactional
     public List<FolderMetadata> saveAllFolders(List<FolderMetadata> folderMetadata) {
         return sqLiteFolderRepository.saveAll(folderMetadata);
     }
@@ -100,6 +141,11 @@ public class SQLiteDAO {
     @Transactional
     public List<FileMetadata> saveAllFiles(List<FileMetadata> fileMetadata) {
         return sqLiteFileRepository.saveAll(fileMetadata);
+    }
+
+    @Transactional
+    public List<ThumbnailMetadata> saveAllThumbnails(List<ThumbnailMetadata> thumbnailMetadata) {
+        return sqLiteThumbnailRepository.saveAll(thumbnailMetadata);
     }
 
     // Database service layer
@@ -185,6 +231,14 @@ public class SQLiteDAO {
     }
 
     @Transactional
+    public ThumbnailMetadata queryThumbnailMetadata(long thumbnailId, long userId) throws SQLException {
+        Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository.findById(thumbnailId).filter(fl -> fl.getUserId() == userId);
+        if (thumbnailMetadata.isEmpty())
+            throw new SQLException("Thumbnail with Id " + thumbnailId + " does not exist");
+        return thumbnailMetadata.get();
+    }
+
+    @Transactional
     public FolderMetadata queryFolderMetadata(long folderId, long userId) throws SQLException {
         Optional<FolderMetadata> folderMetadata = sqLiteFolderRepository.findById(folderId).filter(f -> f.getUserid() == userId);
         if (folderMetadata.isEmpty())
@@ -205,6 +259,11 @@ public class SQLiteDAO {
         return sqLiteFolderRepository.findAllById(folderIdList).stream()
                 .filter(f -> f.getUserid() == userId)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<ThumbnailMetadata> findAllThumbnailsByUserID(long userId) {
+        return sqLiteThumbnailRepository.findAllByUserId(userId);
     }
 
     @Transactional

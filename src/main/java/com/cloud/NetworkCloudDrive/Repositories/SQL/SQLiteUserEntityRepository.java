@@ -7,6 +7,5 @@ import java.util.Optional;
 
 public interface SQLiteUserEntityRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByName(String name);
-
     Optional<UserEntity> findByMail(String mail);
 }

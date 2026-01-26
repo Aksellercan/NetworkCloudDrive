@@ -12,9 +12,7 @@ public class ThumbnailProperties {
 
     public ThumbnailProperties() {
         this.allowedFormats = List.of(
-                //ignore MacOS generated file
                 "image/jpeg",
-                //ignore thumbnails folder in user dir
                 "image/png"
         );
     }

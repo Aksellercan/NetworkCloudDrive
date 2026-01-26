@@ -1,6 +1,8 @@
 package com.cloud.NetworkCloudDrive.Services;
 
+import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Repositories.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
@@ -24,13 +26,19 @@ public class ThumbnailService implements ThumbnailRepository {
     private final Logger logger = LoggerFactory.getLogger(ThumbnailService.class);
     private final UserUtility userUtility;
     private final FileUtility fileUtility;
+    private final SQLiteDAO sqLiteDAO;
+    private final UserSession userSession;
     private final PathUtility pathUtility;
 
     public ThumbnailService(
             UserUtility userUtility,
+            UserSession userSession,
             FileUtility fileUtility,
+            SQLiteDAO sqLiteDAO,
             PathUtility pathUtility) {
         this.userUtility = userUtility;
+        this.userSession = userSession;
+        this.sqLiteDAO = sqLiteDAO;
         this.fileUtility = fileUtility;
         this.pathUtility = pathUtility;
     }
@@ -48,11 +56,8 @@ public class ThumbnailService implements ThumbnailRepository {
         Path thumbnailsFolder = Path.of(userUtility.returnUserFolder().getPath(), ".thumbnails");
         if (!Files.exists(thumbnailsFolder))
             Files.createDirectory(thumbnailsFolder);
-        boolean success = ImageIO.write(thumbnail,
-                "jpg",
-                Path.of(thumbnailsFolder.toString(),
-                                filename + "_thumbnail" + fileUtility.getFileExtension(filename))
-                        .toFile());
+        String format = "jpg";
+        boolean success = ImageIO.write(thumbnail, format, Path.of(thumbnailsFolder.toString(), filename + "_thumbnail" + format).toFile());
         if (!success)
             throw new IOException("Failed to create thumbnail for image " + filename);
         return Paths.get(userUtility.returnUserFolder().getPath()).toString();
@@ -70,6 +75,8 @@ public class ThumbnailService implements ThumbnailRepository {
 
     @Override
     public void deleteAllThumbnails() {
+        sqLiteDAO.findAllThumbnailsByUserID(userSession.getId());
+        sqLiteDAO.deleteT
     }
 
     @Override

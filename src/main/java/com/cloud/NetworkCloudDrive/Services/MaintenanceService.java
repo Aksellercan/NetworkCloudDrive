@@ -4,7 +4,6 @@ import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Repositories.MaintenanceRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
@@ -29,7 +28,6 @@ public class MaintenanceService implements MaintenanceRepository {
     private final EncodingUtility encodingUtility;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
-    private final FileStorageProperties fileStorageProperties;
     private final PathUtility pathUtility;
 
     public MaintenanceService(
@@ -37,19 +35,17 @@ public class MaintenanceService implements MaintenanceRepository {
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
-            FileStorageProperties fileStorageProperties,
             PathUtility pathUtility) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
-        this.fileStorageProperties = fileStorageProperties;
         this.pathUtility = pathUtility;
     }
 
     //controller for scan options
     public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
-        Path startingDirectory = Path.of(fileStorageProperties.getFullPath(pathUtility.getFolderPath(folderId)));
+        Path startingDirectory = pathUtility.getFullPath(pathUtility.getFolderPath(folderId));
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:
