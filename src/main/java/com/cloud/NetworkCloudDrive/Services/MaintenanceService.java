@@ -111,7 +111,6 @@ public class MaintenanceService implements MaintenanceRepository {
 
     @Override
     public void handleFileCheck(File currentFile, long folderId) throws IOException {
-        boolean filenameIsBase32Encoded = false;
         if (encodingUtility.isBase32Decodable(currentFile.getName())) {
             //if its base32 decodable check if its in db
             // we can also decode Base32 and get id to search by ID index could be more performant
@@ -121,7 +120,6 @@ public class MaintenanceService implements MaintenanceRepository {
                 return;
             }
             logger.info("File does not exist {}", currentFile.getName());
-            filenameIsBase32Encoded = true;
         }
         logger.info("-> FILE {}", currentFile.getPath());
         FileMetadata metadata =
@@ -132,11 +130,9 @@ public class MaintenanceService implements MaintenanceRepository {
                         fileUtility.getMimeTypeFromExtensionUsingTikaCore(currentFile),
                         currentFile.getTotalSpace());
         sqLiteDAO.persistObjects(metadata);
-        if (!filenameIsBase32Encoded) {
-            // Encode in BASE32
-            String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
-            metadata.setName(encodedFileName);
-        }
+        // Encode in BASE32
+        String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
+        metadata.setName(encodedFileName);
         logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
                 metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
         sqLiteDAO.saveFile(metadata);

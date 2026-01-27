@@ -232,7 +232,7 @@ public class SQLiteDAO {
 
     @Transactional
     public ThumbnailMetadata queryThumbnailMetadata(long thumbnailId, long userId) throws SQLException {
-        Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository.findById(thumbnailId).filter(fl -> fl.getUserId() == userId);
+        Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository.findById(thumbnailId).filter(tm -> tm.getUserId() == userId);
         if (thumbnailMetadata.isEmpty())
             throw new SQLException("Thumbnail with Id " + thumbnailId + " does not exist");
         return thumbnailMetadata.get();
@@ -316,8 +316,9 @@ public class SQLiteDAO {
 
     /**
      * Returns ID path of folder with folderId
-     * @param folderId  folderId of folder
-     * @return  if folderId is not 0 returns folder's ID path else "0"
+     *
+     * @param folderId folderId of folder
+     * @return if folderId is not 0 returns folder's ID path else "0"
      * @throws SQLException if folder with folderId is not found
      */
     @Transactional

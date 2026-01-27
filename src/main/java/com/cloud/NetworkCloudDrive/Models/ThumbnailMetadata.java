@@ -7,13 +7,18 @@ public class ThumbnailMetadata {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+
     @Column(name = "name")
     private String fileName;
+
     @Column(name = "mimeType")
     private String mimeType;
+
     private long size;
+
     @Column(name = "fileid")
     private long fileId;
+
     @Column(name = "userid")
     private long userId;
 

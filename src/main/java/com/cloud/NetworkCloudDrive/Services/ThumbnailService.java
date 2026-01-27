@@ -50,10 +50,8 @@ public class ThumbnailService implements ThumbnailRepository {
     @Override
     public BufferedImage createThumbnailOfAnImage(Path source, int width, int height) throws IOException {
         if (source == null)
-            throw new IOException("Image is null");
-        return Thumbnailator
-                .createThumbnail(Path.of(pathUtility.getBasePathToString(), source.toString())
-                        .toFile(), width, height);
+            throw new IOException("Image source is null");
+        return Thumbnailator.createThumbnail(Path.of(pathUtility.getBasePathToString(), source.toString()).toFile(), width, height);
     }
 
     public boolean isPortrait(int width, int height) {
@@ -65,9 +63,7 @@ public class ThumbnailService implements ThumbnailRepository {
         if (!Files.exists(thumbnailsFolder))
             Files.createDirectory(thumbnailsFolder);
         String format = "jpg";
-        boolean success = ImageIO.write(thumbnail, format, Path.of(thumbnailsFolder.toString(), filename + "_thumbnail" + format).toFile());
-        if (!success)
-            throw new IOException("Failed to create thumbnail for image " + filename);
+        ImageIO.write(thumbnail, format, Path.of(thumbnailsFolder.toString(), filename + "_thumbnail." + format).toFile());
         return Paths.get(userUtility.returnUserFolder().getPath()).toString();
     }
 

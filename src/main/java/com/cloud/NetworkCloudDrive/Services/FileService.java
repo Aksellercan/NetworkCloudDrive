@@ -27,7 +27,6 @@ import java.util.*;
 public class FileService implements FileRepository {
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
-    private final Path rootPath;
     private final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
@@ -40,10 +39,11 @@ public class FileService implements FileRepository {
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
-            PathUtility pathUtility, ThumbnailProperties thumbnailProperties, ThumbnailService thumbnailService) {
+            PathUtility pathUtility,
+            ThumbnailProperties thumbnailProperties,
+            ThumbnailService thumbnailService) {
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
-        this.rootPath = pathUtility.getBasePath();
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
@@ -79,10 +79,11 @@ public class FileService implements FileRepository {
                 storagePathList.add(storeFile(inputStream, encodedFileName, folderPath));
             }
             metadata.setName(encodedFileName);
-            uploadedFiles.add(metadata);
             if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
                 thumbnailService.createAndSaveThumbnailDefaultSettings(storagePathList.get(storagePathList.size()-1), encodedFileName);
+                metadata.setHasThumbnail(true);
             }
+            uploadedFiles.add(metadata);
         }
         if (storagePathList.isEmpty())
             throw new FileAlreadyExistsException("File(s) already exists at destination");
@@ -90,7 +91,7 @@ public class FileService implements FileRepository {
     }
 
     public Path storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
-        Path userDirectory = rootPath.resolve(Path.of(parentPath)); /* To be extended */
+        Path userDirectory = pathUtility.getBasePath().resolve(Path.of(parentPath)); /* To be extended */
         Files.createDirectories(userDirectory);
         Path filePath = userDirectory.resolve(fileName);
         if (!pathUtility.isPathAllowed(filePath))
@@ -98,14 +99,14 @@ public class FileService implements FileRepository {
         try (OutputStream outputStream = Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW)) {
             StreamUtils.copy(inputStream, outputStream);
         }
-        return rootPath.relativize(filePath);
+        return pathUtility.getBasePath().relativize(filePath);
     }
 
     @Override
     public Resource getFile(FileMetadata file, String path) throws Exception {
         Path filePath = Paths.get(pathUtility.getFullPathToString(path), file.getName());
         logger.info("file service path: {}", filePath);
-        Path normalizedRoot = rootPath.normalize().toAbsolutePath();
+        Path normalizedRoot = pathUtility.getBasePath().normalize().toAbsolutePath();
         if (filePath.startsWith(normalizedRoot))
             throw new SecurityException("Unauthorized access");
         if (!Files.exists(filePath))
