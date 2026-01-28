@@ -62,7 +62,7 @@ public class FileService implements FileRepository {
         for (MultipartFile file : sortedBySize) {
             String fileName = file.getOriginalFilename();
             if (fileName == null) continue;
-            if (fileName.startsWith(".")) {
+            if (!pathUtility.isFilenameAllowed(fileName)) {
                 logger.warn("Invalid filename {}", fileName);
                 continue;
             }
@@ -99,7 +99,7 @@ public class FileService implements FileRepository {
         Path filePath = userDirectory.resolve(fileName);
         if (!pathUtility.isPathAllowed(filePath))
             throw new IOException("Path not allowed");
-        if (pathUtility.isFilenameAllowed(fileName))
+        if (!pathUtility.isFilenameAllowed(fileName))
             throw new IOException("Filename is not allowed");
         StreamUtils.copy(inputStream, Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW));
         return pathUtility.getBasePath().relativize(filePath);

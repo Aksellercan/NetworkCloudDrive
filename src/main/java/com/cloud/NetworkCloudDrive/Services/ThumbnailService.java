@@ -4,6 +4,7 @@ import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Repositories.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.ImageUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import net.coobird.thumbnailator.Thumbnailator;
@@ -29,22 +30,27 @@ public class ThumbnailService implements ThumbnailRepository {
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
     private final PathUtility pathUtility;
+    private final ImageUtility imageUtility;
 
     public ThumbnailService(
             UserUtility userUtility,
             UserSession userSession,
             FileUtility fileUtility,
             SQLiteDAO sqLiteDAO,
-            PathUtility pathUtility) {
+            PathUtility pathUtility,
+            ImageUtility imageUtility) {
         this.userUtility = userUtility;
         this.userSession = userSession;
         this.sqLiteDAO = sqLiteDAO;
         this.fileUtility = fileUtility;
         this.pathUtility = pathUtility;
+        this.imageUtility = imageUtility;
     }
 
     public String createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName) throws IOException {
-        return saveThumbnails(createThumbnailOfAnImage(filePath, 100, 100), encodedFileName, "jpg");
+        logger.warn("thumbnail filepath = {}", filePath);
+        int[] dimensions = imageUtility.getPortraitThumbnailDimensions(filePath);
+        return saveThumbnails(createThumbnailOfAnImage(filePath, dimensions[0], dimensions[1]), encodedFileName, "jpg");
     }
 
     @Override
@@ -52,10 +58,6 @@ public class ThumbnailService implements ThumbnailRepository {
         if (source == null)
             throw new IOException("Image source is null");
         return Thumbnailator.createThumbnail(Path.of(pathUtility.getBasePathToString(), source.toString()).toFile(), width, height);
-    }
-
-    public boolean isPortrait(int width, int height) {
-        return height > width;
     }
 
     public String saveThumbnails(BufferedImage thumbnail, String filename, String format) throws IOException {
