@@ -43,8 +43,8 @@ public class ThumbnailService implements ThumbnailRepository {
         this.pathUtility = pathUtility;
     }
 
-    public void createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName) throws IOException {
-        saveThumbnails(createThumbnailOfAnImage(filePath, 100, 100), encodedFileName);
+    public String createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName) throws IOException {
+        return saveThumbnails(createThumbnailOfAnImage(filePath, 100, 100), encodedFileName, "jpg");
     }
 
     @Override
@@ -58,20 +58,20 @@ public class ThumbnailService implements ThumbnailRepository {
         return height > width;
     }
 
-    public String saveThumbnails(BufferedImage thumbnail, String filename) throws IOException {
+    public String saveThumbnails(BufferedImage thumbnail, String filename, String format) throws IOException {
         Path thumbnailsFolder = Path.of(userUtility.returnUserFolder().getPath(), ".thumbnails");
         if (!Files.exists(thumbnailsFolder))
             Files.createDirectory(thumbnailsFolder);
-        String format = "jpg";
-        ImageIO.write(thumbnail, format, Path.of(thumbnailsFolder.toString(), filename + "_thumbnail." + format).toFile());
-        return Paths.get(userUtility.returnUserFolder().getPath()).toString();
+        Path thumbnailPath = Path.of(thumbnailsFolder.toString(), filename + "_thumbnail." + format);
+        ImageIO.write(thumbnail, format, thumbnailPath.toFile());
+        return thumbnailPath.toString();
     }
 
     @Override
     public List<String> createThumbnailsOfImages(List<Path> images, int width, int height) throws IOException {
         List<String> thumbnailStoragePath = new LinkedList<>();
         for (Path image : images) {
-            thumbnailStoragePath.add(saveThumbnails(createThumbnailOfAnImage(image, width, height), image.getFileName().toString()));
+            thumbnailStoragePath.add(saveThumbnails(createThumbnailOfAnImage(image, width, height), image.getFileName().toString(), "jpg"));
         }
         return thumbnailStoragePath;
     }

@@ -53,8 +53,9 @@ public class FileService implements FileRepository {
 
     @Override
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
-        List<Path> storagePathList = new LinkedList<>();
+        List<String> storagePathList = new LinkedList<>();
         List<FileMetadata> uploadedFiles = new LinkedList<>();
+        List<String> thumbnailPathList = new LinkedList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();
@@ -75,18 +76,20 @@ public class FileService implements FileRepository {
             sqLiteDAO.persistObjects(metadata);
             // Encode in BASE32
             String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), fileName, userSession.getId());
-            try (InputStream inputStream = file.getInputStream()) {
-                storagePathList.add(storeFile(inputStream, encodedFileName, folderPath));
-            }
+            Path storagePath = storeFile(file.getInputStream(), encodedFileName, folderPath);
+            logger.debug("storage path {}", storagePath);
+            storagePathList.add(storagePath.toString());
             metadata.setName(encodedFileName);
             if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
-                thumbnailService.createAndSaveThumbnailDefaultSettings(storagePathList.get(storagePathList.size()-1), encodedFileName);
+                thumbnailPathList.add(thumbnailService.createAndSaveThumbnailDefaultSettings(storagePath, encodedFileName));
                 metadata.setHasThumbnail(true);
             }
             uploadedFiles.add(metadata);
         }
         if (storagePathList.isEmpty())
             throw new FileAlreadyExistsException("File(s) already exists at destination");
+        if (!thumbnailPathList.isEmpty())
+            return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList, "thumbnail_path", thumbnailPathList);
         return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList);
     }
 
@@ -96,9 +99,7 @@ public class FileService implements FileRepository {
         Path filePath = userDirectory.resolve(fileName);
         if (!pathUtility.isPathAllowed(filePath))
             throw new IOException("Path not allowed");
-        try (OutputStream outputStream = Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW)) {
-            StreamUtils.copy(inputStream, outputStream);
-        }
+        StreamUtils.copy(inputStream, Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW));
         return pathUtility.getBasePath().relativize(filePath);
     }
 

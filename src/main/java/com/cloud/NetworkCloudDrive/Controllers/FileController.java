@@ -69,7 +69,7 @@ public class FileController {
             Resource file = fileService.getFile(metadata, actualPath);
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + decodedFileName + "\" "). //return filename
+                            "attachment; filename=\"" + decodedFileName + "\" ").
                             contentType(MediaType.parseMediaType(metadata.getMimiType())).
                     contentLength(metadata.getSize()).body(file);
         }
