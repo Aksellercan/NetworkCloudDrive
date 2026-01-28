@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Repositories;
+package com.cloud.NetworkCloudDrive.Repositories.Services;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;

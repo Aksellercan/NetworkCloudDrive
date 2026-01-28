@@ -1,6 +1,6 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
-import com.cloud.NetworkCloudDrive.Utilities.SecurityUtility;
+import com.cloud.NetworkCloudDrive.Utilities.Security.SecurityUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
