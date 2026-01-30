@@ -82,12 +82,10 @@ public class FileService implements FileRepository {
             metadata.setName(encodedFileName);
             if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
                 String thumbnailPath = handleThumbnailCreation(storagePath, encodedFileName);
-                if (thumbnailPath == null) {
-                    logger.error("Failed to create thumbnail for file {}", fileName);
-                    continue;
+                if (thumbnailPath != null) {
+                    thumbnailPathList.add(thumbnailPath);
+                    metadata.setHasThumbnail(true);
                 }
-                thumbnailPathList.add(thumbnailPath);
-                metadata.setHasThumbnail(true);
             }
             uploadedFiles.add(metadata);
         }

@@ -65,7 +65,9 @@ public class ThumbnailService implements ThumbnailRepository {
         if (thumbnail == null)
             throw new NullPointerException("Buffered Image is null");
         Path thumbnailPath = Path.of(thumbnailsFolder.toString(), filename + "_thumbnail." + format);
-        ImageIO.write(thumbnail, format, thumbnailPath.toFile());
+        if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
+            throw new IOException("Failed to write thumbnail to destination");
+        }
         return thumbnailPath.toString();
     }
 
