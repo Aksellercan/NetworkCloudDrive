@@ -189,7 +189,7 @@ public class PathUtility {
                 if ((splitId.length == depth) && (folderMetadata.getName().equals(folderName))) {
                     logger.debug("APPEND {}", folderMetadata.getId());
                     idPath.append(folderMetadata.getId()).append("/");
-                    logger.debug("CURRENT STATE OF STRING: {}", idPath.toString());
+                    logger.debug("CURRENT STATE OF STRING: {}", idPath);
                 }
             }
             depth++;

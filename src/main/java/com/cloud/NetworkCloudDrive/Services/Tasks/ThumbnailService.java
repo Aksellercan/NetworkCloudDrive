@@ -45,7 +45,7 @@ public class ThumbnailService implements ThumbnailRepository {
         this.imageUtility = imageUtility;
     }
 
-    public String createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName) throws IOException {
+    public String createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName) throws IOException, NullPointerException {
         logger.warn("thumbnail filepath = {}", filePath);
         int[] dimensions = imageUtility.getPortraitThumbnailDimensions(filePath);
         return saveThumbnails(createThumbnailOfAnImage(filePath, dimensions[0], dimensions[1]), encodedFileName, "jpg");
@@ -62,6 +62,8 @@ public class ThumbnailService implements ThumbnailRepository {
         Path thumbnailsFolder = Path.of(userUtility.returnUserFolder().getPath(), ".thumbnails");
         if (!Files.exists(thumbnailsFolder))
             Files.createDirectory(thumbnailsFolder);
+        if (thumbnail == null)
+            throw new NullPointerException("Buffered Image is null");
         Path thumbnailPath = Path.of(thumbnailsFolder.toString(), filename + "_thumbnail." + format);
         ImageIO.write(thumbnail, format, thumbnailPath.toFile());
         return thumbnailPath.toString();

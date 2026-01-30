@@ -3,6 +3,10 @@ package com.cloud.NetworkCloudDrive.Utilities;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageInputStreamImpl;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -37,7 +41,11 @@ public class ImageUtility {
     }
 
     public int[] getImageDimensions(Path imagePath) throws IOException {
-        BufferedImage image = ImageIO.read(Path.of(pathUtility.getBasePathToString(), imagePath.toString()).toFile());
+        BufferedImage image = convertPathToBufferedImage(imagePath);
         return new int[]{image.getWidth(), image.getHeight()};
+    }
+
+    public BufferedImage convertPathToBufferedImage(Path path) throws IOException {
+        return ImageIO.read(Path.of(pathUtility.getBasePathToString(), path.toString()).toFile());
     }
 }

@@ -81,7 +81,12 @@ public class FileService implements FileRepository {
             storagePathList.add(storagePath.toString());
             metadata.setName(encodedFileName);
             if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
-                thumbnailPathList.add(thumbnailService.createAndSaveThumbnailDefaultSettings(storagePath, encodedFileName));
+                String thumbnailPath = handleThumbnailCreation(storagePath, encodedFileName);
+                if (thumbnailPath == null) {
+                    logger.error("Failed to create thumbnail for file {}", fileName);
+                    continue;
+                }
+                thumbnailPathList.add(thumbnailPath);
                 metadata.setHasThumbnail(true);
             }
             uploadedFiles.add(metadata);
@@ -91,6 +96,17 @@ public class FileService implements FileRepository {
         if (!thumbnailPathList.isEmpty())
             return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList, "thumbnail_path", thumbnailPathList);
         return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList);
+    }
+
+    private String handleThumbnailCreation(Path originalFolderPath, String originalFilename) {
+        String thumbnailPath;
+        try {
+            thumbnailPath = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename);
+        } catch (IOException | NullPointerException  e) {
+            logger.error("Failed to create thumbnail {}", e.getMessage());
+            return null;
+        }
+        return thumbnailPath;
     }
 
     public Path storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
