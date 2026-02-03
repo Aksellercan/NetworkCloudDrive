@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services.Tasks;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
@@ -45,10 +46,20 @@ public class ThumbnailService implements ThumbnailRepository {
         this.imageUtility = imageUtility;
     }
 
-    public String createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName) throws IOException, NullPointerException {
+    @Override
+    public String createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException, NullPointerException {
         logger.warn("thumbnail filepath = {}", filePath);
         int[] dimensions = imageUtility.getPortraitThumbnailDimensions(filePath);
-        return saveThumbnails(createThumbnailOfAnImage(filePath, dimensions[0], dimensions[1]), encodedFileName, "jpg");
+        Path path = saveThumbnails(createThumbnailOfAnImage(filePath, dimensions[0], dimensions[1]), encodedFileName, "jpg");
+        ThumbnailMetadata metadata = saveThumbnailToDatabase(path.getFileName().toString(), path, fileId);
+        logger.info("Created thumbnail entry {}", metadata.toString());
+        return path.toString();
+    }
+
+    private ThumbnailMetadata saveThumbnailToDatabase(String filename, Path thumbnailPath, long fileId) throws IOException {
+        long size = Files.size(thumbnailPath);
+        String mimeType = fileUtility.getMimeTypeFromExtensionUsingTikaCore(thumbnailPath.toFile());
+        return sqLiteDAO.saveThumbnail(new ThumbnailMetadata(filename, userSession.getId(), mimeType, size, fileId));
     }
 
     @Override
@@ -58,7 +69,7 @@ public class ThumbnailService implements ThumbnailRepository {
         return Thumbnailator.createThumbnail(Path.of(pathUtility.getBasePathToString(), source.toString()).toFile(), width, height);
     }
 
-    public String saveThumbnails(BufferedImage thumbnail, String filename, String format) throws IOException {
+    private Path saveThumbnails(BufferedImage thumbnail, String filename, String format) throws IOException {
         Path thumbnailsFolder = Path.of(userUtility.returnUserFolder().getPath(), ".thumbnails");
         if (!Files.exists(thumbnailsFolder))
             Files.createDirectory(thumbnailsFolder);
@@ -68,16 +79,7 @@ public class ThumbnailService implements ThumbnailRepository {
         if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
             throw new IOException("Failed to write thumbnail to destination");
         }
-        return thumbnailPath.toString();
-    }
-
-    @Override
-    public List<String> createThumbnailsOfImages(List<Path> images, int width, int height) throws IOException {
-        List<String> thumbnailStoragePath = new LinkedList<>();
-        for (Path image : images) {
-            thumbnailStoragePath.add(saveThumbnails(createThumbnailOfAnImage(image, width, height), image.getFileName().toString(), "jpg"));
-        }
-        return thumbnailStoragePath;
+        return thumbnailPath;
     }
 
     @Override

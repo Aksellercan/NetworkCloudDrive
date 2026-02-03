@@ -53,9 +53,9 @@ public class FileService implements FileRepository {
 
     @Override
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
-        List<String> storagePathList = new LinkedList<>();
-        List<FileMetadata> uploadedFiles = new LinkedList<>();
-        List<String> thumbnailPathList = new LinkedList<>();
+        List<String> storagePathList = new ArrayList<>();
+        List<FileMetadata> uploadedFiles = new ArrayList<>();
+        List<String> thumbnailPathList = new ArrayList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();
@@ -81,7 +81,7 @@ public class FileService implements FileRepository {
             storagePathList.add(storagePath.toString());
             metadata.setName(encodedFileName);
             if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
-                String thumbnailPath = handleThumbnailCreation(storagePath, encodedFileName);
+                String thumbnailPath = handleThumbnailCreation(storagePath, encodedFileName, metadata.getId());
                 if (thumbnailPath != null) {
                     thumbnailPathList.add(thumbnailPath);
                     metadata.setHasThumbnail(true);
@@ -96,10 +96,10 @@ public class FileService implements FileRepository {
         return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList);
     }
 
-    private String handleThumbnailCreation(Path originalFolderPath, String originalFilename) {
+    private String handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId) {
         String thumbnailPath;
         try {
-            thumbnailPath = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename);
+            thumbnailPath = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
         } catch (IOException | NullPointerException  e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());
             return null;

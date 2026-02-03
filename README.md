@@ -12,6 +12,19 @@ Local network storage API that can store files and manage them. Uses SQLite for 
 
 - [Using Docker](DOCKER.md)
 
+# Configuration
+
+application.properties configurations can be overridden by creating file at ./config/application.properties
+
+Example configurations:
+- Configure CORS
+- Enable HTTP Basic Authentication
+- Enable logging debug level
+- Disable CSRF Protection
+- Change Springboot port
+
+... and more
+
 ## File Structure Visual
 
 ```mermaid
