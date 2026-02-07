@@ -22,12 +22,16 @@ public class ThumbnailMetadata {
     @Column(name = "userid")
     private long userId;
 
-    public ThumbnailMetadata(String fileName, long userId, String mimeType, long size, long fileId) {
+    @Column(name = "isPortrait")
+    private boolean isPortrait;
+
+    public ThumbnailMetadata(String fileName, long userId, String mimeType, long size, long fileId, boolean isPortrait) {
         this.fileName = fileName;
         this.userId = userId;
         this.mimeType = mimeType;
         this.size = size;
         this.fileId = fileId;
+        this.isPortrait = isPortrait;
     }
 
     public ThumbnailMetadata() {}

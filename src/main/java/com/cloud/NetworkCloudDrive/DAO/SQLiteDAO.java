@@ -232,9 +232,21 @@ public class SQLiteDAO {
 
     @Transactional
     public ThumbnailMetadata queryThumbnailMetadata(long thumbnailId, long userId) throws SQLException {
-        Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository.findById(thumbnailId).filter(tm -> tm.getUserId() == userId);
+        Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
+                .findById(thumbnailId)
+                .filter(tm -> tm.getUserId() == userId);
         if (thumbnailMetadata.isEmpty())
             throw new SQLException("Thumbnail with Id " + thumbnailId + " does not exist");
+        return thumbnailMetadata.get();
+    }
+
+    @Transactional
+    public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) throws SQLException {
+        Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
+                .findByFileId(fileId)
+                .filter(tm -> tm.getUserId() == userId);
+        if (thumbnailMetadata.isEmpty())
+            throw new SQLException("No Thumbnail found for file Id " + fileId);
         return thumbnailMetadata.get();
     }
 
@@ -310,7 +322,8 @@ public class SQLiteDAO {
     @Transactional
     public List<FolderMetadata> findAllStartsWithIdPath(String prefixIdPath) {
         return sqLiteFolderRepository.findAll()
-                .stream().filter(fl -> fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId())
+                .stream().filter(fl ->
+                        fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId())
                 .collect(Collectors.toList());
     }
 

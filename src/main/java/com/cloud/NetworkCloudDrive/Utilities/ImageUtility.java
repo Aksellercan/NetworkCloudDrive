@@ -13,10 +13,10 @@ import java.nio.file.Path;
 
 @Component
 public class ImageUtility {
-    private final int portraitWidth = 100;
-    private final int portraitHeight = 200;
-    private final int landscapeWidth = 100;
-    private final int landscapeHeight = 100;
+    private int portraitWidth = 100;
+    private int portraitHeight = 200;
+    private int landscapeWidth = 100;
+    private int landscapeHeight = 100;
     private final PathUtility pathUtility;
 
 
@@ -24,7 +24,7 @@ public class ImageUtility {
         this.pathUtility = pathUtility;
     }
 
-    public int[] getPortraitThumbnailDimensions(Path image) throws IOException {
+    public int[] getThumbnailDimensions(Path image) throws IOException {
         if (isPortrait(image)) {
             return new int[] {portraitWidth, portraitHeight};
         }
@@ -47,5 +47,37 @@ public class ImageUtility {
 
     public BufferedImage convertPathToBufferedImage(Path path) throws IOException {
         return ImageIO.read(Path.of(pathUtility.getBasePathToString(), path.toString()).toFile());
+    }
+
+    public int getPortraitWidth() {
+        return portraitWidth;
+    }
+
+    public void setPortraitWidth(int portraitWidth) {
+        this.portraitWidth = portraitWidth;
+    }
+
+    public int getPortraitHeight() {
+        return portraitHeight;
+    }
+
+    public void setPortraitHeight(int portraitHeight) {
+        this.portraitHeight = portraitHeight;
+    }
+
+    public int getLandscapeWidth() {
+        return landscapeWidth;
+    }
+
+    public void setLandscapeWidth(int landscapeWidth) {
+        this.landscapeWidth = landscapeWidth;
+    }
+
+    public int getLandscapeHeight() {
+        return landscapeHeight;
+    }
+
+    public void setLandscapeHeight(int landscapeHeight) {
+        this.landscapeHeight = landscapeHeight;
     }
 }
