@@ -3,12 +3,14 @@ package com.cloud.NetworkCloudDrive;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Services.UserService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
+import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,9 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystemException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 
 @SpringBootTest
@@ -39,6 +43,8 @@ class NetworkCloudDriveApplicationTests {
     UserSession userSession;
     @Autowired
     private PathUtility pathUtility;
+    @Autowired
+    private UserUtility userUtility;
 
     @Test
     void contextLoads() {
@@ -58,14 +64,14 @@ class NetworkCloudDriveApplicationTests {
     public UserEntity registerUserAndLogDetails(UserEntity userEntity) {
         UserEntity userEntityRegisterDetails = userService.registerUser(userEntity.getName(), userEntity.getMail(), userEntity.getPassword());
         logger.info(
-            "Registered UserEntity ID {} details: name {} mail {} and password {}. Extra details: registered at {}, last login {} and role {}",
-            userEntityRegisterDetails.getId(),
-            userEntityRegisterDetails.getName(),
-            userEntityRegisterDetails.getMail(),
-            userEntityRegisterDetails.getPassword(),
-            userEntityRegisterDetails.getRegisteredAt(),
-            userEntityRegisterDetails.getLastLogin(),
-            userEntityRegisterDetails.getRole()
+                "Registered UserEntity ID {} details: name {} mail {} and password {}. Extra details: registered at {}, last login {} and role {}",
+                userEntityRegisterDetails.getId(),
+                userEntityRegisterDetails.getName(),
+                userEntityRegisterDetails.getMail(),
+                userEntityRegisterDetails.getPassword(),
+                userEntityRegisterDetails.getRegisteredAt(),
+                userEntityRegisterDetails.getLastLogin(),
+                userEntityRegisterDetails.getRole()
         );
         return userEntityRegisterDetails;
     }
@@ -94,6 +100,20 @@ class NetworkCloudDriveApplicationTests {
                 fileMetadata.getMimiType(),
                 fileMetadata.getCreatedAt());
         return fileMetadata;
+    }
+
+    public ThumbnailMetadata setupThumbnailMetadataObject(String name, long fileId) {
+        ThumbnailMetadata thumbnailMetadata = new ThumbnailMetadata();
+        thumbnailMetadata.setFileName(name);
+        thumbnailMetadata.setFileId(fileId);
+        thumbnailMetadata.setPortrait(false);
+        thumbnailMetadata.setUserId(0L);
+        logger.info("Arranged Thumbnail Metadata: File name {} linked to file ID {} and belongs to user {}. Extra details: is Portrait {}",
+                thumbnailMetadata.getFileName(),
+                thumbnailMetadata.getFileId(),
+                thumbnailMetadata.getUserId(),
+                thumbnailMetadata.isPortrait());
+        return thumbnailMetadata;
     }
 
     public UserEntity setupUserObject(String name, String mail, String password, UserRole userRole) {
@@ -156,6 +176,31 @@ class NetworkCloudDriveApplicationTests {
 
         // Assert
         Assertions.assertEquals(fileMetadata, savedFileMetadata);
+    }
+
+    @Test
+    @Transactional
+    public void Thumbnail_Metadata_Save_Return_Saved_Thumbnail_Metadata() {
+        // Arrange
+        FileMetadata fileMetadata = setupFileMetadataObject("fileMetadata_test.txt", "text/plain");
+        FileMetadata savedFileMetadata = sqLiteDAO.saveFile(fileMetadata);
+        ThumbnailMetadata thumbnailMetadata = setupThumbnailMetadataObject(savedFileMetadata.getName(), savedFileMetadata.getId());
+
+        // Act
+        ThumbnailMetadata savedThumbnailMetadata = sqLiteDAO.saveThumbnail(thumbnailMetadata);
+
+        if (savedThumbnailMetadata != null)
+            logger.info(
+                    "Saved Thumbnail Metadata ID {}: File name {} linked to file ID {} and belongs to user {}. Extra details: is Portrait {}",
+                    savedThumbnailMetadata.getId(),
+                    savedThumbnailMetadata.getFileName(),
+                    savedThumbnailMetadata.getFileId(),
+                    savedThumbnailMetadata.getUserId(),
+                    savedThumbnailMetadata.isPortrait()
+            );
+
+        // Assert
+        Assertions.assertEquals(thumbnailMetadata, savedThumbnailMetadata);
     }
 
     @Test
@@ -269,7 +314,7 @@ class NetworkCloudDriveApplicationTests {
         boolean loginStatus = false;
         try {
             UserEntity userEntityRegisterDetails = registerUserAndLogDetails(userEntity);
-            if(!sqLiteDAO.checkIfUserExists(userEntityRegisterDetails.getName(), userEntityRegisterDetails.getMail())) {
+            if (!sqLiteDAO.checkIfUserExists(userEntityRegisterDetails.getName(), userEntityRegisterDetails.getMail())) {
                 throw new SecurityException("Failed to register userEntity");
             }
             loginStatus = userService.loginUser(userEntity.getName(), userEntity.getMail(), userEntity.getPassword());
@@ -334,7 +379,55 @@ class NetworkCloudDriveApplicationTests {
     }
 
     @Test
-    public void Path_Utility_Validate_Path() {
+    public void Path_Utility_Validate_Path_Returns_True() throws IOException {
+        // Arrange
+        Path path = Path.of(userUtility.returnUserFolderasPath().toString(), "hello", "world");
+        logger.info("Arranged path: {}", path);
 
+        // Act
+        boolean success = pathUtility.isPathAllowed(path);
+
+        // Assert
+        Assertions.assertTrue(success);
+    }
+
+    @Test
+    public void Path_Utility_Validate_Path_Returns_False() throws IOException {
+        // Arrange
+        Path path = Path.of(userUtility.returnUserFolderasPath().toString(), "../hello", "world");
+        logger.info("Arranged path: {}", path);
+        logger.info("Normalized path: {}", path.normalize());
+
+        // Act
+        boolean success = pathUtility.isPathAllowed(path);
+
+        // Assert
+        Assertions.assertFalse(success);
+    }
+
+    @Test
+    public void Path_Utility_Validate_File_Name_Returns_True() {
+        // Arrange
+        String filename = "helloworld.txt";
+        logger.info("Arranged filename: {}", filename);
+
+        // Act
+        boolean success = pathUtility.isFilenameAllowed(filename);
+
+        // Assert
+        Assertions.assertTrue(success);
+    }
+
+    @Test
+    public void Path_Utility_Validate_File_Name_Returns_False() {
+        // Arrange
+        String filename = "../helloworld.txt";
+        logger.info("Arranged filename: {}", filename);
+
+        // Act
+        boolean success = pathUtility.isFilenameAllowed(filename);
+
+        // Assert
+        Assertions.assertFalse(success);
     }
 }
