@@ -15,8 +15,8 @@ public interface ThumbnailRepository {
     String createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException, NullPointerException;
     BufferedImage createThumbnailOfAnImage(Path source, int width, int height) throws IOException;
     void deleteAllThumbnails();
-    void deleteThumbnailByThumbnailID(long thumbnailId) throws SQLException;
-    void deleteThumbnailByFileID(long fileId) throws SQLException;
+    void deleteThumbnailByThumbnailID(long thumbnailId) throws SQLException, IOException;
+    void deleteThumbnailByFileID(long fileId) throws SQLException, IOException;
     Resource getThumbnail(String thumbnailFilename, boolean isPortrait) throws Exception;
     ThumbnailMetadata getThumbnailByFileID(long fileId) throws SQLException;
     ThumbnailMetadata getThumbnailByID(long thumbnailId) throws SQLException;

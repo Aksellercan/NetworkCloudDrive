@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services.Tasks;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
@@ -16,6 +17,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
+import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.awt.image.BufferedImage;
@@ -74,7 +76,7 @@ public class ThumbnailService implements ThumbnailRepository {
     private Path saveThumbnails(BufferedImage thumbnail, String filename, String format, boolean isPortrait) throws IOException {
         if (thumbnail == null)
             throw new NullPointerException("Buffered Image is null");
-        Path thumbnailPath = Path.of(pathUtility.createThumbnailDirectories(userUtility.returnUserFolder().getPath(), isPortrait).toString(),  filename + "_thumbnail." + format);
+        Path thumbnailPath = Path.of(imageUtility.createThumbnailDirectories(userUtility.returnUserFolder().getPath(), isPortrait).toString(),  filename + "_thumbnail." + format);
         if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
             throw new IOException("Failed to write thumbnail to destination");
         }
@@ -87,13 +89,34 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public void deleteThumbnailByThumbnailID(long thumbnailId) throws SQLException {
-        sqLiteDAO.deleteThumbnail(sqLiteDAO.queryThumbnailMetadata(thumbnailId, userSession.getId()));
+    public void deleteThumbnailByThumbnailID(long thumbnailId) throws SQLException, IOException {
+        ThumbnailMetadata thumbnailMetadata = sqLiteDAO.queryThumbnailMetadata(thumbnailId, userSession.getId());
+        sqLiteDAO.deleteThumbnail(thumbnailMetadata);
+        deleteThumbnailFile(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
+        FileMetadata fileMetadata = sqLiteDAO.queryFileMetadata(thumbnailMetadata.getFileId(), userSession.getId());
+        fileMetadata.setHasThumbnail(false);
+        sqLiteDAO.saveFile(fileMetadata);
     }
 
     @Override
-    public void deleteThumbnailByFileID(long fileId) throws SQLException {
-        sqLiteDAO.deleteThumbnail(sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId()));
+    public void deleteThumbnailByFileID(long fileId) throws SQLException, IOException {
+        ThumbnailMetadata thumbnailMetadata = sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId());
+        sqLiteDAO.deleteThumbnail(thumbnailMetadata);
+        deleteThumbnailFile(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
+        FileMetadata fileMetadata = sqLiteDAO.queryFileMetadata(fileId, userSession.getId());
+        fileMetadata.setHasThumbnail(false);
+        sqLiteDAO.saveFile(fileMetadata);
+    }
+
+    private void deleteThumbnailsFolder() {
+
+    }
+
+    private void deleteThumbnailFile(String thumbnailFilename, boolean isPortrait) throws IOException {
+        Path thumbnailPath =  Path.of(imageUtility.getThumbnailPath(isPortrait).toString(), thumbnailFilename);
+        if (!Files.deleteIfExists(thumbnailPath))
+            throw new FileNotFoundException(String.format("Thumbnail by name %s not found", thumbnailFilename));
+        logger.info("Deleted thumbnail by name {}", thumbnailFilename);
     }
 
     @Override
@@ -108,7 +131,7 @@ public class ThumbnailService implements ThumbnailRepository {
 
     @Override
     public Resource getThumbnail(String thumbnailFilename, boolean isPortrait) throws Exception {
-        Path thumbnailPath =  Path.of(pathUtility.getThumbnailPath(isPortrait).toString(), thumbnailFilename);
+        Path thumbnailPath =  Path.of(imageUtility.getThumbnailPath(isPortrait).toString(), thumbnailFilename);
         Path normalizedRoot = pathUtility.getBasePath().normalize().toAbsolutePath();
         if (thumbnailPath.startsWith(normalizedRoot))
             throw new SecurityException("Unauthorized access");

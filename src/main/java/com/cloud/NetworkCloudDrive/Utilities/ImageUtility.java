@@ -3,16 +3,15 @@ package com.cloud.NetworkCloudDrive.Utilities;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageInputStreamImpl;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Component
 public class ImageUtility {
+    private final UserUtility userUtility;
     private int portraitWidth = 100;
     private int portraitHeight = 200;
     private int landscapeWidth = 100;
@@ -20,8 +19,9 @@ public class ImageUtility {
     private final PathUtility pathUtility;
 
 
-    public ImageUtility(PathUtility pathUtility) {
+    public ImageUtility(PathUtility pathUtility, UserUtility userUtility) {
         this.pathUtility = pathUtility;
+        this.userUtility = userUtility;
     }
 
     public int[] getThumbnailDimensions(Path image) throws IOException {
@@ -52,6 +52,27 @@ public class ImageUtility {
     public int getPortraitWidth() {
         return portraitWidth;
     }
+
+    public Path getThumbnailPath(boolean isPortrait) throws IOException {
+        return getSizeFolder(userUtility.returnUserFolderasPath().toString(), isPortrait);
+    }
+
+    public Path getSizeFolder(String userFolder, boolean isPortrait) {
+        Path portraitThumbnailsFolder = Path.of(userFolder, ".thumbnails", "portrait");
+        Path horizontalThumbnailsFolder = Path.of(userFolder, ".thumbnails", "horizontal");
+        return isPortrait ? portraitThumbnailsFolder : horizontalThumbnailsFolder;
+    }
+
+    public Path createThumbnailDirectories(String path, boolean isPortrait) throws IOException {
+        Path thumbnailsFolder = Path.of(path, ".thumbnails");
+        if (!Files.exists(thumbnailsFolder))
+            Files.createDirectory(thumbnailsFolder);
+        // create subfolders portrait/horizontal
+        Path portraitThumbnailsFolder = Path.of(path, ".thumbnails", "portrait");
+        Path horizontalThumbnailsFolder = Path.of(path, ".thumbnails", "horizontal");
+        return isPortrait ? Files.createDirectory(portraitThumbnailsFolder) : Files.createDirectory(horizontalThumbnailsFolder);
+    }
+
 
     public void setPortraitWidth(int portraitWidth) {
         this.portraitWidth = portraitWidth;

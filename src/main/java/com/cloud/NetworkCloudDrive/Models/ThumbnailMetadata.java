@@ -23,7 +23,7 @@ public class ThumbnailMetadata {
     private long userId;
 
     @Column(name = "isPortrait")
-    private boolean isPortrait;
+    private boolean isPortrait = false;
 
     public ThumbnailMetadata(String fileName, long userId, String mimeType, long size, long fileId, boolean isPortrait) {
         this.fileName = fileName;
