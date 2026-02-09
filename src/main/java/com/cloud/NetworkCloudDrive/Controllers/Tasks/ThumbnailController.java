@@ -42,7 +42,7 @@ public class ThumbnailController {
         } catch (Exception e) {
             logger.error("Thumbnail Controller {}", e.getMessage());
             return ResponseEntity.internalServerError().body(
-                    new JSONErrorResponse(e, "Failed to thumbnail"));
+                    new JSONErrorResponse(e, "Failed to get thumbnail"));
         }
     }
 
@@ -62,7 +62,7 @@ public class ThumbnailController {
         } catch (Exception e) {
             logger.error("Thumbnail Controller {}", e.getMessage());
             return ResponseEntity.internalServerError().body(
-                    new JSONErrorResponse(e, "Failed to thumbnail"));
+                    new JSONErrorResponse(e, "Failed to get thumbnail"));
         }
     }
 
@@ -88,7 +88,7 @@ public class ThumbnailController {
     @DeleteMapping("deletebyfileid")
     public @ResponseBody ResponseEntity<?> deleteThumbnailByFileID(@RequestParam long fileId) {
         try {
-            thumbnailService.deleteThumbnailByFileID(fileId);
+            thumbnailService.deleteThumbnailByFileIDAndSetThumbnailStatus(fileId);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Thumbnail with related to File Id %d was successfully removed", fileId));
         } catch (FileNotFoundException fnf) {

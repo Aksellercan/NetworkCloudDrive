@@ -76,7 +76,7 @@ public class ThumbnailService implements ThumbnailRepository {
     private Path saveThumbnails(BufferedImage thumbnail, String filename, String format, boolean isPortrait) throws IOException {
         if (thumbnail == null)
             throw new NullPointerException("Buffered Image is null");
-        Path thumbnailPath = Path.of(imageUtility.createThumbnailDirectories(userUtility.returnUserFolder().getPath(), isPortrait).toString(),  filename + "_thumbnail." + format);
+        Path thumbnailPath = Path.of(imageUtility.getThumbnailPath(isPortrait).toString(),  filename + "_thumbnail." + format);
         if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
             throw new IOException("Failed to write thumbnail to destination");
         }
@@ -100,6 +100,12 @@ public class ThumbnailService implements ThumbnailRepository {
 
     @Override
     public void deleteThumbnailByFileID(long fileId) throws SQLException, IOException {
+        ThumbnailMetadata thumbnailMetadata = sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId());
+        sqLiteDAO.deleteThumbnail(thumbnailMetadata);
+        deleteThumbnailFile(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
+    }
+
+    public void deleteThumbnailByFileIDAndSetThumbnailStatus(long fileId) throws SQLException, IOException {
         ThumbnailMetadata thumbnailMetadata = sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId());
         sqLiteDAO.deleteThumbnail(thumbnailMetadata);
         deleteThumbnailFile(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
