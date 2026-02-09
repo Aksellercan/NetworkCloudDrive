@@ -63,14 +63,17 @@ public class ImageUtility {
         return isPortrait ? portraitThumbnailsFolder : horizontalThumbnailsFolder;
     }
 
-    public Path createThumbnailDirectories(String path, boolean isPortrait) throws IOException {
-        Path thumbnailsFolder = Path.of(path, ".thumbnails");
+    public void createThumbnailDirectories(Path path) throws IOException {
+        Path thumbnailsFolder = Path.of(path.toString(), ".thumbnails");
         if (!Files.exists(thumbnailsFolder))
             Files.createDirectory(thumbnailsFolder);
         // create subfolders portrait/horizontal
-        Path portraitThumbnailsFolder = Path.of(path, ".thumbnails", "portrait");
-        Path horizontalThumbnailsFolder = Path.of(path, ".thumbnails", "horizontal");
-        return isPortrait ? Files.createDirectory(portraitThumbnailsFolder) : Files.createDirectory(horizontalThumbnailsFolder);
+        Path portraitThumbnailsFolder = Path.of(path.toString(), ".thumbnails", "portrait");
+        if (!Files.exists(portraitThumbnailsFolder))
+            Files.createDirectory(portraitThumbnailsFolder);
+        Path horizontalThumbnailsFolder = Path.of(path.toString(), ".thumbnails", "horizontal");
+        if (!Files.exists(horizontalThumbnailsFolder))
+            Files.createDirectory(horizontalThumbnailsFolder);
     }
 
 

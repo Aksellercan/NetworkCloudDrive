@@ -76,6 +76,8 @@ public class ThumbnailService implements ThumbnailRepository {
     private Path saveThumbnails(BufferedImage thumbnail, String filename, String format, boolean isPortrait) throws IOException {
         if (thumbnail == null)
             throw new NullPointerException("Buffered Image is null");
+        // if thumbnails folder does not exist
+        imageUtility.createThumbnailDirectories(userUtility.returnUserFolderasPath());
         Path thumbnailPath = Path.of(imageUtility.getThumbnailPath(isPortrait).toString(),  filename + "_thumbnail." + format);
         if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
             throw new IOException("Failed to write thumbnail to destination");
