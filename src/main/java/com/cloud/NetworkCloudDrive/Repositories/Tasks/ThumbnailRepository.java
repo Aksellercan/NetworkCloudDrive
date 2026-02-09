@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Repositories.Tasks;
 
+import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Repository;
 
@@ -17,4 +18,6 @@ public interface ThumbnailRepository {
     void deleteThumbnailByThumbnailID(long thumbnailId) throws SQLException;
     void deleteThumbnailByFileID(long fileId) throws SQLException;
     Resource getThumbnail(String thumbnailFilename, boolean isPortrait) throws Exception;
+    ThumbnailMetadata getThumbnailByFileID(long fileId) throws SQLException;
+    ThumbnailMetadata getThumbnailByID(long thumbnailId) throws SQLException;
     }

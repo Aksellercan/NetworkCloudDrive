@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -11,7 +12,7 @@ public class FileStorageProperties {
     private String basePath;
 
     public FileStorageProperties() {
-        this.basePath = "."+ File.separator + "root" + File.separator;
+        this.basePath = "." + File.separator + "root" + File.separator;
     }
 
     public String getFullPath(String username) {

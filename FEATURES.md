@@ -60,5 +60,5 @@
 
 | Method | 	Route                                                       | 	Description                          | Working            |
 |--------|--------------------------------------------------------------|---------------------------------------|--------------------|
-| GET    | 	api/thumbnails/scan?folderid={id}                           | Get thumbnail of file with file ID    | :heavy_minus_sign: |
-| POST   | 	api/thumbnails/scan?folderid={id}&scanOptions={ScanOptions} | Create thumbnail of file with file ID | :heavy_minus_sign: |
+| GET    | 	api/thumbnails/get?thumbId={id}                             | Get thumbnail by ID                   | :heavy_check_sign: |
+| GET    | 	api/thumbnails/getbyfileid?fileId={id}                      | Get thumbnail of file with file ID    | :heavy_check_sign: |

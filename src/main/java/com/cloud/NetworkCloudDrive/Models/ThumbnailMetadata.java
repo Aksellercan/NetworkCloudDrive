@@ -69,6 +69,15 @@ public class ThumbnailMetadata {
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
     }
+    public boolean isPortrait() {
+        return isPortrait;
+    }
+    public void setPortrait(boolean portrait) {
+        isPortrait = portrait;
+    }
+    public void setSize(long size) {
+        this.size = size;
+    }
     @Override
     public String toString() {
         return String.format("ID: %d Name: %s MimeType: %s Size: %d, FileID: %d", this.id, this.fileName, this.mimeType, this.size, this.fileId);

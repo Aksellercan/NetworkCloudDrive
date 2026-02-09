@@ -1,7 +1,6 @@
 package com.cloud.NetworkCloudDrive.Services.Tasks;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -73,20 +71,10 @@ public class ThumbnailService implements ThumbnailRepository {
         return Thumbnailator.createThumbnail(Path.of(pathUtility.getBasePathToString(), source.toString()).toFile(), width, height);
     }
 
-    private Path createThumbnailDirectories(String path, boolean isPortrait) throws IOException {
-        Path thumbnailsFolder = Path.of(path, ".thumbnails");
-        if (!Files.exists(thumbnailsFolder))
-            Files.createDirectory(thumbnailsFolder);
-        // create subfolders portrait/horizontal
-        Path portraitThumbnailsFolder = Path.of(path, ".thumbnails", "portrait");
-        Path horizontalThumbnailsFolder = Path.of(path, ".thumbnails", "horizontal");
-        return isPortrait ? Files.createDirectory(portraitThumbnailsFolder) : Files.createDirectory(horizontalThumbnailsFolder);
-    }
-
     private Path saveThumbnails(BufferedImage thumbnail, String filename, String format, boolean isPortrait) throws IOException {
         if (thumbnail == null)
             throw new NullPointerException("Buffered Image is null");
-        Path thumbnailPath = Path.of(createThumbnailDirectories(userUtility.returnUserFolder().getPath(), isPortrait).toString(),  filename + "_thumbnail." + format);
+        Path thumbnailPath = Path.of(pathUtility.createThumbnailDirectories(userUtility.returnUserFolder().getPath(), isPortrait).toString(),  filename + "_thumbnail." + format);
         if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
             throw new IOException("Failed to write thumbnail to destination");
         }
@@ -108,21 +96,24 @@ public class ThumbnailService implements ThumbnailRepository {
         sqLiteDAO.deleteThumbnail(sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId()));
     }
 
-//    public Resource getFile(FileMetadata file, String path) throws Exception {
-//        Path filePath = Paths.get(pathUtility.getFullPathToString(path), file.getName());
-//        logger.info("file service path: {}", filePath);
-//        Path normalizedRoot = pathUtility.getBasePath().normalize().toAbsolutePath();
-//        if (filePath.startsWith(normalizedRoot))
-//            throw new SecurityException("Unauthorized access");
+    @Override
+    public ThumbnailMetadata getThumbnailByID(long thumbnailId) throws SQLException {
+        return sqLiteDAO.queryThumbnailMetadata(thumbnailId, userSession.getId());
+    }
+
+    @Override
+    public ThumbnailMetadata getThumbnailByFileID(long fileId) throws SQLException {
+        return sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId());
+    }
 
     @Override
     public Resource getThumbnail(String thumbnailFilename, boolean isPortrait) throws Exception {
-//        Path filePath = Paths.get(pathUtility.getFullPath(), file.getName());
+        Path thumbnailPath =  Path.of(pathUtility.getThumbnailPath(isPortrait).toString(), thumbnailFilename);
         Path normalizedRoot = pathUtility.getBasePath().normalize().toAbsolutePath();
-//        if (thumbnailPath.startsWith(normalizedRoot))
-//            throw new SecurityException("Unauthorized access");
-//        if (!Files.exists(thumbnailPath))
-//            throw new IOException("File does not exist");
-        return new UrlResource(normalizedRoot.toAbsolutePath().toUri());
+        if (thumbnailPath.startsWith(normalizedRoot))
+            throw new SecurityException("Unauthorized access");
+        if (!Files.exists(thumbnailPath))
+            throw new IOException("File does not exist");
+        return new UrlResource(thumbnailPath.toAbsolutePath().toUri());
     }
 }

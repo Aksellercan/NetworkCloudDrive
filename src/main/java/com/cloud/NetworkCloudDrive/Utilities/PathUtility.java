@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
@@ -196,5 +197,25 @@ public class PathUtility {
         }
         idPath.setLength(idPath.length() - 1);
         return idPath.toString();
+    }
+
+    public Path getThumbnailPath(boolean isPortrait) throws IOException {
+        return getSizeFolder(userUtility.returnUserFolderasPath().toString(), isPortrait);
+    }
+
+    public Path getSizeFolder(String userFolder, boolean isPortrait) {
+        Path portraitThumbnailsFolder = Path.of(userFolder, ".thumbnails", "portrait");
+        Path horizontalThumbnailsFolder = Path.of(userFolder, ".thumbnails", "horizontal");
+        return isPortrait ? portraitThumbnailsFolder : horizontalThumbnailsFolder;
+    }
+
+    public Path createThumbnailDirectories(String path, boolean isPortrait) throws IOException {
+        Path thumbnailsFolder = Path.of(path, ".thumbnails");
+        if (!Files.exists(thumbnailsFolder))
+            Files.createDirectory(thumbnailsFolder);
+        // create subfolders portrait/horizontal
+        Path portraitThumbnailsFolder = Path.of(path, ".thumbnails", "portrait");
+        Path horizontalThumbnailsFolder = Path.of(path, ".thumbnails", "horizontal");
+        return isPortrait ? Files.createDirectory(portraitThumbnailsFolder) : Files.createDirectory(horizontalThumbnailsFolder);
     }
 }
