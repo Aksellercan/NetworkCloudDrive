@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Repositories;
+package com.cloud.NetworkCloudDrive.Repositories.Tasks;
 
 import org.springframework.stereotype.Repository;
 

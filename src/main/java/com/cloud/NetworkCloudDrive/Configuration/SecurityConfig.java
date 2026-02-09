@@ -1,6 +1,6 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
-import com.cloud.NetworkCloudDrive.Utilities.SecurityUtility;
+import com.cloud.NetworkCloudDrive.Utilities.Security.SecurityUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -85,6 +85,11 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
 
+    // Information about CORS setting
+    private boolean checkIfCORSPropertiesAreSet(List<String> properties) {
+        return properties.stream().filter(prop -> !prop.isEmpty()).toList().isEmpty();
+    }
+
     private List<List<String>> setupCors() {
         List<String> properties = List.of(
                 env.getProperty("cors-allowed-origins-patterns", ""),
@@ -93,8 +98,12 @@ public class SecurityConfig {
                 env.getProperty("cors-exposed-headers", "")
         );
         List<List<String>> collect = new ArrayList<>();
+        if (checkIfCORSPropertiesAreSet(properties)) {
+            logger.warn("CORS properties are not set!");
+            return collect;
+        }
         for (String property : properties) {
-            collect.add(Arrays.asList(property.replaceAll("\"", "").split(",")));
+            collect.add(List.of(property.replaceAll("\"", "").split(",")));
         }
         return collect;
     }
@@ -104,17 +113,18 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // Apply CORS settings
         List<List<String>> corsSettings = setupCors();
-
+        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        if (corsSettings.isEmpty()) {
+            return new CorsFilter(source);
+        }
         configuration.setAllowedOriginPatterns(corsSettings.get(0));
         configuration.setAllowedHeaders(corsSettings.get(1));
         configuration.setAllowedMethods(corsSettings.get(2));
-        configuration.setMaxAge(3600L);
-        configuration.setAllowCredentials(true);
+        long maxAge = Long.parseLong(env.getProperty("cors-maximum-age", "3600"));
+        configuration.setMaxAge(maxAge);
+        configuration.setAllowCredentials(Boolean.parseBoolean(env.getProperty("cors-allow-credentials")));
         configuration.setExposedHeaders(corsSettings.get(3)); //expose headers for JS to see
-        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return new CorsFilter(source);
     }
-
-
 }

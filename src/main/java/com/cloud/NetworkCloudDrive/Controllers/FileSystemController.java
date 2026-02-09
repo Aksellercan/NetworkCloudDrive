@@ -11,7 +11,7 @@ import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Services.FileSystemService;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
+import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
@@ -20,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
 import java.nio.file.FileSystemException;
 import java.nio.file.Path;
 import java.util.List;
@@ -150,7 +149,7 @@ public class FileSystemController {
         }
     }
 
-    //TODO add pagination max like = 12 items
+    //TODO add pagination max like = 6 items per type (files/folders)
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid) {
         try {

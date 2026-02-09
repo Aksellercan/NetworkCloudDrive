@@ -10,6 +10,7 @@ import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Services.UserService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+import com.cloud.NetworkCloudDrive.Utilities.ImageUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,16 +30,18 @@ public class UserController {
     private final UserSession userSession;
     private final SQLiteDAO sqLiteDAO;
     private final UserUtility userUtility;
+    private final ImageUtility imageUtility;
 
     public UserController(
             UserService userService,
             UserSession userSession,
             SQLiteDAO sqLiteDAO,
-            UserUtility userUtility) {
+            UserUtility userUtility, ImageUtility imageUtility) {
         this.userService = userService;
         this.userSession = userSession;
         this.sqLiteDAO = sqLiteDAO;
         this.userUtility = userUtility;
+        this.imageUtility = imageUtility;
     }
 
     @PostMapping("register")
@@ -46,7 +49,7 @@ public class UserController {
         try {
             UserEntity registeredUserEntity = userService.registerUser(userDTO.getName(), userDTO.getMail(), userDTO.getPassword());
             //create user directory
-            userUtility.createUserDirectory(registeredUserEntity.getId(), registeredUserEntity.getName(), registeredUserEntity.getMail());
+            imageUtility.createThumbnailDirectories(userUtility.createUserDirectory(registeredUserEntity.getId(), registeredUserEntity.getName(), registeredUserEntity.getMail()));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONMapResponse(Map.of(
                             "id", registeredUserEntity.getId(),

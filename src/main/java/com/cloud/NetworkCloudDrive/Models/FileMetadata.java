@@ -5,7 +5,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 
-//TODO fix createdAt to be more readable and add ownership (later after auth)
 //TODO Last updated
 
 @Entity
@@ -31,6 +30,9 @@ public class FileMetadata {
     @Column(name = "createdAt")
     @CreationTimestamp
     private Instant createdAt;
+
+    @Column(name = "hasThumbnail")
+    private boolean hasThumbnail = false;
 
     public FileMetadata(String name, Long folderId, Long userid, String mimiType, Long size) {
         this.name = name;
@@ -83,5 +85,11 @@ public class FileMetadata {
     }
     public void setName(String name) {
         this.name = name;
+    }
+    public boolean isHasThumbnail() {
+        return hasThumbnail;
+    }
+    public void setHasThumbnail(boolean hasThumbnail) {
+        this.hasThumbnail = hasThumbnail;
     }
 }

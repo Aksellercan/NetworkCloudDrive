@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Repositories;
+package com.cloud.NetworkCloudDrive.Repositories.Services;
 
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;

@@ -27,7 +27,6 @@ public class UserSession {
     private final Logger logger = LoggerFactory.getLogger(UserSession.class);
     private final Environment env;
 
-
     public UserSession(SQLiteDAO sqLiteDAO, Environment env) {
         this.sqLiteDAO = sqLiteDAO;
         this.env = env;
@@ -36,7 +35,7 @@ public class UserSession {
     @PostConstruct
     @Transactional
     public CurrentUserDTO initializeUserSessionDetails() throws UsernameNotFoundException {
-        if (Boolean.parseBoolean(env.getProperty("unit-test"))) return new CurrentUserDTO();
+        if (Boolean.parseBoolean(env.getProperty("environment.unit-test"))) return new CurrentUserDTO();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) throw new UsernameNotFoundException("Invalid authentication");
         if (this.name != null) {

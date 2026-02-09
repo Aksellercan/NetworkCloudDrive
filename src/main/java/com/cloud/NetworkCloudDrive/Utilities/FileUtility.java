@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
+import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -5,7 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.*;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Services.FileService;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
-import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
+import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +69,7 @@ public class FileController {
             Resource file = fileService.getFile(metadata, actualPath);
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + decodedFileName + "\" "). //return filename
+                            "attachment; filename=\"" + decodedFileName + "\" ").
                             contentType(MediaType.parseMediaType(metadata.getMimiType())).
                     contentLength(metadata.getSize()).body(file);
         }

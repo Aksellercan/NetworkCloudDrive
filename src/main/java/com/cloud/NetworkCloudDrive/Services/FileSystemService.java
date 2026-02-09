@@ -4,9 +4,10 @@ import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Repositories.FileSystemRepository;
+import com.cloud.NetworkCloudDrive.Repositories.Services.FileSystemRepository;
+import com.cloud.NetworkCloudDrive.Services.Tasks.ThumbnailService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
+import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
@@ -33,6 +34,7 @@ public class FileSystemService implements FileSystemRepository {
     private final EncodingUtility encodingUtility;
     private final UserUtility userUtility;
     private final PathUtility pathUtility;
+    private final ThumbnailService thumbnailService;
 
     public FileSystemService(
             UserSession userSession,
@@ -40,13 +42,14 @@ public class FileSystemService implements FileSystemRepository {
             SQLiteDAO sqLiteDAO,
             EncodingUtility encodingUtility,
             UserUtility userUtility,
-            PathUtility pathUtility) {
+            PathUtility pathUtility, ThumbnailService thumbnailService) {
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.encodingUtility = encodingUtility;
         this.userUtility = userUtility;
         this.pathUtility = pathUtility;
+        this.thumbnailService = thumbnailService;
     }
 
     @Override
@@ -88,6 +91,7 @@ public class FileSystemService implements FileSystemRepository {
         if (!Files.deleteIfExists(checkExists))
             throw new FileSystemException(String.format("Failed to remove folder at path %s\n", checkExists));
         sqLiteDAO.deleteFile(file);
+        thumbnailService.deleteThumbnailByFileID(file.getId());
         return checkExists.toString();
     }
 

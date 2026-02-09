@@ -1,13 +1,12 @@
-package com.cloud.NetworkCloudDrive.Services;
+package com.cloud.NetworkCloudDrive.Services.Tasks;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
-import com.cloud.NetworkCloudDrive.Repositories.MaintenanceRepository;
+import com.cloud.NetworkCloudDrive.Repositories.Tasks.MaintenanceRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
+import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
@@ -29,7 +28,6 @@ public class MaintenanceService implements MaintenanceRepository {
     private final EncodingUtility encodingUtility;
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
-    private final FileStorageProperties fileStorageProperties;
     private final PathUtility pathUtility;
 
     public MaintenanceService(
@@ -37,19 +35,17 @@ public class MaintenanceService implements MaintenanceRepository {
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
-            FileStorageProperties fileStorageProperties,
             PathUtility pathUtility) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
-        this.fileStorageProperties = fileStorageProperties;
         this.pathUtility = pathUtility;
     }
 
     //controller for scan options
     public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
-        Path startingDirectory = Path.of(fileStorageProperties.getFullPath(pathUtility.getFolderPath(folderId)));
+        Path startingDirectory = pathUtility.getFullPath(pathUtility.getFolderPath(folderId));
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:
@@ -115,7 +111,6 @@ public class MaintenanceService implements MaintenanceRepository {
 
     @Override
     public void handleFileCheck(File currentFile, long folderId) throws IOException {
-        boolean filenameIsBase32Encoded = false;
         if (encodingUtility.isBase32Decodable(currentFile.getName())) {
             //if its base32 decodable check if its in db
             // we can also decode Base32 and get id to search by ID index could be more performant
@@ -125,7 +120,6 @@ public class MaintenanceService implements MaintenanceRepository {
                 return;
             }
             logger.info("File does not exist {}", currentFile.getName());
-            filenameIsBase32Encoded = true;
         }
         logger.info("-> FILE {}", currentFile.getPath());
         FileMetadata metadata =
@@ -136,11 +130,9 @@ public class MaintenanceService implements MaintenanceRepository {
                         fileUtility.getMimeTypeFromExtensionUsingTikaCore(currentFile),
                         currentFile.getTotalSpace());
         sqLiteDAO.persistObjects(metadata);
-        if (!filenameIsBase32Encoded) {
-            // Encode in BASE32
-            String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
-            metadata.setName(encodedFileName);
-        }
+        // Encode in BASE32
+        String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
+        metadata.setName(encodedFileName);
         logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
                 metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
         sqLiteDAO.saveFile(metadata);

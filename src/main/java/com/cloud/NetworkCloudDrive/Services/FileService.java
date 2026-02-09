@@ -3,9 +3,11 @@ package com.cloud.NetworkCloudDrive.Services;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
+import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
+import com.cloud.NetworkCloudDrive.Repositories.Services.FileRepository;
+import com.cloud.NetworkCloudDrive.Services.Tasks.ThumbnailService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.EncodingUtility;
+import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
@@ -18,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.*;
 import java.util.*;
 
@@ -26,37 +27,42 @@ import java.util.*;
 public class FileService implements FileRepository {
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
-    private final Path rootPath;
     private final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
     private final PathUtility pathUtility;
+    private final ThumbnailProperties thumbnailProperties;
+    private final ThumbnailService thumbnailService;
 
     public FileService(
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
-            PathUtility pathUtility) {
+            PathUtility pathUtility,
+            ThumbnailProperties thumbnailProperties,
+            ThumbnailService thumbnailService) {
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
-        this.rootPath = pathUtility.getBasePath();
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
+        this.thumbnailProperties = thumbnailProperties;
+        this.thumbnailService = thumbnailService;
     }
 
     @Override
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
-        List<String> storagePathList = new LinkedList<>();
-        List<FileMetadata> uploadedFiles = new LinkedList<>();
+        List<String> storagePathList = new ArrayList<>();
+        List<FileMetadata> uploadedFiles = new ArrayList<>();
+        List<String> thumbnailPathList = new ArrayList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();
         for (MultipartFile file : sortedBySize) {
             String fileName = file.getOriginalFilename();
             if (fileName == null) continue;
-            if (fileName.startsWith(".")) {
+            if (!pathUtility.isFilenameAllowed(fileName)) {
                 logger.warn("Invalid filename {}", fileName);
                 continue;
             }
@@ -70,33 +76,54 @@ public class FileService implements FileRepository {
             sqLiteDAO.persistObjects(metadata);
             // Encode in BASE32
             String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), fileName, userSession.getId());
-            try (InputStream inputStream = file.getInputStream()) {
-                storagePathList.add(storeFile(inputStream, encodedFileName, folderPath));
-            }
+            Path storagePath = storeFile(file.getInputStream(), encodedFileName, folderPath);
+            logger.debug("storage path {}", storagePath);
+            storagePathList.add(storagePath.toString());
             metadata.setName(encodedFileName);
+            if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
+                String thumbnailPath = handleThumbnailCreation(storagePath, encodedFileName, metadata.getId());
+                if (thumbnailPath != null) {
+                    thumbnailPathList.add(thumbnailPath);
+                    metadata.setHasThumbnail(true);
+                }
+            }
             uploadedFiles.add(metadata);
         }
         if (storagePathList.isEmpty())
             throw new FileAlreadyExistsException("File(s) already exists at destination");
+        if (!thumbnailPathList.isEmpty())
+            return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList, "thumbnail_path", thumbnailPathList);
         return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList);
     }
 
-    public String storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
-        Path userDirectory = rootPath.resolve(Path.of(parentPath)); /* To be extended */
+    private String handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId) {
+        String thumbnailPath;
+        try {
+            thumbnailPath = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
+        } catch (IOException | NullPointerException  e) {
+            logger.error("Failed to create thumbnail {}", e.getMessage());
+            return null;
+        }
+        return thumbnailPath;
+    }
+
+    public Path storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
+        Path userDirectory = pathUtility.getBasePath().resolve(Path.of(parentPath)); /* To be extended */
         Files.createDirectories(userDirectory);
         Path filePath = userDirectory.resolve(fileName);
-        if (!pathUtility.isPathAllowed(filePath)) throw new IOException("Path not allowed");
-        try (OutputStream outputStream = Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW)) {
-            StreamUtils.copy(inputStream, outputStream);
-        }
-        return rootPath.relativize(filePath).toString();
+        if (!pathUtility.isPathAllowed(filePath))
+            throw new IOException("Path not allowed");
+        if (!pathUtility.isFilenameAllowed(fileName))
+            throw new IOException("Filename is not allowed");
+        StreamUtils.copy(inputStream, Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW));
+        return pathUtility.getBasePath().relativize(filePath);
     }
 
     @Override
     public Resource getFile(FileMetadata file, String path) throws Exception {
         Path filePath = Paths.get(pathUtility.getFullPathToString(path), file.getName());
         logger.info("file service path: {}", filePath);
-        Path normalizedRoot = rootPath.normalize().toAbsolutePath();
+        Path normalizedRoot = pathUtility.getBasePath().normalize().toAbsolutePath();
         if (filePath.startsWith(normalizedRoot))
             throw new SecurityException("Unauthorized access");
         if (!Files.exists(filePath))

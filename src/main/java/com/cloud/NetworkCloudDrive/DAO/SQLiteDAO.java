@@ -3,15 +3,16 @@ package com.cloud.NetworkCloudDrive.DAO;
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFileRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFolderRepository;
+import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteUserEntityRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.actuate.logging.LoggersEndpoint;
 import org.springframework.data.domain.Example;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,7 @@ public class SQLiteDAO {
     private final SQLiteFolderRepository sqLiteFolderRepository;
     private final SQLiteFileRepository sqLiteFileRepository;
     private final SQLiteUserEntityRepository sqLiteUserEntityRepository;
+    private final SQLiteThumbnailRepository sqLiteThumbnailRepository;
     private final UserSession userSession;
     private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
 
@@ -37,11 +39,13 @@ public class SQLiteDAO {
             SQLiteFolderRepository sqLiteFolderRepository,
             SQLiteFileRepository sqLiteFileRepository,
             SQLiteUserEntityRepository sqLiteUserEntityRepository,
+            SQLiteThumbnailRepository sqLiteThumbnailRepository,
             EntityManager entityManager,
             UserSession userSession) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
+        this.sqLiteThumbnailRepository = sqLiteThumbnailRepository;
         this.entityManager = entityManager;
         this.userSession = userSession;
     }
@@ -61,6 +65,10 @@ public class SQLiteDAO {
         return sqLiteFileRepository;
     }
 
+    public SQLiteThumbnailRepository getSqLiteThumbnailRepository() {
+        return sqLiteThumbnailRepository;
+    }
+
     // Delete
     @Transactional
     public void deleteFolder(FolderMetadata folder) {
@@ -75,6 +83,32 @@ public class SQLiteDAO {
     @Transactional
     public void deleteUser(UserEntity userEntity) {
         sqLiteUserEntityRepository.delete(userEntity);
+    }
+
+    @Transactional
+    public void deleteThumbnail(ThumbnailMetadata thumbnail) {
+        sqLiteThumbnailRepository.delete(thumbnail);
+    }
+
+    // Delete collection
+    @Transactional
+    public void deleteAllFolders(List<FolderMetadata> folders) {
+        sqLiteFolderRepository.deleteAllInBatch(folders);
+    }
+
+    @Transactional
+    public void deleteAllFiles(List<FileMetadata> files) {
+        sqLiteFileRepository.deleteAllInBatch(files);
+    }
+
+    @Transactional
+    public void deleteAllUsers(List<UserEntity> userEntities) {
+        sqLiteUserEntityRepository.deleteAllInBatch(userEntities);
+    }
+
+    @Transactional
+    public void deleteAllThumbnails(List<ThumbnailMetadata> thumbnails) {
+        sqLiteThumbnailRepository.deleteAllInBatch(thumbnails);
     }
 
     // Add/Update
@@ -94,6 +128,12 @@ public class SQLiteDAO {
     }
 
     @Transactional
+    public ThumbnailMetadata saveThumbnail(ThumbnailMetadata thumbnail) {
+        return sqLiteThumbnailRepository.save(thumbnail);
+    }
+
+    // Add/Update using collections
+    @Transactional
     public List<FolderMetadata> saveAllFolders(List<FolderMetadata> folderMetadata) {
         return sqLiteFolderRepository.saveAll(folderMetadata);
     }
@@ -103,8 +143,12 @@ public class SQLiteDAO {
         return sqLiteFileRepository.saveAll(fileMetadata);
     }
 
-    // Database service layer
+    @Transactional
+    public List<ThumbnailMetadata> saveAllThumbnails(List<ThumbnailMetadata> thumbnailMetadata) {
+        return sqLiteThumbnailRepository.saveAll(thumbnailMetadata);
+    }
 
+    // Database service layer
     @Transactional
     public List<FileMetadata> searchFileMetadataByName(String name) {
         return sqLiteFileRepository.searchFileMetadataByName(name);
@@ -187,6 +231,26 @@ public class SQLiteDAO {
     }
 
     @Transactional
+    public ThumbnailMetadata queryThumbnailMetadata(long thumbnailId, long userId) throws SQLException {
+        Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
+                .findById(thumbnailId)
+                .filter(tm -> tm.getUserId() == userId);
+        if (thumbnailMetadata.isEmpty())
+            throw new SQLException("Thumbnail with Id " + thumbnailId + " does not exist");
+        return thumbnailMetadata.get();
+    }
+
+    @Transactional
+    public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) throws SQLException {
+        Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
+                .findByFileId(fileId)
+                .filter(tm -> tm.getUserId() == userId);
+        if (thumbnailMetadata.isEmpty())
+            throw new SQLException("No Thumbnail found for file Id " + fileId);
+        return thumbnailMetadata.get();
+    }
+
+    @Transactional
     public FolderMetadata queryFolderMetadata(long folderId, long userId) throws SQLException {
         Optional<FolderMetadata> folderMetadata = sqLiteFolderRepository.findById(folderId).filter(f -> f.getUserid() == userId);
         if (folderMetadata.isEmpty())
@@ -207,6 +271,11 @@ public class SQLiteDAO {
         return sqLiteFolderRepository.findAllById(folderIdList).stream()
                 .filter(f -> f.getUserid() == userId)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<ThumbnailMetadata> findAllThumbnailsByUserID(long userId) {
+        return sqLiteThumbnailRepository.findAllByUserId(userId);
     }
 
     @Transactional
@@ -253,14 +322,16 @@ public class SQLiteDAO {
     @Transactional
     public List<FolderMetadata> findAllStartsWithIdPath(String prefixIdPath) {
         return sqLiteFolderRepository.findAll()
-                .stream().filter(fl -> fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId())
+                .stream().filter(fl ->
+                        fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId())
                 .collect(Collectors.toList());
     }
 
     /**
      * Returns ID path of folder with folderId
-     * @param folderId  folderId of folder
-     * @return  if folderId is not 0 returns folder's ID path else "0"
+     *
+     * @param folderId folderId of folder
+     * @return if folderId is not 0 returns folder's ID path else "0"
      * @throws SQLException if folder with folderId is not found
      */
     @Transactional

@@ -55,3 +55,12 @@
 |--------|---------------------------------------------------------------|-------------------|--------------------|
 | POST   | 	api/maintenance/scan?folderid={id}                           | Normal scan       | :heavy_check_mark: |
 | POST   | 	api/maintenance/scan?folderid={id}&scanOptions={ScanOptions} | Scan with options | :heavy_check_mark: |
+
+## Thumbnail Endpoints
+
+| Method | 	Route                                     | 	Description                       | Working            |
+|--------|--------------------------------------------|------------------------------------|--------------------|
+| GET    | 	api/thumbnails/get?thumbId={id}           | Get thumbnail by ID                | :heavy_check_sign: |
+| GET    | 	api/thumbnails/getbyfileid?fileId={id}    | Get thumbnail of file with File ID | :heavy_check_sign: |
+| DELETE | 	api/thumbnails/delete?thumbId={id}        | Delete thumbnail by ID             | :heavy_check_sign: |
+| DELETE | 	api/thumbnails/deletebyfileid?fileId={id} | Delete thumbnail by File ID        | :heavy_check_sign: |
