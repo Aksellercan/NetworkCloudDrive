@@ -29,9 +29,9 @@ docker run --network=host networkclouddrive:latest
 docker ps -a
 ```
 
-2. Find ```networkclouddrive:latest``` in Image column left to it is Container ID
+2. Find ```networkclouddrive:latest``` in Image column and left to it is Container ID
 
-3. Create folder called ```config``` inside create ```application.properties``` file
+3. Create folder called ```config``` then inside create ```application.properties``` file
 
 4. Edit the file then run:
 
@@ -45,4 +45,4 @@ docker cp config [CONTAINER_ID]:/app
 docker start [CONTAINER_ID]
 ```
 
-Now your changes should be in effect
+Now your changes should be in effect.
