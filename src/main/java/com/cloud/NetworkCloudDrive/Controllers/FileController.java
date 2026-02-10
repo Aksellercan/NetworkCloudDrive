@@ -44,7 +44,7 @@ public class FileController {
     public ResponseEntity<?> uploadFile(@RequestParam MultipartFile[] files, @RequestParam long folderid) {
         try {
             if (files.length == 0)
-                throw new NullPointerException("No file is provided");
+                throw new NullPointerException("No files provided");
             String folderPath = pathUtility.getFolderPath(folderid);
             return ResponseEntity.ok().body(fileService.uploadFiles(files, folderPath, folderid));
         } catch(FileAlreadyExistsException fileAlreadyExistsException) {
@@ -69,9 +69,10 @@ public class FileController {
             Resource file = fileService.getFile(metadata, actualPath);
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + decodedFileName + "\" ").
-                            contentType(MediaType.parseMediaType(metadata.getMimiType())).
-                    contentLength(metadata.getSize()).body(file);
+                            "attachment; filename=\"" + decodedFileName + "\" ")
+                    .contentType(MediaType.parseMediaType(metadata.getMimiType()))
+                    .contentLength(metadata.getSize())
+                    .body(file);
         }
         catch (FileSystemException fse) {
             logger.error("Internal error occurred. {}", fse.getMessage());

@@ -10,6 +10,7 @@ public class FileListItemDTO {
     private String mimeType;
     private long size;
     private Instant createdAt;
+    private boolean hasThumbnail;
 
     public FileListItemDTO() {}
 
@@ -19,6 +20,7 @@ public class FileListItemDTO {
         this.mimeType = fileMetadata.getMimiType();
         this.size = fileMetadata.getSize();
         this.createdAt = fileMetadata.getCreatedAt();
+        this.hasThumbnail = fileMetadata.isHasThumbnail();
     }
 
 
@@ -51,5 +53,11 @@ public class FileListItemDTO {
     }
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+    public boolean isHasThumbnail() {
+        return hasThumbnail;
+    }
+    public void setHasThumbnail(boolean hasThumbnail) {
+        this.hasThumbnail = hasThumbnail;
     }
 }
