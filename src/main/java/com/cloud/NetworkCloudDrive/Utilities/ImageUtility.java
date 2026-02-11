@@ -12,8 +12,8 @@ import java.nio.file.Path;
 @Component
 public class ImageUtility {
     private final UserUtility userUtility;
-    private int portraitWidth = 100;
-    private int portraitHeight = 200;
+    private int portraitWidth = 50;
+    private int portraitHeight = 100;
     private int landscapeWidth = 100;
     private int landscapeHeight = 100;
     private final PathUtility pathUtility;
