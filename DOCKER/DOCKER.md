@@ -1,6 +1,6 @@
 # Run via Docker File
 
-[Look inside Docker file](Dockerfile)
+[Look inside Docker file](../Dockerfile)
 
 ## Build Options
 

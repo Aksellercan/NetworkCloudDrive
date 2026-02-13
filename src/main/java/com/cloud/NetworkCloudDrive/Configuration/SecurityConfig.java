@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .formLogin(formLogin ->
                         formLogin.successHandler(authenticationHandler())
                                 .failureHandler(authenticationHandler())) // Use both BASIC and FORM logins
+                .rememberMe(Customizer.withDefaults()) // remember me defaults test
                 .cors(Customizer.withDefaults())
                 // give everyone access to log out
                 .logout(LogoutConfigurer::permitAll);

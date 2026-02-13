@@ -10,7 +10,7 @@ Local network storage API that can store files and manage them. Uses SQLite for 
 
 # Run
 
-- [Using Docker](DOCKER.md)
+- [Using Docker](DOCKER/DOCKER.md)
 
 # Configuration
 
