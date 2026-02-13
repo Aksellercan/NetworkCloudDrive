@@ -1,6 +1,12 @@
 #!/bin/bash
+if [[ $# = 0 ]]; then
+  echo "Provide Docker Container name"
+  exit 0;
+fi
 echo "Starting Docker Backup script"
-container_id=$(docker ps -aqf "name=NetworkCloudDriveDocker")
+docker_container_name=$1
+echo "Looking for docker container with name ${docker_container_name}"
+container_id=$(docker ps -aqf "name=${docker_container_name}")
 echo "Found CONTAINER ID: ${container_id}"
 # ENTER CONTAINER AND RETRIEVE /app FOLDER
 docker cp $container_id:app/ .

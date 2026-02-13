@@ -1,6 +1,12 @@
 #!/bin/bash
+if [[ $# = 0 ]]; then
+  echo "Provide Docker Container name"
+  exit 0;
+fi
+docker_container_name=$1
 echo "Starting Docker Restore script"
-container_id=$(docker ps -aqf "name=NetworkCloudDriveDocker")
+echo "Looking for docker container with name ${docker_container_name}"
+container_id=$(docker ps -aqf "name=${docker_container_name}")
 echo "Found CONTAINER ID: ${container_id}"
 echo "Stopping container ${container_id}"
 docker stop $container_id

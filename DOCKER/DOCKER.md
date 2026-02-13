@@ -21,6 +21,21 @@ docker run --network=host networkclouddrive:latest
 
 *Note the parameter might not be necessary in the future*
 
+# Updating API
+
+Updating API will reset the container, there are 2 scripts available to automate data backup and restore:
+
+## Backup Files
+
+- Run ```backupFiles.sh container_name```, if no parameter provided script won't run
+- Script will copy contents of Docker container and will create folder called ```NetworkCloudDriveDocker_$time_stamp```
+
+## Restore Files
+
+- Run ```restoreFiles.sh container_name```, if no parameter provided script won't run
+- Script will look for folder starting with ```NetworkCloudDriveDocker_*``` and pick the latest
+- Then it will restore files to docker container
+ 
 # Updating Configuration After Deploying
 
 1. Get Docker Container ID:
