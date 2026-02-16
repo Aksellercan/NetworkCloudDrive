@@ -64,7 +64,31 @@ public class SecurityConfig {
             // disable csrf if set
             http.csrf(AbstractHttpConfigurer::disable); // blocks POST and cross-platform attacks
         }
-        return http.build();
+        return rememberMeConfigurer(http).build();
+    }
+
+    private HttpSecurity rememberMeConfigurer(HttpSecurity http) {
+        boolean useDefaults = Boolean.parseBoolean(env.getProperty("security.remember_me.use-defaults", "true"));
+        if (!useDefaults) {
+            String rememberMeKey = env.getProperty("security.remember_me.key", "spring-security-remember-me");
+            boolean alwaysRemember = Boolean.parseBoolean(env.getProperty("security.remember_me.always_remember"));
+            String rememberMeCookieDomain = env.getProperty("security.remember_me.cookie_domain");
+            String rememberMeCookieName = env.getProperty("security.remember_me.cookie_name", "remember-me");
+            String rememberMeParameter = env.getProperty("security.remember_me.parameter", "remember-me");
+            boolean useSecureCookie = Boolean.parseBoolean(env.getProperty("security.remember_me.use-secure-cookie"));
+            int tokenValiditySeconds = Integer.parseInt(env.getProperty("security.remember-me.token-validity-in-seconds", "1209600"));
+            return http.rememberMe(remember -> {
+                remember
+                        .key(rememberMeKey)
+                        .alwaysRemember(alwaysRemember)
+                        .rememberMeCookieDomain(rememberMeCookieDomain)
+                        .rememberMeCookieName(rememberMeCookieName)
+                        .rememberMeParameter(rememberMeParameter)
+                        .tokenValiditySeconds(tokenValiditySeconds)
+                        .useSecureCookie(useSecureCookie);
+            });
+        }
+        return http.rememberMe(Customizer.withDefaults());
     }
 
     @Bean
