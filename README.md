@@ -25,6 +25,16 @@ Example configurations:
 
 ... and more
 
+# Helper Tools
+- [IOS Shortcut](https://www.icloud.com/shortcuts/76e9b9103fd441ba9c684e33376fc0aa). Create note called `HTTP Auth` with format like:
+```
+username:
+[mail]
+password:
+[password]
+```
+then using share menu you can upload files without even downloading the file.
+
 ## File Structure Visual
 
 ```mermaid
