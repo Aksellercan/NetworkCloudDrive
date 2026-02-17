@@ -82,5 +82,5 @@ Run ```./systemdTimer.sh [SCRIPTS-PATH] [DOCKER-CONTAINER-NAME]``` script
 - Creates Systemd service
 - Runs backup initially
 - Backups are outputted to $HOME directory
-*Where it will output will be customisable soon*
+*Where it outputs will be customisable soon*
 
