@@ -23,5 +23,7 @@ echo "Moved ./app/root/"
 mv ./app/config ./$backup_folder
 echo "Moved ./app/config/"
 rm -r ./app
+echo ":: Disk usage:"
+du -h --max-depth=1 $backup_folder
 echo "Cleaned up"
 echo "Finished backup of Docker Container"
