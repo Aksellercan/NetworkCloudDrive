@@ -32,7 +32,7 @@ public class FileMetadata {
     private Instant createdAt;
 
     @Column(name = "hasThumbnail")
-    private Boolean hasThumbnail = false;
+    private boolean hasThumbnail = false;
 
     public FileMetadata(String name, Long folderId, Long userid, String mimiType, Long size) {
         this.name = name;
@@ -100,11 +100,11 @@ public class FileMetadata {
         this.name = name;
     }
 
-    public Boolean isHasThumbnail() {
+    public boolean isHasThumbnail() {
         return hasThumbnail;
     }
 
-    public void setHasThumbnail(Boolean hasThumbnail) {
+    public void setHasThumbnail(boolean hasThumbnail) {
         this.hasThumbnail = hasThumbnail;
     }
 

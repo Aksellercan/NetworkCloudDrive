@@ -37,31 +37,48 @@ public class FolderMetadata {
     public Long getUserid() {
         return userid;
     }
+
     public void setUserid(Long userid) {
         this.userid = userid;
     }
+
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
+
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
+
     public String getPath() {
         return path;
     }
+
     public void setPath(String path) {
         this.path = path;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return String
+                .format(
+                        "Folder Metadata:\nid: %d\nname: %s\npath: %s\nbelongs to: %d",
+                        this.id, this.name, this.path, this.userid);
     }
 }

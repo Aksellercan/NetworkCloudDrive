@@ -110,7 +110,6 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     //TODO instead of generating Id paths use startsWith from DAO and filter files by found folders id's then delete them both from db and system
-    //TODO seems to be broken on PROD
     private void deleteFsTree(Path dir, String startingIdPath) throws IOException {
         logger.info("Start File Tree deletion operation");
         long errorCount = 0;

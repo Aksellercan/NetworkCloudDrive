@@ -50,14 +50,14 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public String createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException, NullPointerException {
+    public ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException, NullPointerException {
         logger.warn("thumbnail filepath = {}", filePath);
         int[] dimensions = imageUtility.getThumbnailDimensions(filePath);
         boolean isPortrait = imageUtility.isPortrait(dimensions[0], dimensions[1]);
         Path path = saveThumbnails(createThumbnailOfAnImage(filePath, dimensions[0], dimensions[1]), encodedFileName, "jpg", isPortrait);
         ThumbnailMetadata metadata = saveThumbnailToDatabase(path.getFileName().toString(), path, fileId, isPortrait);
         logger.info("Created thumbnail entry {}", metadata.toString());
-        return path.toString();
+        return metadata;
     }
 
     private ThumbnailMetadata saveThumbnailToDatabase(String filename, Path thumbnailPath, long fileId, boolean isPortrait) throws IOException {

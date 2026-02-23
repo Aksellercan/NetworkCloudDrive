@@ -3,6 +3,7 @@ package com.cloud.NetworkCloudDrive.Services;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.Services.FileRepository;
 import com.cloud.NetworkCloudDrive.Services.Tasks.ThumbnailService;
@@ -55,7 +56,7 @@ public class FileService implements FileRepository {
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
         List<String> storagePathList = new ArrayList<>();
         List<FileMetadata> uploadedFiles = new ArrayList<>();
-        List<String> thumbnailPathList = new ArrayList<>();
+        List<ThumbnailMetadata> thumbnailPathList = new ArrayList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();
@@ -81,9 +82,9 @@ public class FileService implements FileRepository {
             storagePathList.add(storagePath.toString());
             metadata.setName(encodedFileName);
             if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
-                String thumbnailPath = handleThumbnailCreation(storagePath, encodedFileName, metadata.getId());
-                if (thumbnailPath != null) {
-                    thumbnailPathList.add(thumbnailPath);
+                ThumbnailMetadata thumbnailMetadata = handleThumbnailCreation(storagePath, encodedFileName, metadata.getId());
+                if (thumbnailMetadata != null) {
+                    thumbnailPathList.add(thumbnailMetadata);
                     metadata.setHasThumbnail(true);
                 }
             }
@@ -92,19 +93,19 @@ public class FileService implements FileRepository {
         if (storagePathList.isEmpty())
             throw new FileAlreadyExistsException("File(s) already exists at destination");
         if (!thumbnailPathList.isEmpty())
-            return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList, "thumbnail_path", thumbnailPathList);
+            return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList, "thumbnail_metadata", thumbnailPathList);
         return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList);
     }
 
-    private String handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId) {
-        String thumbnailPath;
+    private ThumbnailMetadata handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId) {
+        ThumbnailMetadata thumbnail;
         try {
-            thumbnailPath = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
+            thumbnail = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
         } catch (IOException | NullPointerException  e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());
             return null;
         }
-        return thumbnailPath;
+        return thumbnail;
     }
 
     public Path storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
