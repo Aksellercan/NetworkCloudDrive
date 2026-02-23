@@ -296,11 +296,20 @@ public class SQLiteDAO {
         dummyFileMetadata.setSize(null);
         dummyFileMetadata.setId(null);
         dummyFileMetadata.setCreatedAt(null);
-        Example<FileMetadata> fileMetadataExample = Example.of(dummyFileMetadata);
-        Optional<FileMetadata> optionalFileMetadata = sqLiteFileRepository.findOne(fileMetadataExample);
-        if (optionalFileMetadata.isEmpty())
+        dummyFileMetadata.setHasThumbnail(false);
+        Example<FileMetadata> fileMetadataWithoutThumbnailExample = Example.of(dummyFileMetadata);
+        Optional<FileMetadata> optionalFileMetadataWithoutThumbnail = sqLiteFileRepository.findOne(fileMetadataWithoutThumbnailExample);
+        logger.info("Example without thumbnail {}", dummyFileMetadata);
+        if (optionalFileMetadataWithoutThumbnail.isPresent()) {
+            return optionalFileMetadataWithoutThumbnail.get();
+        }
+        dummyFileMetadata.setHasThumbnail(true);
+        Example<FileMetadata> fileMetadataWithThumbnailExample = Example.of(dummyFileMetadata);
+        Optional<FileMetadata> optionalFileMetadataWithThumbnail = sqLiteFileRepository.findOne(fileMetadataWithThumbnailExample);
+        logger.info("Example with thumbnail {}", dummyFileMetadata);
+        if (optionalFileMetadataWithThumbnail.isEmpty())
             throw new FileSystemException("File not found in database. Is database synced?");
-        return optionalFileMetadata.get();
+        return optionalFileMetadataWithThumbnail.get();
     }
 
     @Transactional

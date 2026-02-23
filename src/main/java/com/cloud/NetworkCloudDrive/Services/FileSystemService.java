@@ -110,6 +110,7 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     //TODO instead of generating Id paths use startsWith from DAO and filter files by found folders id's then delete them both from db and system
+    //TODO seems to be broken on PROD
     private void deleteFsTree(Path dir, String startingIdPath) throws IOException {
         logger.info("Start File Tree deletion operation");
         long errorCount = 0;
@@ -123,7 +124,7 @@ public class FileSystemService implements FileSystemRepository {
                 errorCount++;
                 continue;
             }
-            if (Files.exists(file)) {
+            if (Files.exists(file) && Files.isRegularFile(file)) {
                 String parentFolderIdPath = pathUtility.generateIdPaths(file.getParent().toString(), startingIdPath);
                 logger.debug("generated file path: {}", parentFolderIdPath);
                 FolderMetadata folderMetadata =

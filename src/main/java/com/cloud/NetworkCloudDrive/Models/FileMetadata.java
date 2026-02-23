@@ -32,7 +32,7 @@ public class FileMetadata {
     private Instant createdAt;
 
     @Column(name = "hasThumbnail")
-    private boolean hasThumbnail = false;
+    private Boolean hasThumbnail = false;
 
     public FileMetadata(String name, Long folderId, Long userid, String mimiType, Long size) {
         this.name = name;
@@ -47,49 +47,72 @@ public class FileMetadata {
     public Long getUserid() {
         return userid;
     }
+
     public void setUserid(Long userid) {
         this.userid = userid;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
+
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
+
     public Long getFolderId() {
         return folderId;
     }
+
     public void setFolderId(Long folderId) {
         this.folderId = folderId;
     }
+
     public Long getId() {
         return id;
     }
+
     public Long getSize() {
         return size;
     }
+
     public void setSize(Long size) {
         this.size = size;
     }
+
     public String getMimiType() {
         return mimiType;
     }
+
     public void setMimiType(String mimiType) {
         this.mimiType = mimiType;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
-    public boolean isHasThumbnail() {
+
+    public Boolean isHasThumbnail() {
         return hasThumbnail;
     }
-    public void setHasThumbnail(boolean hasThumbnail) {
+
+    public void setHasThumbnail(Boolean hasThumbnail) {
         this.hasThumbnail = hasThumbnail;
+    }
+
+    @Override
+    public String toString() {
+        return String
+                .format(
+                        "File Metadata:\nid: %d\nname: %s\nsize: %d\nmimitype: %s\ndirectory: %d\nbelongs to: %d\nhas thumbnail: %b",
+                        this.id, this.name, this.size, this.mimiType,this.folderId, this.userid, this.hasThumbnail);
     }
 }
