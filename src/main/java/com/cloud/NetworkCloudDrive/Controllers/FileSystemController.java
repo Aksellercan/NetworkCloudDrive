@@ -5,6 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFileNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFilePathDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderPathDTO;
+import com.cloud.NetworkCloudDrive.Models.Enum.FileListFilter;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
@@ -155,7 +156,24 @@ public class FileSystemController {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList));
+                    body(fileSystemService.getListOfMetadataFromPath(fileList, FileListFilter.DEFAULT));
+        } catch (FileSystemException fileSystemException) {
+            logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
+            return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
+                    body(new JSONErrorResponse(fileSystemException, "Some folders couldn't be found at folder with Id %d", folderid));
+        } catch (Exception e) {
+            logger.error("Failed to list items in folder with Id {}, reason: {}", folderid, e.getMessage());
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "Failed to list items inside folder with Id %d", folderid));
+        }
+    }
+
+    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "fileListFilter"})
+    public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FileListFilter fileListFilter) {
+        try {
+            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
+                    body(fileSystemService.getListOfMetadataFromPath(fileList, fileListFilter));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).

@@ -2,6 +2,7 @@ package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.Enum.FileListFilter;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Repositories.Services.FileSystemRepository;
@@ -20,10 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class FileSystemService implements FileSystemRepository {
@@ -53,7 +51,7 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     @Override
-    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws FileSystemException, SQLException {
+    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FileListFilter fileListFilter) throws FileSystemException, SQLException {
         List<FileListItemDTO> fileList = new LinkedList<>();
         List<FolderListItemDTO> folderList = new LinkedList<>();
         for (Path file : filePaths) {
@@ -77,6 +75,30 @@ public class FileSystemService implements FileSystemRepository {
             FolderListItemDTO folderListItemDTO = new FolderListItemDTO(foundFolderMetadata);
             folderListItemDTO.setName(actualFileName);
             folderList.add(folderListItemDTO);
+        }
+        return sortFileList(fileListFilter, fileList, folderList);
+    }
+
+    private Map<String, List<?>> sortFileList(FileListFilter fileListFilter, List<FileListItemDTO> fileList, List<FolderListItemDTO> folderList) {
+        switch (fileListFilter) {
+            case ALPHABETIC:
+                fileList = fileList.stream().sorted(Comparator.comparing(FileListItemDTO::getName)).toList();
+                folderList = folderList.stream().sorted(Comparator.comparing(FolderListItemDTO::getName)).toList();
+                break;
+            case REVERSE_ALPHABETIC:
+                fileList = fileList.stream().sorted(Comparator.comparing(FileListItemDTO::getName).reversed()).toList();
+                folderList = folderList.stream().sorted(Comparator.comparing(FolderListItemDTO::getName).reversed()).toList();
+                break;
+            case NEWEST:
+                fileList = fileList.stream().sorted(Comparator.comparing(FileListItemDTO::getCreatedAt).reversed()).toList();
+                folderList = folderList.stream().sorted(Comparator.comparing(FolderListItemDTO::getCreatedAt).reversed()).toList();
+                break;
+            case OLDEST:
+                fileList = fileList.stream().sorted(Comparator.comparing(FileListItemDTO::getCreatedAt)).toList();
+                folderList = folderList.stream().sorted(Comparator.comparing(FolderListItemDTO::getCreatedAt)).toList();
+                break;
+            case FOLDERS_FIRST:
+                return new LinkedHashMap<>(Map.of("folders", folderList, "files", fileList));
         }
         return Map.of("files", fileList, "folders", folderList);
     }
