@@ -5,7 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFileNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFilePathDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderPathDTO;
-import com.cloud.NetworkCloudDrive.Models.Enum.FileListFilter;
+import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
@@ -156,7 +156,7 @@ public class FileSystemController {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList, FileListFilter.DEFAULT));
+                    body(fileSystemService.getListOfMetadataFromPath(fileList, SortListEnum.DEFAULT));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
@@ -168,12 +168,12 @@ public class FileSystemController {
         }
     }
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "fileListFilter"})
-    public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FileListFilter fileListFilter) {
+    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "sortby"})
+    public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam SortListEnum sortListEnum) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList, fileListFilter));
+                    body(fileSystemService.getListOfMetadataFromPath(fileList, sortListEnum));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).

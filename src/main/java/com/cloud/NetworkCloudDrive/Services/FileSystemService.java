@@ -2,7 +2,7 @@ package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
-import com.cloud.NetworkCloudDrive.Models.Enum.FileListFilter;
+import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Repositories.Services.FileSystemRepository;
@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 public class FileSystemService implements FileSystemRepository {
@@ -51,7 +52,7 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     @Override
-    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FileListFilter fileListFilter) throws FileSystemException, SQLException {
+    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws FileSystemException, SQLException {
         List<FileListItemDTO> fileList = new LinkedList<>();
         List<FolderListItemDTO> folderList = new LinkedList<>();
         for (Path file : filePaths) {
@@ -76,31 +77,45 @@ public class FileSystemService implements FileSystemRepository {
             folderListItemDTO.setName(actualFileName);
             folderList.add(folderListItemDTO);
         }
-        return sortFileList(fileListFilter, fileList, folderList);
+        logger.debug("Sorted by: {}", sortListEnum.name());
+        return sortFileList(sortListEnum, fileList.stream(), folderList.stream());
     }
 
-    private Map<String, List<?>> sortFileList(FileListFilter fileListFilter, List<FileListItemDTO> fileList, List<FolderListItemDTO> folderList) {
-        switch (fileListFilter) {
+    private Map<String, List<?>> sortFileList(SortListEnum sortListEnum, Stream<FileListItemDTO> fileList, Stream<FolderListItemDTO> folderList) {
+        Comparator<FileListItemDTO> fileListItemDTOComparator;
+        Comparator<FolderListItemDTO> folderListItemDTOComparator;
+        switch (sortListEnum) {
             case ALPHABETIC:
-                fileList = fileList.stream().sorted(Comparator.comparing(FileListItemDTO::getName)).toList();
-                folderList = folderList.stream().sorted(Comparator.comparing(FolderListItemDTO::getName)).toList();
+                fileListItemDTOComparator = Comparator.comparing(f -> f.getName().toLowerCase());
+                folderListItemDTOComparator = Comparator.comparing(fl -> fl.getName().toLowerCase());
                 break;
             case REVERSE_ALPHABETIC:
-                fileList = fileList.stream().sorted(Comparator.comparing(FileListItemDTO::getName).reversed()).toList();
-                folderList = folderList.stream().sorted(Comparator.comparing(FolderListItemDTO::getName).reversed()).toList();
+                fileListItemDTOComparator = Comparator.comparing(f -> f.getName().toLowerCase(), Comparator.reverseOrder());
+                folderListItemDTOComparator = Comparator.comparing(fl -> fl.getName().toLowerCase(), Comparator.reverseOrder());
                 break;
             case NEWEST:
-                fileList = fileList.stream().sorted(Comparator.comparing(FileListItemDTO::getCreatedAt).reversed()).toList();
-                folderList = folderList.stream().sorted(Comparator.comparing(FolderListItemDTO::getCreatedAt).reversed()).toList();
+                fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getCreatedAt, Comparator.reverseOrder());
+                folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getCreatedAt, Comparator.reverseOrder());
                 break;
             case OLDEST:
-                fileList = fileList.stream().sorted(Comparator.comparing(FileListItemDTO::getCreatedAt)).toList();
-                folderList = folderList.stream().sorted(Comparator.comparing(FolderListItemDTO::getCreatedAt)).toList();
+                fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getCreatedAt);
+                folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getCreatedAt);
                 break;
             case FOLDERS_FIRST:
-                return new LinkedHashMap<>(Map.of("folders", folderList, "files", fileList));
+                LinkedHashMap<String, List<?>> linkedHashMap = new LinkedHashMap<>();
+                linkedHashMap.put("folders", folderList.toList());
+                linkedHashMap.put("files", fileList.toList());
+                return linkedHashMap;
+            default:
+                return Map.of(
+                        "files", fileList.toList(),
+                        "folders", folderList.toList()
+                );
         }
-        return Map.of("files", fileList, "folders", folderList);
+        return Map.of(
+                "files", fileList.sorted(fileListItemDTOComparator).toList(),
+                "folders", folderList.sorted(folderListItemDTOComparator).toList()
+        );
     }
 
     @Override

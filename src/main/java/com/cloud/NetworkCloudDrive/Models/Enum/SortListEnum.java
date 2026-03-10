@@ -1,6 +1,6 @@
 package com.cloud.NetworkCloudDrive.Models.Enum;
 
-public enum FileListFilter {
+public enum SortListEnum {
     DEFAULT,
     ALPHABETIC,
     REVERSE_ALPHABETIC,
