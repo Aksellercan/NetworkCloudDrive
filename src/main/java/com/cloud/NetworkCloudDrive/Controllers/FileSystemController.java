@@ -5,6 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFileNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFilePathDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderPathDTO;
+import com.cloud.NetworkCloudDrive.Models.Enum.FilterListEnum;
 import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
@@ -156,7 +157,7 @@ public class FileSystemController {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList, SortListEnum.DEFAULT));
+                    body(fileSystemService.getListOfMetadataFromPath(fileList));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
@@ -169,11 +170,54 @@ public class FileSystemController {
     }
 
     @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "sortby"})
-    public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam SortListEnum sortListEnum) {
+    public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam SortListEnum sortby) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList, sortListEnum));
+                    body(fileSystemService.getListOfMetadataFromPath(fileList, sortby));
+        } catch (FileSystemException fileSystemException) {
+            logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
+            return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
+                    body(new JSONErrorResponse(fileSystemException, "Some folders couldn't be found at folder with Id %d", folderid));
+        } catch (Exception e) {
+            logger.error("Failed to list items in folder with Id {}, reason: {}", folderid, e.getMessage());
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "Failed to list items inside folder with Id %d", folderid));
+        }
+    }
+
+    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "filterby"})
+    public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FilterListEnum filterby) {
+        try {
+            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
+                    body(fileSystemService.getListOfMetadataFromPath(fileList, filterby));
+        } catch (FileSystemException fileSystemException) {
+            logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
+            return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
+                    body(new JSONErrorResponse(fileSystemException, "Some folders couldn't be found at folder with Id %d", folderid));
+        } catch (Exception e) {
+            logger.error("Failed to list items in folder with Id {}, reason: {}", folderid, e.getMessage());
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "Failed to list items inside folder with Id %d", folderid));
+        }
+    }
+
+    //TODO filter and sort
+    //TODO filter and sort with keyword/type
+    //TODO get type automatically by asking for extension then detect it by tika core
+    //TODO I feel like parameters are getting too long, might be a good idea to switch to json to get filter requests
+
+    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "filterby", "filter"})
+    public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FilterListEnum filterby, @RequestParam String filter) {
+        try {
+            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
+            if ((filterby != FilterListEnum.KEYWORD) && (filterby != FilterListEnum.TYPE)) {
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
+                        body(fileSystemService.getListOfMetadataFromPath(fileList, filterby));
+            }
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
+                    body(fileSystemService.getListOfMetadataFromPath(fileList, filterby, filter));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).

@@ -2,6 +2,7 @@ package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.Enum.FilterListEnum;
 import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
@@ -12,6 +13,7 @@ import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
+import com.cloud.NetworkCloudDrive.Utilities.SortAndFilterUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,7 @@ public class FileSystemService implements FileSystemRepository {
     private final UserUtility userUtility;
     private final PathUtility pathUtility;
     private final ThumbnailService thumbnailService;
+    private final SortAndFilterUtility sortAndFilterUtility;
 
     public FileSystemService(
             UserSession userSession,
@@ -41,7 +44,8 @@ public class FileSystemService implements FileSystemRepository {
             SQLiteDAO sqLiteDAO,
             EncodingUtility encodingUtility,
             UserUtility userUtility,
-            PathUtility pathUtility, ThumbnailService thumbnailService) {
+            PathUtility pathUtility,
+            ThumbnailService thumbnailService, SortAndFilterUtility sortAndFilterUtility) {
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.sqLiteDAO = sqLiteDAO;
@@ -49,10 +53,10 @@ public class FileSystemService implements FileSystemRepository {
         this.userUtility = userUtility;
         this.pathUtility = pathUtility;
         this.thumbnailService = thumbnailService;
+        this.sortAndFilterUtility = sortAndFilterUtility;
     }
 
-    @Override
-    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws FileSystemException, SQLException {
+    private List<List<?>> checkAndCollectFilesAndFolders(List<Path> filePaths) throws SQLException {
         List<FileListItemDTO> fileList = new LinkedList<>();
         List<FolderListItemDTO> folderList = new LinkedList<>();
         for (Path file : filePaths) {
@@ -77,44 +81,47 @@ public class FileSystemService implements FileSystemRepository {
             folderListItemDTO.setName(actualFileName);
             folderList.add(folderListItemDTO);
         }
-        logger.debug("Sorted by: {}", sortListEnum.name());
-        return sortFileList(sortListEnum, fileList.stream(), folderList.stream());
+        return List.of(fileList, folderList);
     }
 
-    private Map<String, List<?>> sortFileList(SortListEnum sortListEnum, Stream<FileListItemDTO> fileList, Stream<FolderListItemDTO> folderList) {
-        Comparator<FileListItemDTO> fileListItemDTOComparator;
-        Comparator<FolderListItemDTO> folderListItemDTOComparator;
-        switch (sortListEnum) {
-            case ALPHABETIC:
-                fileListItemDTOComparator = Comparator.comparing(f -> f.getName().toLowerCase());
-                folderListItemDTOComparator = Comparator.comparing(fl -> fl.getName().toLowerCase());
-                break;
-            case REVERSE_ALPHABETIC:
-                fileListItemDTOComparator = Comparator.comparing(f -> f.getName().toLowerCase(), Comparator.reverseOrder());
-                folderListItemDTOComparator = Comparator.comparing(fl -> fl.getName().toLowerCase(), Comparator.reverseOrder());
-                break;
-            case NEWEST:
-                fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getCreatedAt, Comparator.reverseOrder());
-                folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getCreatedAt, Comparator.reverseOrder());
-                break;
-            case OLDEST:
-                fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getCreatedAt);
-                folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getCreatedAt);
-                break;
-            case FOLDERS_FIRST:
-                LinkedHashMap<String, List<?>> linkedHashMap = new LinkedHashMap<>();
-                linkedHashMap.put("folders", folderList.toList());
-                linkedHashMap.put("files", fileList.toList());
-                return linkedHashMap;
-            default:
-                return Map.of(
-                        "files", fileList.toList(),
-                        "folders", folderList.toList()
-                );
-        }
+    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws SQLException {
+        List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
         return Map.of(
-                "files", fileList.sorted(fileListItemDTOComparator).toList(),
-                "folders", folderList.sorted(folderListItemDTOComparator).toList()
+                "files", results.get(0),
+                "folders", results.get(1)
+        );
+    }
+
+    @Override
+    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws FileSystemException, SQLException {
+        logger.debug("Sorted by: {}", sortListEnum.name());
+        List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
+        return sortAndFilterUtility.sortFileList(
+                sortListEnum,
+                (Stream<FileListItemDTO>) results.get(0).stream(),
+                (Stream<FolderListItemDTO>) results.get(1).stream()
+        );
+    }
+
+    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FilterListEnum filterListEnum) throws SQLException {
+        logger.debug("Filter by: {}", filterListEnum.name());
+        List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
+        return sortAndFilterUtility.filterFileList(
+                filterListEnum,
+                (Stream<FileListItemDTO>) results.get(0).stream(),
+                (Stream<FolderListItemDTO>) results.get(1).stream(),
+                ""
+        );
+    }
+
+    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FilterListEnum filterListEnum, String filterCase) throws SQLException {
+        logger.debug("Filter by: {} case {}", filterListEnum.name(), filterCase);
+        List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
+        return sortAndFilterUtility.filterFileList(
+                filterListEnum,
+                (Stream<FileListItemDTO>) results.get(0).stream(),
+                (Stream<FolderListItemDTO>) results.get(1).stream(),
+                filterCase
         );
     }
 

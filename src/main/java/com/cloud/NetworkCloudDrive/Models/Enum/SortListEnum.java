@@ -2,9 +2,11 @@ package com.cloud.NetworkCloudDrive.Models.Enum;
 
 public enum SortListEnum {
     DEFAULT,
-    ALPHABETIC,
-    REVERSE_ALPHABETIC,
+    ALPHABETICAL,
+    REVERSE_ALPHABETICAL,
     NEWEST,
     OLDEST,
-    FOLDERS_FIRST
+    FOLDERS_FIRST,
+    SIZE_LOWEST,
+    SIZE
 }
