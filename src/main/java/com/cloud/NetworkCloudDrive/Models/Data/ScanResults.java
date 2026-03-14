@@ -1,7 +1,6 @@
 package com.cloud.NetworkCloudDrive.Models.Data;
 
 public class ScanResults {
-    private boolean success = false;
     private int discoveredFiles = 0;
     private int discoveredFolders = 0;
     private int createdFiles = 0;
@@ -23,14 +22,6 @@ public class ScanResults {
 
     public void incrementCreatedFolderCount() {
         this.createdFolders++;
-    }
-
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
-        this.success = success;
     }
 
     public int getDiscoveredFiles() {
@@ -67,7 +58,7 @@ public class ScanResults {
 
     @Override
     public String toString() {
-        return String.format("Results\nDiscovered Folders: %d\nDiscovered Files: %d\nCreated Files: %d\nCreated Folders: %d\nSuccess: %s",
-                this.discoveredFolders, this.discoveredFiles, this.createdFiles, this.createdFolders, this.success);
+        return String.format("Results\nDiscovered Folders: %d\nDiscovered Files: %d\nCreated Files: %d\nCreated Folders: %d",
+                this.discoveredFolders, this.discoveredFiles, this.createdFiles, this.createdFolders);
     }
 }

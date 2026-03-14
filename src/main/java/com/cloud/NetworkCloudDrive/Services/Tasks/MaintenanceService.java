@@ -53,7 +53,7 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     //controller for scan options
-    public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
+    public ScanResults scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
         Path startingDirectory = pathUtility.getFullPath(pathUtility.getFolderPath(folderId));
         ScanResults scanResults = new ScanResults();
         logger.info("Scan options {}", scanOptions);
@@ -72,6 +72,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 break;
         }
         logger.info(scanResults.toString());
+        return scanResults;
     }
 
     private long getFolderId(File parentFolder) throws SQLException {
@@ -145,19 +146,16 @@ public class MaintenanceService implements MaintenanceRepository {
         // Encode in BASE32
         String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
         metadata.setName(encodedFileName);
-        logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
-                metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
-        // changing in loop causes it to fail but rerunning scan makes it work
-        Path updatedFilePath = Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
         if (thumbnailProperties.isAllowedFormat(metadata.getMimiType())) {
             logger.error("CHECKING FOR THUMBNAIL on {}", currentFile.getName());
-            ThumbnailMetadata thumbnailMetadata = handleThumbnailCreation(updatedFilePath, encodedFileName, metadata.getId());
+            ThumbnailMetadata thumbnailMetadata = handleThumbnailCreation(pathUtility.getBasePath().relativize(Path.of(currentFile.getPath())).toAbsolutePath(), encodedFileName, metadata.getId());
             if (thumbnailMetadata != null) {
-                logger.error("THUMBNAIL NOT POSSIBLE for {}", currentFile.getName());
+                logger.error("THUMBNAIL POSSIBLE for {}", currentFile.getName());
                 metadata.setHasThumbnail(true);
-                sqLiteDAO.saveThumbnail(thumbnailMetadata);
             }
         }
+        logger.info("setup metadata {}", metadata);
+        Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
         sqLiteDAO.saveFile(metadata);
     }
 

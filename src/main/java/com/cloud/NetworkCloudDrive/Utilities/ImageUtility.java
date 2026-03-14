@@ -14,6 +14,7 @@ import java.nio.file.Path;
 @Component
 public class ImageUtility {
     private final UserUtility userUtility;
+    private final FileUtility fileUtility;
     private int portraitWidth = 50;
     private int portraitHeight = 100;
     private int landscapeWidth = 100;
@@ -21,9 +22,10 @@ public class ImageUtility {
     private final PathUtility pathUtility;
     private final Logger logger = LoggerFactory.getLogger(ImageUtility.class);
 
-    public ImageUtility(PathUtility pathUtility, UserUtility userUtility) {
+    public ImageUtility(PathUtility pathUtility, UserUtility userUtility, FileUtility fileUtility) {
         this.pathUtility = pathUtility;
         this.userUtility = userUtility;
+        this.fileUtility = fileUtility;
     }
 
     public int[] getThumbnailDimensions(Path image) throws IOException {
@@ -49,6 +51,7 @@ public class ImageUtility {
     }
 
     public BufferedImage convertPathToBufferedImage(Path path) throws IOException {
+        logger.error(fileUtility.returnPathIfItExists(path.toString()).toString());
         return ImageIO.read(Path.of(pathUtility.getBasePathToString(), path.toString()).toFile());
     }
 
