@@ -107,7 +107,7 @@ public class FileUtility {
      */
     public List<Path> getFileAndFolderPathsFromFolder(Path folder) throws IOException {
         List<Path> fileList;
-        logger.info("full path {}", folder);
+        logger.debug("full path {}", folder);
         try (Stream<Path> stream = Files.list(folder)) {
             fileList = stream.toList();
         }

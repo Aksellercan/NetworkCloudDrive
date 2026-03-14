@@ -11,7 +11,11 @@ import java.util.function.Predicate;
 
 @Repository
 public interface MaintenanceRepository {
-    ScanResults scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion, ScanResults scanResults);
+    boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion);
+
     void handleFileCheck(File currentFile, long folderId) throws IOException;
+
     File handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException;
+
+    boolean handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId, String mimeType);
 }
