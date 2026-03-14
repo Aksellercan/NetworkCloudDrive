@@ -1,9 +1,12 @@
 package com.cloud.NetworkCloudDrive.Services.Tasks;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Models.Data.ScanResults;
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
+import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.Tasks.MaintenanceRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
@@ -29,38 +32,46 @@ public class MaintenanceService implements MaintenanceRepository {
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
     private final PathUtility pathUtility;
+    private final ThumbnailService thumbnailService;
+    private final ThumbnailProperties thumbnailProperties;
 
     public MaintenanceService(
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
-            PathUtility pathUtility) {
+            PathUtility pathUtility,
+            ThumbnailService thumbnailService,
+            ThumbnailProperties thumbnailProperties) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
         this.pathUtility = pathUtility;
+        this.thumbnailService = thumbnailService;
+        this.thumbnailProperties = thumbnailProperties;
     }
 
     //controller for scan options
     public void scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
         Path startingDirectory = pathUtility.getFullPath(pathUtility.getFolderPath(folderId));
+        ScanResults scanResults = new ScanResults();
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS:
-                scanDirectory(startingDirectory, Files::exists, true);
+                scanDirectory(startingDirectory, Files::exists, true, scanResults);
                 break;
             case ONLY_FILES:
-                scanDirectory(startingDirectory,Files::isRegularFile, false);
+                scanDirectory(startingDirectory,Files::isRegularFile, false, scanResults);
                 break;
             case ONLY_FOLDERS:
-                scanDirectory(startingDirectory, Files::isDirectory, true);
+                scanDirectory(startingDirectory, Files::isDirectory, true, scanResults);
                 break;
             case DONT_GO_INTO_FOLDERS:
-                scanDirectory(startingDirectory, Files::exists, false);
+                scanDirectory(startingDirectory, Files::exists, false, scanResults);
                 break;
         }
+        logger.info(scanResults.toString());
     }
 
     private long getFolderId(File parentFolder) throws SQLException {
@@ -68,7 +79,7 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     @Override
-    public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion) {
+    public ScanResults scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion, ScanResults scanResults) {
         try {
             logger.info("Start better scan function at {}", startingPath);
             List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().filter(filter).toList();
@@ -79,6 +90,7 @@ public class MaintenanceService implements MaintenanceRepository {
                     continue;
                 }
                 if (Files.isRegularFile(files)) {
+                    scanResults.incrementDiscoveredFileCount();
                     long folderId = getFolderId(files.getParent().toFile());
                     logger.debug("Enter file handling. Current Folder ID {}", folderId);
                     handleFileCheck(files.toFile(), folderId);
@@ -88,7 +100,7 @@ public class MaintenanceService implements MaintenanceRepository {
                     logger.info("decodable skipping");
                     if (Files.isDirectory(files)) {
                         if (useRecursion) {
-                            if (!scanDirectory(files, filter, useRecursion))
+                            if (scanDirectory(files, filter, useRecursion, scanResults) == null)
                                 throw new RuntimeException("Failed to enter folder");
                         }
                     }
@@ -98,14 +110,14 @@ public class MaintenanceService implements MaintenanceRepository {
                 logger.info("Enter folder handling FolderID {}", folderId);
                 File createdFolder = handleFolderCheck(files.toFile(), folderId);
                 if (useRecursion) {
-                    if (!scanDirectory(createdFolder.toPath(), filter, useRecursion))
+                    if (scanDirectory(createdFolder.toPath(), filter, useRecursion, scanResults) == null)
                         throw new RuntimeException("Failed to enter created folder");
                 }
             }
-            return true;
+            return scanResults;
         } catch (Exception e) {
             logger.error("Exception occurred {}", e.getMessage());
-            return false;
+            return null;
         }
     }
 
@@ -135,9 +147,18 @@ public class MaintenanceService implements MaintenanceRepository {
         metadata.setName(encodedFileName);
         logger.info("setup metadata id {} name {} folderid {} userid {} mimetype {} totalspace {}",
                 metadata.getId(), metadata.getName(), metadata.getFolderId(), metadata.getUserid(), metadata.getMimiType(), metadata.getSize());
-        sqLiteDAO.saveFile(metadata);
         // changing in loop causes it to fail but rerunning scan makes it work
-        Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
+        Path updatedFilePath = Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
+        if (thumbnailProperties.isAllowedFormat(metadata.getMimiType())) {
+            logger.error("CHECKING FOR THUMBNAIL on {}", currentFile.getName());
+            ThumbnailMetadata thumbnailMetadata = handleThumbnailCreation(updatedFilePath, encodedFileName, metadata.getId());
+            if (thumbnailMetadata != null) {
+                logger.error("THUMBNAIL NOT POSSIBLE for {}", currentFile.getName());
+                metadata.setHasThumbnail(true);
+                sqLiteDAO.saveThumbnail(thumbnailMetadata);
+            }
+        }
+        sqLiteDAO.saveFile(metadata);
     }
 
     @Override
@@ -154,5 +175,16 @@ public class MaintenanceService implements MaintenanceRepository {
                 currentFolder.toPath(), Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
         logger.info("Created folder metadata ID {} NAME {}", createdFolder.getId(), createdFolder.getName());
         return result.toFile();
+    }
+
+    private ThumbnailMetadata handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId) {
+        ThumbnailMetadata thumbnail;
+        try {
+            thumbnail = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
+        } catch (IOException | NullPointerException  e) {
+            logger.error("Failed to create thumbnail {}", e.getMessage());
+            return null;
+        }
+        return thumbnail;
     }
 }

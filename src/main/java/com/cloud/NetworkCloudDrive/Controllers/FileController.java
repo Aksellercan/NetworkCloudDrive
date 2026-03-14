@@ -2,6 +2,7 @@ package com.cloud.NetworkCloudDrive.Controllers;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CreateFolderDTO;
 import com.cloud.NetworkCloudDrive.Models.*;
+import com.cloud.NetworkCloudDrive.Models.Enum.UploadOptions;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Services.FileService;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
@@ -42,6 +43,25 @@ public class FileController {
 
     @PostMapping("upload")
     public ResponseEntity<?> uploadFile(@RequestParam MultipartFile[] files, @RequestParam long folderid) {
+        try {
+            if (files.length == 0)
+                throw new NullPointerException("No files provided");
+            String folderPath = pathUtility.getFolderPath(folderid);
+            return ResponseEntity.ok().body(fileService.uploadFiles(files, folderPath, folderid));
+        } catch(FileAlreadyExistsException fileAlreadyExistsException) {
+            logger.error("File already exists at destination {}", fileAlreadyExistsException.getMessage());
+            return ResponseEntity.badRequest().body(new JSONErrorResponse(fileAlreadyExistsException));
+        } catch (SQLException sqlException) {
+            logger.error("SQL error occurred {}", sqlException.getMessage());
+            return ResponseEntity.internalServerError().body(new JSONErrorResponse(sqlException, "SQL error occurred"));
+        } catch (Exception e) {
+            logger.error("Failed to upload file. {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(new JSONErrorResponse(e, "Failed to upload file"));
+        }
+    }
+
+    @PostMapping(value = "upload", params = {"files", "folderid", "options"})
+    public ResponseEntity<?> uploadFile(@RequestParam MultipartFile[] files, @RequestParam long folderid, @RequestParam UploadOptions options) {
         try {
             if (files.length == 0)
                 throw new NullPointerException("No files provided");

@@ -1,5 +1,7 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
@@ -17,7 +19,7 @@ public class ImageUtility {
     private int landscapeWidth = 100;
     private int landscapeHeight = 100;
     private final PathUtility pathUtility;
-
+    private final Logger logger = LoggerFactory.getLogger(ImageUtility.class);
 
     public ImageUtility(PathUtility pathUtility, UserUtility userUtility) {
         this.pathUtility = pathUtility;
@@ -41,6 +43,7 @@ public class ImageUtility {
     }
 
     public int[] getImageDimensions(Path imagePath) throws IOException {
+        logger.info("thumb path: {}", imagePath);
         BufferedImage image = convertPathToBufferedImage(imagePath);
         return new int[]{image.getWidth(), image.getHeight()};
     }

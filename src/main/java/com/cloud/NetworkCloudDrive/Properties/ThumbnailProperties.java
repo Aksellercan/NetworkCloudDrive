@@ -13,7 +13,10 @@ public class ThumbnailProperties {
     public ThumbnailProperties() {
         this.allowedFormats = List.of(
                 "image/jpeg",
-                "image/png"
+                "image/png",
+                "image/webp",
+                "image/vnd.microsoft.icon",
+                "image/avif"
         );
     }
 

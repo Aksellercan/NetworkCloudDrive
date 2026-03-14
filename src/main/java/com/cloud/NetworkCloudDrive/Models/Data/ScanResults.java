@@ -1,21 +1,28 @@
 package com.cloud.NetworkCloudDrive.Models.Data;
 
 public class ScanResults {
-    private boolean success;
-    private int discoveredFiles;
-    private int discoveredFolders;
-    private int createdFiles;
-    private int createdFolders;
+    private boolean success = false;
+    private int discoveredFiles = 0;
+    private int discoveredFolders = 0;
+    private int createdFiles = 0;
+    private int createdFolders = 0;
 
-    public ScanResults() {
+    public ScanResults() {}
+
+    public void incrementDiscoveredFileCount() {
+        this.discoveredFiles++;
     }
 
-    public ScanResults(boolean success, int discoveredFiles, int discoveredFolders, int createdFiles, int createdFolders) {
-        this.success = success;
-        this.discoveredFiles = discoveredFiles;
-        this.discoveredFolders = discoveredFolders;
-        this.createdFiles = createdFiles;
-        this.createdFolders = createdFolders;
+    public void incrementDiscoveredFolderCount() {
+        this.discoveredFolders++;
+    }
+
+    public void incrementCreatedFileCount() {
+        this.createdFiles++;
+    }
+
+    public void incrementCreatedFolderCount() {
+        this.createdFolders++;
     }
 
     public boolean isSuccess() {
@@ -56,5 +63,11 @@ public class ScanResults {
 
     public void setCreatedFolders(int createdFolders) {
         this.createdFolders = createdFolders;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Results\nDiscovered Folders: %d\nDiscovered Files: %d\nCreated Files: %d\nCreated Folders: %d\nSuccess: %s",
+                this.discoveredFolders, this.discoveredFiles, this.createdFiles, this.createdFolders, this.success);
     }
 }
