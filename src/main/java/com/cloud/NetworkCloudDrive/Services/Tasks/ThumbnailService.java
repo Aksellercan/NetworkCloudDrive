@@ -50,7 +50,7 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException, NullPointerException {
+    public ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException {
         logger.warn("thumbnail filepath = {}", filePath);
         int[] dimensions = imageUtility.getThumbnailDimensions(filePath);
         boolean isPortrait = imageUtility.isPortrait(dimensions[0], dimensions[1]);

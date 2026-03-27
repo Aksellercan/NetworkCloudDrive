@@ -60,16 +60,22 @@ public class MaintenanceService implements MaintenanceRepository {
         setScanResultsSession(scanResults);
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
-            case NORMAL, GO_INTO_FOLDERS:
+            case NORMAL, GO_INTO_FOLDERS, CREATE_THUMBNAILS:
                 scanDirectory(startingDirectory, Files::exists, true);
                 break;
             case ONLY_FILES:
-                scanDirectory(startingDirectory,Files::isRegularFile, false);
+                scanDirectory(startingDirectory, Files::isRegularFile, false);
                 break;
             case ONLY_FOLDERS:
                 scanDirectory(startingDirectory, Files::isDirectory, true);
                 break;
             case DONT_GO_INTO_FOLDERS:
+                scanDirectory(startingDirectory, Files::exists, false);
+                break;
+            case ONLY_THUMBNAILS:
+                scanAndCreateThumbnails(folderId, false);
+                break;
+            case DONT_CREATE_THUMBNAILS:
                 scanDirectory(startingDirectory, Files::exists, false);
                 break;
         }
@@ -94,9 +100,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 }
                 if (Files.isRegularFile(files)) {
                     scanResults.incrementDiscoveredFileCount();
-                    long folderId = getFolderId(files.getParent().toFile());
-                    logger.debug("Enter file handling. Current Folder ID {}", folderId);
-                    handleFileCheck(files.toFile(), folderId);
+                    handleFileCheck(files.toFile(), getFolderId(files.getParent().toFile()));
                     continue;
                 }
                 if (encodingUtility.isBase32Decodable(files.getFileName().toString())) {
@@ -126,6 +130,14 @@ public class MaintenanceService implements MaintenanceRepository {
         }
     }
 
+    public boolean scanAndCreateThumbnails(long startingFolderId, boolean enterFolders) throws IOException {
+        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(startingFolderId, userSession.getId());
+        for (FileMetadata fileMetadata : fileMetadataList) {
+            handleThumbnailCreation();
+        }
+        return true;
+    }
+
     private ScanResults getScanResultsSession() {
         return this.scanResults;
     }
@@ -134,8 +146,8 @@ public class MaintenanceService implements MaintenanceRepository {
         this.scanResults = scanResults;
     }
 
-    @Override
-    public void handleFileCheck(File currentFile, long folderId) throws IOException {
+    private void handleFileCheck(File currentFile, long folderId) throws IOException {
+        logger.debug("Enter file handling. Current Folder ID {}", folderId);
         if (encodingUtility.isBase32Decodable(currentFile.getName())) {
             //if its base32 decodable check if its in db
             // we can also decode Base32 and get id to search by ID index could be more performant
@@ -146,6 +158,12 @@ public class MaintenanceService implements MaintenanceRepository {
             }
             logger.info("File does not exist {}", currentFile.getName());
         }
+        long newFileEntry = createNewFileEntry(currentFile, folderId);
+        logger.info("New file entry ID {}", newFileEntry);
+        getScanResultsSession().incrementCreatedFileCount();
+    }
+
+    private long createNewFileEntry(File currentFile, long folderId) throws IOException {
         logger.info("-> FILE {}", currentFile.getPath());
         FileMetadata metadata =
                 new FileMetadata(
@@ -162,11 +180,10 @@ public class MaintenanceService implements MaintenanceRepository {
         logger.info("setup metadata {}", metadata);
         Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
         sqLiteDAO.saveFile(metadata);
-        getScanResultsSession().incrementCreatedFileCount();
+        return metadata.getId();
     }
 
-    @Override
-    public File handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException {
+    private File handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException {
         FolderMetadata createdFolder = new FolderMetadata();
         sqLiteDAO.persistObjects(createdFolder);
         createdFolder.setPath(sqLiteDAO.getIdPath(currentFolderId) + "/" + createdFolder.getId());
@@ -174,6 +191,7 @@ public class MaintenanceService implements MaintenanceRepository {
         createdFolder.setName(encodingUtility.encodeBase32FolderName(createdFolder.getId(), currentFolder.getName(), userSession.getId()));
         sqLiteDAO.saveFolder(createdFolder);
         // changing in loop causes it to fail but rerunning scan makes it work
+        //NO LONGER THE CASE
         logger.info("mutated path {}", Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
         Path result = Files.move(
                 currentFolder.toPath(), Path.of(currentFolder.getParentFile().getPath() + File.separator + createdFolder.getName()));
@@ -182,9 +200,8 @@ public class MaintenanceService implements MaintenanceRepository {
         return result.toFile();
     }
 
-    @Override
-    public boolean handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId, String mimeType) {
-        if (!thumbnailProperties.isAllowedFormat(mimeType)) {
+    private boolean handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId, String mimeType) {
+        if (!thumbnailProperties.isAllowedImageFormat(mimeType)) {
             return false;
         }
         ThumbnailMetadata thumbnail;

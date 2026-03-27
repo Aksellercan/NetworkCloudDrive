@@ -82,7 +82,7 @@ public class FileService implements FileRepository {
             logger.debug("storage path {}", storagePath);
             savedFileCount++;
             metadata.setName(encodedFileName);
-            if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
+            if (thumbnailProperties.isAllowedImageFormat(file.getContentType())) {
                 ThumbnailMetadata thumbnailMetadata = handleThumbnailCreation(storagePath, encodedFileName, metadata.getId());
                 if (thumbnailMetadata != null) {
                     thumbnailIdList.add(thumbnailMetadata.getId());
