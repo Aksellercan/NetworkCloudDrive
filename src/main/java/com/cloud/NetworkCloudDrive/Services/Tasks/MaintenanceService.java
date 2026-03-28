@@ -130,12 +130,21 @@ public class MaintenanceService implements MaintenanceRepository {
         }
     }
 
-    public boolean scanAndCreateThumbnails(long startingFolderId, boolean enterFolders) throws IOException {
-        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(startingFolderId, userSession.getId());
-        for (FileMetadata fileMetadata : fileMetadataList) {
-            handleThumbnailCreation();
+    public void scanAndCreateThumbnails(long startingFolderId, boolean enterFolders) throws IOException, SQLException {
+        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnails(userSession.getId());
+        for (int i = 0; i < fileMetadataList.size(); i++) {
+            FileMetadata fileMetadata = fileMetadataList.get(i);
+            boolean result =
+                    handleThumbnailCreation(
+                            Path.of(pathUtility.resolvePathFromIdString(sqLiteDAO.getIdPath(fileMetadata.getFolderId())), fileMetadata.getName()),
+                            fileMetadata.getName(),
+                            fileMetadata.getId(),
+                            fileMetadata.getMimiType());
+            fileMetadata.setHasThumbnail(result);
+            fileMetadataList.set(i, fileMetadata);
+            logger.info("Thumbnail creation result {}", result ? "success" : "failure");
         }
-        return true;
+        sqLiteDAO.saveAllFiles(fileMetadataList);
     }
 
     private ScanResults getScanResultsSession() {
@@ -176,8 +185,8 @@ public class MaintenanceService implements MaintenanceRepository {
         // Encode in BASE32
         String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
         metadata.setName(encodedFileName);
-        metadata.setHasThumbnail(handleThumbnailCreation(Path.of(currentFile.getPath()), encodedFileName, metadata.getId(), metadata.getMimiType()));
-        logger.info("setup metadata {}", metadata);
+        metadata.setHasThumbnail(handleThumbnailCreation(pathUtility.getBasePath().relativize(Path.of(currentFile.getPath())), encodedFileName, metadata.getId(), metadata.getMimiType()));
+        logger.info("setup {}", metadata);
         Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
         sqLiteDAO.saveFile(metadata);
         return metadata.getId();
@@ -206,7 +215,7 @@ public class MaintenanceService implements MaintenanceRepository {
         }
         ThumbnailMetadata thumbnail;
         try {
-            thumbnail = thumbnailService.createAndSaveThumbnailDefaultSettings(pathUtility.getBasePath().relativize(originalFolderPath), originalFilename, fileId);
+            thumbnail = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
             return thumbnail != null;
         } catch (IOException | NullPointerException  e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());

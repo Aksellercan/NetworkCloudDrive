@@ -23,6 +23,8 @@ import java.sql.SQLException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ThumbnailService implements ThumbnailRepository {
@@ -87,8 +89,20 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public void deleteAllThumbnails() {
-        sqLiteDAO.deleteAllThumbnails(sqLiteDAO.findAllThumbnailsByUserID(userSession.getId()));
+    public void deleteAllThumbnails() throws IOException, SQLException {
+        List<ThumbnailMetadata> thumbnailMetadataList = sqLiteDAO.findAllThumbnailsByUserID(userSession.getId());
+        List<FileMetadata> fileMetadataList = new ArrayList<>();
+        for  (ThumbnailMetadata thumbnailMetadata : thumbnailMetadataList) {
+            FileMetadata fileMetadata = sqLiteDAO.findFileMetadataById(thumbnailMetadata.getFileId());
+            fileMetadata.setHasThumbnail(false);
+            fileMetadataList.add(fileMetadata);
+        }
+        sqLiteDAO.saveAllFiles(fileMetadataList);
+        long errorCount = fileUtility.deleteFolders(imageUtility.getThumbnailPath());
+        sqLiteDAO.deleteAllThumbnails(thumbnailMetadataList);
+        if (errorCount > 0) {
+            logger.error("Failed to delete thumbnails from the database. {}", errorCount);
+        }
     }
 
     @Override
@@ -115,10 +129,6 @@ public class ThumbnailService implements ThumbnailRepository {
         FileMetadata fileMetadata = sqLiteDAO.queryFileMetadata(fileId, userSession.getId());
         fileMetadata.setHasThumbnail(false);
         sqLiteDAO.saveFile(fileMetadata);
-    }
-
-    private void deleteThumbnailsFolder() {
-
     }
 
     private void deleteThumbnailFile(String thumbnailFilename, boolean isPortrait) throws IOException {

@@ -56,6 +56,10 @@ public class ImageUtility {
         return getSizeFolder(userUtility.returnUserFolderasPath().toString(), isPortrait);
     }
 
+    public Path getThumbnailPath() throws IOException {
+        return Path.of(userUtility.returnUserFolderasPath().toString(), ".thumbnails");
+    }
+
     public Path getSizeFolder(String userFolder, boolean isPortrait) {
         Path portraitThumbnailsFolder = Path.of(userFolder, ".thumbnails", "portrait");
         Path horizontalThumbnailsFolder = Path.of(userFolder, ".thumbnails", "horizontal");

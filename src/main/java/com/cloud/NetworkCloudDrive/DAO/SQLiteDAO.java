@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.FileNotFoundException;
 import java.nio.file.FileSystemException;
 import java.sql.SQLException;
 import java.util.List;
@@ -152,6 +153,15 @@ public class SQLiteDAO {
     }
 
     // Database service layer
+    @Transactional
+    public FileMetadata findFileMetadataById(long id) throws SQLException {
+        Optional<FileMetadata> fileMetadata = sqLiteFileRepository.findById(id);
+        if (fileMetadata.isEmpty()) {
+            throw new SQLException("File not found with id " + id);
+        }
+        return fileMetadata.get();
+    }
+
     @Transactional
     public List<FileMetadata> searchFileMetadataByName(String name) {
         return sqLiteFileRepository.searchFileMetadataByName(name);
