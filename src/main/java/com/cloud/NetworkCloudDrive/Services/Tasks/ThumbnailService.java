@@ -101,7 +101,7 @@ public class ThumbnailService implements ThumbnailRepository {
         long errorCount = fileUtility.deleteFolders(imageUtility.getThumbnailPath());
         sqLiteDAO.deleteAllThumbnails(thumbnailMetadataList);
         if (errorCount > 0) {
-            logger.error("Failed to delete thumbnails from the database. {}", errorCount);
+            logger.error("Failed to delete {} thumbnail(s)", errorCount);
         }
     }
 
