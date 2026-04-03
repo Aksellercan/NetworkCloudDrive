@@ -10,5 +10,8 @@ import java.util.function.Predicate;
 @Repository
 public interface MaintenanceRepository {
     boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion);
-    //void scanAndCreateThumbnails(long startingFolderId, boolean enterFolders) throws IOException, SQLException;
+
+    boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion, boolean createThumbnails);
+
+    void scanAndCreateThumbnails(long startingFolderId) throws IOException, SQLException;
 }

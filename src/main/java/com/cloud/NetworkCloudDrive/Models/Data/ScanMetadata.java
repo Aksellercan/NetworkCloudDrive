@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Models.DTO;
+package com.cloud.NetworkCloudDrive.Models.Data;
 
 public class ScanMetadata<T> {
     private T metadata;

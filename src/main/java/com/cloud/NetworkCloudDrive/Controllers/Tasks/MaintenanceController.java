@@ -18,16 +18,16 @@ public class MaintenanceController {
         this.maintenanceService = maintenanceService;
     }
 
-//    @PostMapping(value = "scan")
-//    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestBody ScanOptions scanOptions) {
-//        try {
-//            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-//                    .body(new JSONObjectResponse(maintenanceService.scanOptionsController(folderid, ScanOptions.NORMAL), "Scan completed"));
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
-//                    .body(new JSONErrorResponse(e, "Error scanning"));
-//        }
-//    }
+    @PostMapping(value = "scan", params = "scanOptions")
+    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam ScanOptions scanOptions) {
+        try {
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONObjectResponse(maintenanceService.scanOptionsController(0L, scanOptions), "Scan completed"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONErrorResponse(e, "Error scanning"));
+        }
+    }
 
     @PostMapping(value = "scan", params = "folderid")
     public @ResponseBody ResponseEntity<?> scanDirectoryNestedFolders(@RequestParam long folderid) {
