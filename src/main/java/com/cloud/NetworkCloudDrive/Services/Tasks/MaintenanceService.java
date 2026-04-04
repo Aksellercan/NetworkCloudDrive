@@ -150,7 +150,7 @@ public class MaintenanceService implements MaintenanceRepository {
 
     public boolean scanAndCreateThumbnailsRecursive(List<FolderMetadata> files, int index, ThumbnailScanResults thumbnailScanResults) {
         if (index == files.size())
-            return false;
+            return true;
 
         List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(files.get(index).getId(), userSession.getId());
 
@@ -158,11 +158,10 @@ public class MaintenanceService implements MaintenanceRepository {
             FileMetadata fileMetadata = fileMetadataList.get(i);
             boolean result = thumbnailCreationWrapper(fileMetadata);
             fileMetadata.setHasThumbnail(result);
-            fileMetadataList.set(i, fileMetadata);
+            sqLiteDAO.saveFile(fileMetadata);
             thumbnailScanResults.incrementCreatedOrFailedThumbnailCount(result);
             logger.info("Thumbnail creation result {}", result ? "success" : "failure");
         }
-
         return scanAndCreateThumbnailsRecursive(files, index + 1, thumbnailScanResults);
     }
 
