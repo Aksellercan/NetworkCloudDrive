@@ -23,6 +23,8 @@ import java.sql.SQLException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ThumbnailService implements ThumbnailRepository {
@@ -50,7 +52,7 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException, NullPointerException {
+    public ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException {
         logger.warn("thumbnail filepath = {}", filePath);
         int[] dimensions = imageUtility.getThumbnailDimensions(filePath);
         boolean isPortrait = imageUtility.isPortrait(dimensions[0], dimensions[1]);
@@ -73,12 +75,14 @@ public class ThumbnailService implements ThumbnailRepository {
         return Thumbnailator.createThumbnail(Path.of(pathUtility.getBasePathToString(), source.toString()).toFile(), width, height);
     }
 
+    @SuppressWarnings("SameParameterValue") //Suppress useless warning in IntelliJ
     private Path saveThumbnails(BufferedImage thumbnail, String filename, String format, boolean isPortrait) throws IOException {
         if (thumbnail == null)
             throw new NullPointerException("Buffered Image is null");
         // if thumbnails folder does not exist
         imageUtility.createThumbnailDirectories(userUtility.returnUserFolderasPath());
         Path thumbnailPath = Path.of(imageUtility.getThumbnailPath(isPortrait).toString(),  filename + "_thumbnail." + format);
+        logger.info("Saving thumbnail to {}", thumbnailPath);
         if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
             throw new IOException("Failed to write thumbnail to destination");
         }
@@ -86,8 +90,20 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public void deleteAllThumbnails() {
-        sqLiteDAO.deleteAllThumbnails(sqLiteDAO.findAllThumbnailsByUserID(userSession.getId()));
+    public void deleteAllThumbnails() throws IOException, SQLException {
+        List<ThumbnailMetadata> thumbnailMetadataList = sqLiteDAO.findAllThumbnailsByUserID(userSession.getId());
+        List<FileMetadata> fileMetadataList = new ArrayList<>();
+        for  (ThumbnailMetadata thumbnailMetadata : thumbnailMetadataList) {
+            FileMetadata fileMetadata = sqLiteDAO.findFileMetadataById(thumbnailMetadata.getFileId());
+            fileMetadata.setHasThumbnail(false);
+            fileMetadataList.add(fileMetadata);
+        }
+        sqLiteDAO.saveAllFiles(fileMetadataList);
+        long errorCount = fileUtility.deleteFolders(imageUtility.getThumbnailPath());
+        sqLiteDAO.deleteAllThumbnails(thumbnailMetadataList);
+        if (errorCount > 0) {
+            logger.error("Failed to delete {} thumbnail(s)", errorCount);
+        }
     }
 
     @Override
@@ -114,10 +130,6 @@ public class ThumbnailService implements ThumbnailRepository {
         FileMetadata fileMetadata = sqLiteDAO.queryFileMetadata(fileId, userSession.getId());
         fileMetadata.setHasThumbnail(false);
         sqLiteDAO.saveFile(fileMetadata);
-    }
-
-    private void deleteThumbnailsFolder() {
-
     }
 
     private void deleteThumbnailFile(String thumbnailFilename, boolean isPortrait) throws IOException {

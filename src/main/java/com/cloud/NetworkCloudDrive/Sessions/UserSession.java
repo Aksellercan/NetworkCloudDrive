@@ -13,10 +13,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.annotation.RequestScope;
+import org.springframework.web.context.annotation.SessionScope;
 
 //TODO temporarily use RequestScope instead of SessionScope (Reason: Session won't update on Postman/Yaak/Bruno. Should work for browser)
-@RequestScope
-//@SessionScope
+//@RequestScope
+@SessionScope
 @Component
 public class UserSession {
     private long id;

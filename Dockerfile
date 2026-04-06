@@ -1,6 +1,6 @@
 FROM amazoncorretto:17-alpine
 
-# Set volumes and work directory
+# Set volumes
 VOLUME /tmp
 VOLUME /app/root
 

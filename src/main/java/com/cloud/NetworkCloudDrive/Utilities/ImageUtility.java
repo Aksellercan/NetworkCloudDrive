@@ -18,7 +18,6 @@ public class ImageUtility {
     private int landscapeHeight = 100;
     private final PathUtility pathUtility;
 
-
     public ImageUtility(PathUtility pathUtility, UserUtility userUtility) {
         this.pathUtility = pathUtility;
         this.userUtility = userUtility;
@@ -55,6 +54,10 @@ public class ImageUtility {
 
     public Path getThumbnailPath(boolean isPortrait) throws IOException {
         return getSizeFolder(userUtility.returnUserFolderasPath().toString(), isPortrait);
+    }
+
+    public Path getThumbnailPath() throws IOException {
+        return Path.of(userUtility.returnUserFolderasPath().toString(), ".thumbnails");
     }
 
     public Path getSizeFolder(String userFolder, boolean isPortrait) {

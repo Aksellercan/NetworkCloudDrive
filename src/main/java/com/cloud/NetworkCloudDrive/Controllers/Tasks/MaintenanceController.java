@@ -2,7 +2,7 @@ package com.cloud.NetworkCloudDrive.Controllers.Tasks;
 
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Services.Tasks.MaintenanceService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,12 +17,22 @@ public class MaintenanceController {
         this.maintenanceService = maintenanceService;
     }
 
+    @PostMapping(value = "scan", params = "scanOptions")
+    public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam ScanOptions scanOptions) {
+        try {
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONObjectResponse(maintenanceService.scanOptionsController(0L, scanOptions), "Scan completed"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONErrorResponse(e, "Error scanning"));
+        }
+    }
+
     @PostMapping(value = "scan", params = "folderid")
     public @ResponseBody ResponseEntity<?> scanDirectoryNestedFolders(@RequestParam long folderid) {
         try {
-            maintenanceService.scanOptionsController(folderid, ScanOptions.NORMAL);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONResponse("Scan completed"));
+                    .body(new JSONObjectResponse(maintenanceService.scanOptionsController(folderid, ScanOptions.NORMAL), "Scan completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "Error scanning"));
@@ -32,9 +42,8 @@ public class MaintenanceController {
     @PostMapping(value = "scan", params = {"folderid", "scanOptions"})
     public @ResponseBody ResponseEntity<?> scanDirectoryOptions(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
         try {
-            maintenanceService.scanOptionsController(folderid, scanOptions);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONResponse("Scan completed"));
+                    .body(new JSONObjectResponse(maintenanceService.scanOptionsController(folderid, scanOptions), "Scan completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "Error scanning"));

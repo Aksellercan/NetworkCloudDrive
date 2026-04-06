@@ -5,6 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
+import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFileRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteFolderRepository;
 import com.cloud.NetworkCloudDrive.Repositories.SQL.SQLiteThumbnailRepository;
@@ -18,6 +19,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.FileNotFoundException;
 import java.nio.file.FileSystemException;
 import java.sql.SQLException;
 import java.util.List;
@@ -34,6 +36,7 @@ public class SQLiteDAO {
     private final SQLiteThumbnailRepository sqLiteThumbnailRepository;
     private final UserSession userSession;
     private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
+    private final ThumbnailProperties thumbnailProperties;
 
     public SQLiteDAO(
             SQLiteFolderRepository sqLiteFolderRepository,
@@ -41,13 +44,14 @@ public class SQLiteDAO {
             SQLiteUserEntityRepository sqLiteUserEntityRepository,
             SQLiteThumbnailRepository sqLiteThumbnailRepository,
             EntityManager entityManager,
-            UserSession userSession) {
+            UserSession userSession, ThumbnailProperties thumbnailProperties) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
         this.sqLiteThumbnailRepository = sqLiteThumbnailRepository;
         this.entityManager = entityManager;
         this.userSession = userSession;
+        this.thumbnailProperties = thumbnailProperties;
     }
 
     // DAO stuff
@@ -149,6 +153,15 @@ public class SQLiteDAO {
     }
 
     // Database service layer
+    @Transactional
+    public FileMetadata findFileMetadataById(long id) throws SQLException {
+        Optional<FileMetadata> fileMetadata = sqLiteFileRepository.findById(id);
+        if (fileMetadata.isEmpty()) {
+            throw new SQLException("File not found with id " + id);
+        }
+        return fileMetadata.get();
+    }
+
     @Transactional
     public List<FileMetadata> searchFileMetadataByName(String name) {
         return sqLiteFileRepository.searchFileMetadataByName(name);
@@ -331,9 +344,28 @@ public class SQLiteDAO {
     @Transactional
     public List<FolderMetadata> findAllStartsWithIdPath(String prefixIdPath) {
         return sqLiteFolderRepository.findAll()
-                .stream().filter(fl ->
-                        fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId())
+                .stream().filter(fl -> {
+                    //handle null values if they exist
+                    if (fl.getPath() == null || fl.getUserid() == null) return false;
+                    return fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId();
+                })
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<FileMetadata> findAllFilesWithoutThumbnails(long userId) {
+        return sqLiteFileRepository.findAllByUseridAndHasThumbnail(userId, false)
+                .stream()
+                .filter(fl -> thumbnailProperties.isAllowedImageFormat(fl.getMimiType()))
+                .toList();
+    }
+
+    @Transactional
+    public List<FileMetadata> findAllFilesWithoutThumbnailsInFolder(long folderId, long userId) {
+        return sqLiteFileRepository.findAllByUseridAndHasThumbnailAndFolderId(userId, false, folderId)
+                .stream()
+                .filter(fl -> thumbnailProperties.isAllowedImageFormat(fl.getMimiType()))
+                .toList();
     }
 
     /**

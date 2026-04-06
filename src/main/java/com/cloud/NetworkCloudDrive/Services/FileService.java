@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Models.DTO.UploadFileMetadataDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
@@ -54,9 +55,9 @@ public class FileService implements FileRepository {
 
     @Override
     public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
-        List<String> storagePathList = new ArrayList<>();
-        List<FileMetadata> uploadedFiles = new ArrayList<>();
-        List<ThumbnailMetadata> thumbnailPathList = new ArrayList<>();
+        List<UploadFileMetadataDTO> uploadedFiles = new ArrayList<>();
+        int savedFileCount = 0;
+        List<Long> thumbnailIdList = new ArrayList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();
@@ -79,22 +80,31 @@ public class FileService implements FileRepository {
             String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), fileName, userSession.getId());
             Path storagePath = storeFile(file.getInputStream(), encodedFileName, folderPath);
             logger.debug("storage path {}", storagePath);
-            storagePathList.add(storagePath.toString());
+            savedFileCount++;
             metadata.setName(encodedFileName);
-            if (thumbnailProperties.isAllowedFormat(file.getContentType())) {
+            if (thumbnailProperties.isAllowedImageFormat(file.getContentType())) {
                 ThumbnailMetadata thumbnailMetadata = handleThumbnailCreation(storagePath, encodedFileName, metadata.getId());
                 if (thumbnailMetadata != null) {
-                    thumbnailPathList.add(thumbnailMetadata);
+                    thumbnailIdList.add(thumbnailMetadata.getId());
                     metadata.setHasThumbnail(true);
                 }
             }
-            uploadedFiles.add(metadata);
+            uploadedFiles.add(new UploadFileMetadataDTO(metadata));
+            sqLiteDAO.saveFile(metadata);
         }
-        if (storagePathList.isEmpty())
-            throw new FileAlreadyExistsException("File(s) already exists at destination");
-        if (!thumbnailPathList.isEmpty())
-            return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList, "thumbnail_metadata", thumbnailPathList);
-        return Map.of("files", sqLiteDAO.saveAllFiles(uploadedFiles), "storage_path", storagePathList);
+        if (savedFileCount == 0)
+            throw new FileAlreadyExistsException(
+                    String.format("File%s already exists at destination", (files.length > 1 ? "s" : "")));
+        if (!thumbnailIdList.isEmpty())
+            return Map
+                    .of(
+                            "uploaded_file_count", savedFileCount,
+                            "files", uploadedFiles,
+                            "thumbnail_id_list", thumbnailIdList);
+        return Map
+                .of(
+                        "uploaded_file_count", savedFileCount,
+                        "files", uploadedFiles);
     }
 
     private ThumbnailMetadata handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId) {

@@ -12,9 +12,9 @@ import java.util.List;
 
 @Repository
 public interface ThumbnailRepository {
-    ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException, NullPointerException;
+    ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException;
     BufferedImage createThumbnailOfAnImage(Path source, int width, int height) throws IOException;
-    void deleteAllThumbnails();
+    void deleteAllThumbnails() throws IOException, SQLException;
     void deleteThumbnailByThumbnailID(long thumbnailId) throws SQLException, IOException;
     void deleteThumbnailByFileID(long fileId) throws SQLException, IOException;
     Resource getThumbnail(String thumbnailFilename, boolean isPortrait) throws Exception;

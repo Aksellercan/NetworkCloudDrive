@@ -85,6 +85,22 @@ public class ThumbnailController {
         }
     }
 
+    @DeleteMapping("deleteall")
+    public @ResponseBody ResponseEntity<?> deleteAllThumbnails() {
+        try {
+            thumbnailService.deleteAllThumbnails();
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
+                    body(new JSONResponse("Removed all thumbnails"));
+        } catch (FileNotFoundException fnf) {
+            logger.error("Internal error occurred. {}", fnf.getMessage());
+            return ResponseEntity.internalServerError().body(new JSONErrorResponse(fnf, "Internal error occurred"));
+        } catch (Exception e) {
+            logger.error("Thumbnail Controller {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(
+                    new JSONErrorResponse(e, "Failed to delete thumbnail"));
+        }
+    }
+
     @DeleteMapping("deletebyfileid")
     public @ResponseBody ResponseEntity<?> deleteThumbnailByFileID(@RequestParam long fileId) {
         try {

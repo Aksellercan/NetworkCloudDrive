@@ -107,7 +107,7 @@ public class FileUtility {
      */
     public List<Path> getFileAndFolderPathsFromFolder(Path folder) throws IOException {
         List<Path> fileList;
-        logger.info("full path {}", folder);
+        logger.debug("full path {}", folder);
         try (Stream<Path> stream = Files.list(folder)) {
             fileList = stream.toList();
         }
@@ -159,5 +159,21 @@ public class FileUtility {
                 !ignoreFileListProperties.isInIgnoreList(dup.toFile().getName())
                         &&
                         encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(filename));
+    }
+
+    /**
+     * Deletes entire folders
+     * @param dir   Directory to delete
+     * @return  Error count, if successful 0. 1 < ... failure
+     * @throws IOException  If file doesn't exist or cannot be deleted
+     */
+    public long deleteFolders(Path dir) throws IOException {
+        List<Path> fileTreeStream = walkFsTree(dir, true);
+        long errorCount = 0;
+        for (Path file : fileTreeStream) {
+            if (!Files.deleteIfExists(file)) errorCount++;
+            logger.debug("Deleted file at path {}", file);
+        }
+        return errorCount;
     }
 }
