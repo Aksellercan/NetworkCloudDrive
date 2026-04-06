@@ -5,6 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.Data.ScanResults;
 import com.cloud.NetworkCloudDrive.Models.Data.ThumbnailScanResults;
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
+import com.cloud.NetworkCloudDrive.Models.Data.ScanMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -56,7 +56,7 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     //controller for scan options
-    public ScanResults scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
+    public ScanMetadata<Object> scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
         Path startingDirectory = pathUtility.getFullPath(pathUtility.getFolderPath(folderId));
         ScanResults scanResults = new ScanResults();
         setScanResultsSession(scanResults);
@@ -75,14 +75,13 @@ public class MaintenanceService implements MaintenanceRepository {
                 scanDirectory(startingDirectory, Files::exists, false);
                 break;
             case ONLY_THUMBNAILS:
-                logger.warn(recursiveThumbnailScanInvoker(folderId).toString());
-                break;
+                return new ScanMetadata<>(recursiveThumbnailScanInvoker(folderId));
             case DONT_CREATE_THUMBNAILS:
                 scanDirectory(startingDirectory, Files::exists, true, false);
                 break;
         }
         logger.info(scanResults.toString());
-        return scanResults;
+        return new ScanMetadata<>(scanResults);
     }
 
     @Override
@@ -154,13 +153,13 @@ public class MaintenanceService implements MaintenanceRepository {
 
         List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(files.get(index).getId(), userSession.getId());
 
-        for (int i = 0; i < fileMetadataList.size(); i++) {
-            FileMetadata fileMetadata = fileMetadataList.get(i);
+        for (FileMetadata fileMetadata : fileMetadataList) {
+            thumbnailScanResults.incrementDiscoveredFileCount();
             boolean result = thumbnailCreationWrapper(fileMetadata);
             fileMetadata.setHasThumbnail(result);
             sqLiteDAO.saveFile(fileMetadata);
             thumbnailScanResults.incrementCreatedOrFailedThumbnailCount(result);
-            logger.info("Thumbnail creation result {}", result ? "success" : "failure");
+            logger.info("Thumbnail creation attempt: {}", result ? "success" : "failure");
         }
         return scanAndCreateThumbnailsRecursive(files, index + 1, thumbnailScanResults);
     }

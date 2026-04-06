@@ -58,7 +58,8 @@ public class ScanResults {
 
     @Override
     public String toString() {
-        return String.format("Results\nDiscovered Folders: %d\nDiscovered Files: %d\nCreated Files: %d\nCreated Folders: %d",
+        return String.format(
+                "Results\nDiscovered Folders: %d\nDiscovered Files: %d\nCreated Files: %d\nCreated Folders: %d",
                 this.discoveredFolders, this.discoveredFiles, this.createdFiles, this.createdFolders);
     }
 }

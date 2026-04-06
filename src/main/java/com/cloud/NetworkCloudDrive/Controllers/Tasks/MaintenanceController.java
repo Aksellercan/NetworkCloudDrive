@@ -3,7 +3,6 @@ package com.cloud.NetworkCloudDrive.Controllers.Tasks;
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Services.Tasks.MaintenanceService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

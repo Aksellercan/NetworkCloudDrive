@@ -1,12 +1,11 @@
 package com.cloud.NetworkCloudDrive.Models.Data;
 
+// No idea what this is for...
 public class ScanMetadata<T> {
     private T metadata;
-    private boolean updated = false;
 
-    public ScanMetadata(T metadata, boolean updated) {
+    public ScanMetadata(T metadata) {
         this.metadata = metadata;
-        this.updated = updated;
     }
 
     public ScanMetadata() {
@@ -18,13 +17,5 @@ public class ScanMetadata<T> {
 
     public void setMetadata(T metadata) {
         this.metadata = metadata;
-    }
-
-    public boolean isUpdated() {
-        return updated;
-    }
-
-    public void setUpdated(boolean updated) {
-        this.updated = updated;
     }
 }

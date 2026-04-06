@@ -2,7 +2,6 @@ package com.cloud.NetworkCloudDrive.Models.Data;
 
 public class ThumbnailScanResults extends ScanResults {
     private int createdThumbnails = 0;
-    private int discoveredFiles = 0;
     private int failedThumbnails = 0;
 
     public ThumbnailScanResults() {
@@ -11,10 +10,6 @@ public class ThumbnailScanResults extends ScanResults {
     public void incrementCreatedOrFailedThumbnailCount(boolean result) {
         if (result) incrementCreatedThumbnailCount();
         else incrementFailedThumbnailCount();
-    }
-
-    public void incrementDiscoveredFileCount() {
-        this.discoveredFiles++;
     }
 
     public void incrementCreatedThumbnailCount() {
@@ -33,19 +28,17 @@ public class ThumbnailScanResults extends ScanResults {
         this.createdThumbnails = createdThumbnails;
     }
 
-    @Override
-    public int getDiscoveredFiles() {
-        return discoveredFiles;
+    public int getFailedThumbnails() {
+        return failedThumbnails;
     }
 
-    @Override
-    public void setDiscoveredFiles(int discoveredFiles) {
-        this.discoveredFiles = discoveredFiles;
+    public void setFailedThumbnails(int failedThumbnails) {
+        this.failedThumbnails = failedThumbnails;
     }
 
     @Override
     public String toString() {
         return String.format("Results\nDiscovered Files: %d\nCreated thumbnails: %d\nFailed thumbnails count: %d",
-                this.discoveredFiles, this.createdThumbnails, this.failedThumbnails);
+                getDiscoveredFiles(), this.createdThumbnails, this.failedThumbnails);
     }
 }
