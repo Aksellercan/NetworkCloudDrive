@@ -133,7 +133,6 @@ public class FileService implements FileRepository {
     @Override
     public Resource getFile(FileMetadata file, String path) throws Exception {
         Path filePath = Paths.get(pathUtility.getFullPathToString(path), file.getName());
-        logger.info("file service path: {}", filePath);
         Path normalizedRoot = pathUtility.getBasePath().normalize().toAbsolutePath();
         if (filePath.startsWith(normalizedRoot))
             throw new SecurityException("Unauthorized access");

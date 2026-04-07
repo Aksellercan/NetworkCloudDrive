@@ -85,7 +85,6 @@ public class FileController {
             FileMetadata metadata = informationService.getFileMetadata(fileid);
             String actualPath = pathUtility.getFolderPath(metadata.getFolderId());
             String decodedFileName = encodingUtility.decodedBase32SplitArray(metadata.getName())[1];
-            logger.info("path requested {}", actualPath);
             Resource file = fileService.getFile(metadata, actualPath);
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
