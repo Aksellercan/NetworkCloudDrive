@@ -1,6 +1,8 @@
 package com.cloud.NetworkCloudDrive.Repositories.Tasks;
 
+import com.cloud.NetworkCloudDrive.Models.Data.ScanMetadata;
 import com.cloud.NetworkCloudDrive.Models.Data.ThumbnailScanResults;
+import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -17,4 +19,6 @@ public interface MaintenanceRepository {
     void scanAndCreateThumbnails(long startingFolderId) throws IOException, SQLException;
 
     ThumbnailScanResults recursiveThumbnailScanInvoker(long folderId) throws SQLException;
+
+    Object scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException;
     }

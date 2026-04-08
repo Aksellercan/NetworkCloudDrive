@@ -10,6 +10,7 @@ import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.Tasks.MaintenanceRepository;
+import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
@@ -34,7 +35,7 @@ public class MaintenanceService implements MaintenanceRepository {
     private final SQLiteDAO sqLiteDAO;
     private final UserSession userSession;
     private final PathUtility pathUtility;
-    private final ThumbnailService thumbnailService;
+    private final ThumbnailRepository thumbnailRepository;
     private final ThumbnailProperties thumbnailProperties;
     private ScanResults scanResults;
 
@@ -44,19 +45,20 @@ public class MaintenanceService implements MaintenanceRepository {
             SQLiteDAO sqLiteDAO,
             UserSession userSession,
             PathUtility pathUtility,
-            ThumbnailService thumbnailService,
+            ThumbnailRepository thumbnailRepository,
             ThumbnailProperties thumbnailProperties) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
         this.pathUtility = pathUtility;
-        this.thumbnailService = thumbnailService;
+        this.thumbnailRepository = thumbnailRepository;
         this.thumbnailProperties = thumbnailProperties;
     }
 
     //controller for scan options
-    public ScanMetadata<Object> scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
+    @Override
+    public Object scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
         Path startingDirectory = pathUtility.getFullPath(pathUtility.getFolderPath(folderId));
         ScanResults scanResults = new ScanResults();
         setScanResultsSession(scanResults);
@@ -266,7 +268,7 @@ public class MaintenanceService implements MaintenanceRepository {
         }
         ThumbnailMetadata thumbnail;
         try {
-            thumbnail = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
+            thumbnail = thumbnailRepository.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
             return thumbnail != null;
         } catch (IOException | NullPointerException  e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());

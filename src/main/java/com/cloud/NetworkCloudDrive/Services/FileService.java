@@ -7,7 +7,7 @@ import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.Services.FileRepository;
-import com.cloud.NetworkCloudDrive.Services.Tasks.ThumbnailService;
+import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
@@ -34,7 +34,7 @@ public class FileService implements FileRepository {
     private final EncodingUtility encodingUtility;
     private final PathUtility pathUtility;
     private final ThumbnailProperties thumbnailProperties;
-    private final ThumbnailService thumbnailService;
+    private final ThumbnailRepository thumbnailRepository;
 
     public FileService(
             SQLiteDAO sqLiteDAO,
@@ -43,14 +43,14 @@ public class FileService implements FileRepository {
             EncodingUtility encodingUtility,
             PathUtility pathUtility,
             ThumbnailProperties thumbnailProperties,
-            ThumbnailService thumbnailService) {
+            ThumbnailRepository thumbnailRepository) {
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
         this.thumbnailProperties = thumbnailProperties;
-        this.thumbnailService = thumbnailService;
+        this.thumbnailRepository = thumbnailRepository;
     }
 
     @Override
@@ -110,7 +110,7 @@ public class FileService implements FileRepository {
     private ThumbnailMetadata handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId) {
         ThumbnailMetadata thumbnail;
         try {
-            thumbnail = thumbnailService.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
+            thumbnail = thumbnailRepository.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
         } catch (IOException | NullPointerException  e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());
             return null;

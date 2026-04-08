@@ -3,7 +3,7 @@ package com.cloud.NetworkCloudDrive.Controllers.Tasks;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
-import com.cloud.NetworkCloudDrive.Services.Tasks.ThumbnailService;
+import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -20,17 +20,17 @@ import java.sql.SQLException;
 @RequestMapping(path = "/api/thumbnails")
 public class ThumbnailController {
     public final Logger logger = LoggerFactory.getLogger(ThumbnailController.class);
-    private final ThumbnailService thumbnailService;
+    private final ThumbnailRepository thumbnailRepository;
 
-    public ThumbnailController(ThumbnailService thumbnailService) {
-        this.thumbnailService = thumbnailService;
+    public ThumbnailController(ThumbnailRepository thumbnailRepository) {
+        this.thumbnailRepository = thumbnailRepository;
     }
 
     @GetMapping("get")
     public @ResponseBody ResponseEntity<?> getThumbnailByID(@RequestParam long thumbId) {
         try {
-            ThumbnailMetadata thumbnailMetadata = thumbnailService.getThumbnailByID(thumbId);
-            Resource file = thumbnailService.getThumbnail(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
+            ThumbnailMetadata thumbnailMetadata = thumbnailRepository.getThumbnailByID(thumbId);
+            Resource file = thumbnailRepository.getThumbnail(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"" + thumbnailMetadata.getFileName() + "\" ").
@@ -49,8 +49,8 @@ public class ThumbnailController {
     @GetMapping("getbyfileid")
     public @ResponseBody ResponseEntity<?> getThumbnailByFileID(@RequestParam long fileId) {
         try {
-            ThumbnailMetadata thumbnailMetadata = thumbnailService.getThumbnailByFileID(fileId);
-            Resource file = thumbnailService.getThumbnail(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
+            ThumbnailMetadata thumbnailMetadata = thumbnailRepository.getThumbnailByFileID(fileId);
+            Resource file = thumbnailRepository.getThumbnail(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"" + thumbnailMetadata.getFileName() + "\" ").
@@ -69,7 +69,7 @@ public class ThumbnailController {
     @DeleteMapping("delete")
     public @ResponseBody ResponseEntity<?> deleteThumbnailByID(@RequestParam long thumbId) {
         try {
-            thumbnailService.deleteThumbnailByThumbnailID(thumbId);
+            thumbnailRepository.deleteThumbnailByThumbnailID(thumbId);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Thumbnail with Id %d was successfully removed", thumbId));
         } catch (FileNotFoundException fnf) {
@@ -88,7 +88,7 @@ public class ThumbnailController {
     @DeleteMapping("deleteall")
     public @ResponseBody ResponseEntity<?> deleteAllThumbnails() {
         try {
-            thumbnailService.deleteAllThumbnails();
+            thumbnailRepository.deleteAllThumbnails();
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Removed all thumbnails"));
         } catch (FileNotFoundException fnf) {
@@ -104,7 +104,7 @@ public class ThumbnailController {
     @DeleteMapping("deletebyfileid")
     public @ResponseBody ResponseEntity<?> deleteThumbnailByFileID(@RequestParam long fileId) {
         try {
-            thumbnailService.deleteThumbnailByFileIDAndSetThumbnailStatus(fileId);
+            thumbnailRepository.deleteThumbnailByFileIDAndSetThumbnailStatus(fileId);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Thumbnail with related to File Id %d was successfully removed", fileId));
         } catch (FileNotFoundException fnf) {

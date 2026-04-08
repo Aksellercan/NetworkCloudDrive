@@ -5,7 +5,7 @@ import com.cloud.NetworkCloudDrive.Models.*;
 import com.cloud.NetworkCloudDrive.Models.Enum.UploadOptions;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Repositories.Services.FileRepository;
-import com.cloud.NetworkCloudDrive.Services.InformationService;
+import com.cloud.NetworkCloudDrive.Repositories.Services.InformationRepository;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
@@ -25,17 +25,17 @@ import java.sql.SQLException;
 @RequestMapping(path = "/api/file")
 public class FileController {
     private final FileRepository fileRepository;
-    private final InformationService informationService;
+    private final InformationRepository informationRepository;
     private final Logger logger = LoggerFactory.getLogger(FileController.class);
     private final EncodingUtility encodingUtility;
     private final PathUtility pathUtility;
 
     public FileController(
-            InformationService informationService,
+            InformationRepository informationRepository,
             EncodingUtility encodingUtility,
             PathUtility pathUtility,
             FileRepository fileRepository) {
-        this.informationService = informationService;
+        this.informationRepository = informationRepository;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
         this.fileRepository = fileRepository;
@@ -82,7 +82,7 @@ public class FileController {
     @GetMapping("download")
     public ResponseEntity<?> downloadFile(@RequestParam long fileid) {
         try {
-            FileMetadata metadata = informationService.getFileMetadata(fileid);
+            FileMetadata metadata = informationRepository.getFileMetadata(fileid);
             String actualPath = pathUtility.getFolderPath(metadata.getFolderId());
             String decodedFileName = encodingUtility.decodedBase32SplitArray(metadata.getName())[1];
             Resource file = fileRepository.getFile(metadata, actualPath);

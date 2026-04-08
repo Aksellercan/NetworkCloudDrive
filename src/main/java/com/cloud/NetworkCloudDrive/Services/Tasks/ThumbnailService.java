@@ -123,6 +123,7 @@ public class ThumbnailService implements ThumbnailRepository {
         deleteThumbnailFile(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
     }
 
+    @Override
     public void deleteThumbnailByFileIDAndSetThumbnailStatus(long fileId) throws SQLException, IOException {
         ThumbnailMetadata thumbnailMetadata = sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId());
         sqLiteDAO.deleteThumbnail(thumbnailMetadata);

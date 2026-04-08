@@ -6,7 +6,7 @@ import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Services.UserService;
+import com.cloud.NetworkCloudDrive.Repositories.Services.UserRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
@@ -38,7 +38,7 @@ class NetworkCloudDriveApplicationTests {
     @Autowired
     EncodingUtility encodingUtility;
     @Autowired
-    UserService userService;
+    UserRepository userRepository;
     @Autowired
     UserSession userSession;
     @Autowired
@@ -62,7 +62,7 @@ class NetworkCloudDriveApplicationTests {
     }
 
     public UserEntity registerUserAndLogDetails(UserEntity userEntity) {
-        UserEntity userEntityRegisterDetails = userService.registerUser(userEntity.getName(), userEntity.getMail(), userEntity.getPassword());
+        UserEntity userEntityRegisterDetails = userRepository.registerUser(userEntity.getName(), userEntity.getMail(), userEntity.getPassword());
         logger.info(
                 "Registered UserEntity ID {} details: name {} mail {} and password {}. Extra details: registered at {}, last login {} and role {}",
                 userEntityRegisterDetails.getId(),
@@ -317,7 +317,7 @@ class NetworkCloudDriveApplicationTests {
             if (!sqLiteDAO.checkIfUserExists(userEntityRegisterDetails.getName(), userEntityRegisterDetails.getMail())) {
                 throw new SecurityException("Failed to register userEntity");
             }
-            loginStatus = userService.loginUser(userEntity.getName(), userEntity.getMail(), userEntity.getPassword());
+            loginStatus = userRepository.loginUser(userEntity.getName(), userEntity.getMail(), userEntity.getPassword());
         } catch (SQLException e) {
             logger.error("User_Service_Register_and_Login_User_Returns_True {}", e.getMessage());
             Assertions.fail(e.getMessage());

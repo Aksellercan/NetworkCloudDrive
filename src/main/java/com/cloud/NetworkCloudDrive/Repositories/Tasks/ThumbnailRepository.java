@@ -20,4 +20,5 @@ public interface ThumbnailRepository {
     Resource getThumbnail(String thumbnailFilename, boolean isPortrait) throws Exception;
     ThumbnailMetadata getThumbnailByFileID(long fileId) throws SQLException;
     ThumbnailMetadata getThumbnailByID(long thumbnailId) throws SQLException;
+    void deleteThumbnailByFileIDAndSetThumbnailStatus(long fileId) throws SQLException, IOException;
     }
