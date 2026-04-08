@@ -10,7 +10,7 @@ import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
-import com.cloud.NetworkCloudDrive.Services.FileSystemService;
+import com.cloud.NetworkCloudDrive.Repositories.Services.FileSystemRepository;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
@@ -30,7 +30,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(path = "/api/filesystem")
 public class FileSystemController {
-    private final FileSystemService fileSystemService;
+    private final FileSystemRepository fileSystemRepository;
     private final FileUtility fileUtility;
     private final InformationService informationService;
     private final UserSession userSession;
@@ -39,18 +39,18 @@ public class FileSystemController {
     private final PathUtility pathUtility;
 
     public FileSystemController(
-            FileSystemService fileSystemService,
             InformationService informationService,
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
-            PathUtility pathUtility) {
-        this.fileSystemService = fileSystemService;
+            PathUtility pathUtility,
+            FileSystemRepository fileSystemRepository) {
         this.informationService = informationService;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
+        this.fileSystemRepository = fileSystemRepository;
     }
 
     @PatchMapping(value = "file/rename", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -58,7 +58,7 @@ public class FileSystemController {
         try {
             FileMetadata oldFile = informationService.getFileMetadata(updateFileNameDTO.getFile_id());
             String oldName = oldFile.getName();
-            String updatedPath = fileSystemService.updateFileName(updateFileNameDTO.getName(), oldFile);
+            String updatedPath = fileSystemRepository.updateFileName(updateFileNameDTO.getName(), oldFile);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Updated file with Id %d from %s to %s. Updated path %s",
                             updateFileNameDTO.getFile_id(), oldName, updateFileNameDTO.getName(), updatedPath));
@@ -74,7 +74,7 @@ public class FileSystemController {
         try {
             FolderMetadata oldFolder = informationService.getFolderMetadata(updateFolderNameDTO.getFolder_id());
             String oldName = encodingUtility.decodedBase32SplitArray(oldFolder.getName())[1];
-            String updatedPath = fileSystemService.updateFolderName(updateFolderNameDTO.getName(), oldFolder);
+            String updatedPath = fileSystemRepository.updateFolderName(updateFolderNameDTO.getName(), oldFolder);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Updated folder name with Id %d from %s to %s. Updated path %s",
                             updateFolderNameDTO.getFolder_id(), oldName, updateFolderNameDTO.getName(), updatedPath));
@@ -91,7 +91,7 @@ public class FileSystemController {
         try {
             FolderMetadata folderToMove = informationService.getFolderMetadata(updateFolderPathDTO.getFormer_folder_id());
             String oldPath = pathUtility.resolvePathFromIdString(folderToMove.getPath());
-            String newPath = fileSystemService.moveFolder(folderToMove, updateFolderPathDTO.getDestination_folder_id());
+            String newPath = fileSystemRepository.moveFolder(folderToMove, updateFolderPathDTO.getDestination_folder_id());
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONMapResponse(
                             Map.of("old_path", oldPath, "new_path", newPath),
@@ -113,7 +113,7 @@ public class FileSystemController {
                     :
                     userSession.getName());
             logger.info("old path controller {}", oldPath);
-            String newPath = fileSystemService.moveFile(fileToMove, updateFilePathDTO.getFolder_id());
+            String newPath = fileSystemRepository.moveFile(fileToMove, updateFilePathDTO.getFolder_id());
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Moved file with Id %d from %s to %s", updateFilePathDTO.getFile_id(), oldPath, newPath));
         } catch (Exception e) {
@@ -127,7 +127,7 @@ public class FileSystemController {
     public @ResponseBody ResponseEntity<JSONResponse> removeFolder(@RequestParam long folderid) {
         try {
             FolderMetadata folderToRemove = informationService.getFolderMetadata(folderid);
-            String oldPath = fileSystemService.removeFolder(folderToRemove);
+            String oldPath = fileSystemRepository.removeFolder(folderToRemove);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Folder with Id %d at path %s was successfully removed", folderToRemove.getId(), oldPath));
         } catch (Exception e) {
@@ -141,7 +141,7 @@ public class FileSystemController {
     public @ResponseBody ResponseEntity<JSONResponse> removeFile(@RequestParam long fileid) {
         try {
             FileMetadata fileToRemove = informationService.getFileMetadata(fileid);
-            String oldPath = fileSystemService.removeFile(fileToRemove);
+            String oldPath = fileSystemRepository.removeFile(fileToRemove);
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("file with Id %d at path %s was successfully removed", fileToRemove.getId(), oldPath));
         } catch (Exception e) {
@@ -157,7 +157,7 @@ public class FileSystemController {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList));
+                    body(fileSystemRepository.getListOfMetadataFromPath(fileList));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
@@ -174,7 +174,7 @@ public class FileSystemController {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList, sortby));
+                    body(fileSystemRepository.getListOfMetadataFromPath(fileList, sortby));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
@@ -191,7 +191,7 @@ public class FileSystemController {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList, filterby));
+                    body(fileSystemRepository.getListOfMetadataFromPath(fileList, filterby));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
@@ -214,10 +214,10 @@ public class FileSystemController {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
             if ((filterby != FilterListEnum.KEYWORD) && (filterby != FilterListEnum.TYPE)) {
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                        body(fileSystemService.getListOfMetadataFromPath(fileList, filterby));
+                        body(fileSystemRepository.getListOfMetadataFromPath(fileList, filterby));
             }
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(fileSystemService.getListOfMetadataFromPath(fileList, filterby, filter));
+                    body(fileSystemRepository.getListOfMetadataFromPath(fileList, filterby, filter));
         } catch (FileSystemException fileSystemException) {
             logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
             return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).

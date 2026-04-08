@@ -4,7 +4,7 @@ import com.cloud.NetworkCloudDrive.Models.DTO.CreateFolderDTO;
 import com.cloud.NetworkCloudDrive.Models.*;
 import com.cloud.NetworkCloudDrive.Models.Enum.UploadOptions;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Services.FileService;
+import com.cloud.NetworkCloudDrive.Repositories.Services.FileRepository;
 import com.cloud.NetworkCloudDrive.Services.InformationService;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
@@ -24,21 +24,21 @@ import java.sql.SQLException;
 @RestController
 @RequestMapping(path = "/api/file")
 public class FileController {
-    private final FileService fileService;
+    private final FileRepository fileRepository;
     private final InformationService informationService;
     private final Logger logger = LoggerFactory.getLogger(FileController.class);
     private final EncodingUtility encodingUtility;
     private final PathUtility pathUtility;
 
     public FileController(
-            FileService fileService,
             InformationService informationService,
             EncodingUtility encodingUtility,
-            PathUtility pathUtility) {
-        this.fileService = fileService;
+            PathUtility pathUtility,
+            FileRepository fileRepository) {
         this.informationService = informationService;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
+        this.fileRepository = fileRepository;
     }
 
     @PostMapping("upload")
@@ -47,7 +47,7 @@ public class FileController {
             if (files.length == 0)
                 throw new NullPointerException("No files provided");
             String folderPath = pathUtility.getFolderPath(folderid);
-            return ResponseEntity.ok().body(fileService.uploadFiles(files, folderPath, folderid));
+            return ResponseEntity.ok().body(fileRepository.uploadFiles(files, folderPath, folderid));
         } catch(FileAlreadyExistsException fileAlreadyExistsException) {
             logger.error("File already exists at destination {}", fileAlreadyExistsException.getMessage());
             return ResponseEntity.badRequest().body(new JSONErrorResponse(fileAlreadyExistsException));
@@ -66,7 +66,7 @@ public class FileController {
             if (files.length == 0)
                 throw new NullPointerException("No files provided");
             String folderPath = pathUtility.getFolderPath(folderid);
-            return ResponseEntity.ok().body(fileService.uploadFiles(files, folderPath, folderid));
+            return ResponseEntity.ok().body(fileRepository.uploadFiles(files, folderPath, folderid));
         } catch(FileAlreadyExistsException fileAlreadyExistsException) {
             logger.error("File already exists at destination {}", fileAlreadyExistsException.getMessage());
             return ResponseEntity.badRequest().body(new JSONErrorResponse(fileAlreadyExistsException));
@@ -85,7 +85,7 @@ public class FileController {
             FileMetadata metadata = informationService.getFileMetadata(fileid);
             String actualPath = pathUtility.getFolderPath(metadata.getFolderId());
             String decodedFileName = encodingUtility.decodedBase32SplitArray(metadata.getName())[1];
-            Resource file = fileService.getFile(metadata, actualPath);
+            Resource file = fileRepository.getFile(metadata, actualPath);
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"" + decodedFileName + "\" ")
@@ -107,7 +107,7 @@ public class FileController {
     @PostMapping(value = "create/folder", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createFolder(@RequestBody CreateFolderDTO folderDTO) {
         try {
-            FolderMetadata folderMetadata = fileService.createFolder(folderDTO.getName(), folderDTO.getFolder_id());
+            FolderMetadata folderMetadata = fileRepository.createFolder(folderDTO.getName(), folderDTO.getFolder_id());
             folderMetadata.setPath(pathUtility.resolvePathFromIdString(folderMetadata.getPath()));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(folderMetadata);
         } catch (FileAlreadyExistsException fae) {

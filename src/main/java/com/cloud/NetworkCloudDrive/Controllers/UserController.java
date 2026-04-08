@@ -8,7 +8,7 @@ import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
-import com.cloud.NetworkCloudDrive.Services.UserService;
+import com.cloud.NetworkCloudDrive.Repositories.Services.UserRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.ImageUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
@@ -26,18 +26,19 @@ import java.util.Map;
 @RequestMapping(path = "/api/user")
 public class UserController {
     private final Logger logger = LoggerFactory.getLogger(UserController.class);
-    private final UserService userService;
+    private final UserRepository userRepository;
     private final UserSession userSession;
     private final SQLiteDAO sqLiteDAO;
     private final UserUtility userUtility;
     private final ImageUtility imageUtility;
 
     public UserController(
-            UserService userService,
+            UserRepository userRepository,
             UserSession userSession,
             SQLiteDAO sqLiteDAO,
-            UserUtility userUtility, ImageUtility imageUtility) {
-        this.userService = userService;
+            UserUtility userUtility,
+            ImageUtility imageUtility) {
+        this.userRepository = userRepository;
         this.userSession = userSession;
         this.sqLiteDAO = sqLiteDAO;
         this.userUtility = userUtility;
@@ -47,7 +48,7 @@ public class UserController {
     @PostMapping("register")
     public @ResponseBody ResponseEntity<?> register(@RequestBody UserDTO userDTO) {
         try {
-            UserEntity registeredUserEntity = userService.registerUser(userDTO.getName(), userDTO.getMail(), userDTO.getPassword());
+            UserEntity registeredUserEntity = userRepository.registerUser(userDTO.getName(), userDTO.getMail(), userDTO.getPassword());
             //create user directory
             imageUtility.createThumbnailDirectories(userUtility.createUserDirectory(registeredUserEntity.getId(), registeredUserEntity.getName(), registeredUserEntity.getMail()));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
@@ -74,7 +75,7 @@ public class UserController {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONObjectResponse(
-                            userService.updateMail(sqLiteDAO.findUserByMail(userSession.getMail()),
+                            userRepository.updateMail(sqLiteDAO.findUserByMail(userSession.getMail()),
                                     updateUserDTO.getUpdate()), "Successfully updated user mail"));
         } catch (Exception e) {
             logger.error("Failed to update user mail reason: {}", e.getMessage());
@@ -87,7 +88,7 @@ public class UserController {
     public @ResponseBody ResponseEntity<?> updateName(@RequestBody UpdateUserDTO updateUserDTO) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(new JSONObjectResponse(userService.updateName(sqLiteDAO.findUserByMail(userSession.getMail()),
+                    body(new JSONObjectResponse(userRepository.updateName(sqLiteDAO.findUserByMail(userSession.getMail()),
                             updateUserDTO.getUpdate()), "Successfully updated user name"));
         } catch (Exception e) {
             logger.error("Failed to update user name reason: {}", e.getMessage());
@@ -100,7 +101,7 @@ public class UserController {
     public @ResponseBody ResponseEntity<?> updatePassword(@RequestBody UpdateUserDTO updateUserDTO) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(new JSONObjectResponse(userService.updatePassword(sqLiteDAO.findUserByMail(userSession.getMail()),
+                    body(new JSONObjectResponse(userRepository.updatePassword(sqLiteDAO.findUserByMail(userSession.getMail()),
                             updateUserDTO.getUpdate()), "Successfully updated user password"));
         } catch (Exception e) {
             logger.error("Failed to update user password reason: {}", e.getMessage());
@@ -112,7 +113,7 @@ public class UserController {
     @DeleteMapping("delete")
     public @ResponseBody ResponseEntity<?> deleteUser() {
         try {
-            userService.deleteUser(sqLiteDAO.findUserByMail(userSession.getMail()));
+            userRepository.deleteUser(sqLiteDAO.findUserByMail(userSession.getMail()));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONResponse("Successfully deleted user"));
         } catch (Exception e) {
@@ -127,7 +128,7 @@ public class UserController {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONObjectResponse(
-                            userService.currentUserDetails(userSession.getMail()), "Currently authenticated user info"));
+                            userRepository.currentUserDetails(userSession.getMail()), "Currently authenticated user info"));
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).
                     body(new JSONErrorResponse(e, "Failed to get user details, reason: %s", e.getMessage()));

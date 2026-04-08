@@ -3,7 +3,7 @@ package com.cloud.NetworkCloudDrive.Controllers;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Services.InformationService;
+import com.cloud.NetworkCloudDrive.Repositories.Services.InformationRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
@@ -20,19 +20,19 @@ import java.io.File;
 @RequestMapping(path = "/api/info")
 public class InformationController {
     private final UserSession userSession;
-    private final InformationService informationService;
+    private final InformationRepository informationRepository;
     private final Logger logger = LoggerFactory.getLogger(InformationController.class);
     private final EncodingUtility encodingUtility;
     private final UserUtility userUtility;
     private final PathUtility pathUtility;
 
     public InformationController(
-            InformationService informationService,
+            InformationRepository informationRepository,
             UserSession userSession,
             EncodingUtility encodingUtility,
             UserUtility userUtility,
             PathUtility pathUtility) {
-        this.informationService = informationService;
+        this.informationRepository = informationRepository;
         this.userSession = userSession;
         this.encodingUtility = encodingUtility;
         this.userUtility = userUtility;
@@ -42,7 +42,7 @@ public class InformationController {
     @GetMapping(value = "get/filemetadata", produces = MediaType.ALL_VALUE)
     public @ResponseBody ResponseEntity<?> getFile(@RequestParam long fileid) {
         try {
-            FileMetadata fileMetadata = informationService.getFileMetadata(fileid);
+            FileMetadata fileMetadata = informationRepository.getFileMetadata(fileid);
             String decodeName = encodingUtility.decodeBase32StringNoPadding(fileMetadata.getName());
             String[] splitColons = decodeName.split(":");
             fileMetadata.setName(splitColons[1]);
@@ -59,7 +59,7 @@ public class InformationController {
         try {
             FolderMetadata folderMetadata;
             if (folderid != 0) {
-                folderMetadata = informationService.getFolderMetadata(folderid);
+                folderMetadata = informationRepository.getFolderMetadata(folderid);
                 folderMetadata.setPath(pathUtility.resolvePathFromIdString(folderMetadata.getPath()));
             } else {
                 File folderRootMetadata = userUtility.returnUserFolder();

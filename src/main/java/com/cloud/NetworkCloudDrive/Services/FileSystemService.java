@@ -84,6 +84,7 @@ public class FileSystemService implements FileSystemRepository {
         return List.of(fileList, folderList);
     }
 
+    @Override
     public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws SQLException {
         List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
         return Map.of(
@@ -103,6 +104,7 @@ public class FileSystemService implements FileSystemRepository {
         );
     }
 
+    @Override
     public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FilterListEnum filterListEnum) throws SQLException {
         logger.debug("Filter by: {}", filterListEnum.name());
         List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
@@ -114,6 +116,7 @@ public class FileSystemService implements FileSystemRepository {
         );
     }
 
+    @Override
     public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FilterListEnum filterListEnum, String filterCase) throws SQLException {
         logger.debug("Filter by: {} case {}", filterListEnum.name(), filterCase);
         List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
