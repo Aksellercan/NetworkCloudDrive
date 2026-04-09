@@ -5,7 +5,6 @@ import com.cloud.NetworkCloudDrive.Models.Data.ScanResults;
 import com.cloud.NetworkCloudDrive.Models.Data.ThumbnailScanResults;
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
-import com.cloud.NetworkCloudDrive.Models.Data.ScanMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
@@ -77,13 +76,13 @@ public class MaintenanceService implements MaintenanceRepository {
                 scanDirectory(startingDirectory, Files::exists, false);
                 break;
             case ONLY_THUMBNAILS:
-                return new ScanMetadata<>(recursiveThumbnailScanInvoker(folderId));
+                return recursiveThumbnailScanInvoker(folderId);
             case DONT_CREATE_THUMBNAILS:
                 scanDirectory(startingDirectory, Files::exists, true, false);
                 break;
         }
         logger.info(scanResults.toString());
-        return new ScanMetadata<>(scanResults);
+        return scanResults;
     }
 
     @Override

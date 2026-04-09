@@ -1,6 +1,5 @@
 package com.cloud.NetworkCloudDrive.Repositories.Tasks;
 
-import com.cloud.NetworkCloudDrive.Models.Data.ScanMetadata;
 import com.cloud.NetworkCloudDrive.Models.Data.ThumbnailScanResults;
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import org.springframework.stereotype.Repository;

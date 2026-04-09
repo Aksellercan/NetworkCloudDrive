@@ -33,9 +33,12 @@
 
 ## List Structure Endpoint
 
-| Method | 	Route                             | 	Description                          | Working            |
-|--------|------------------------------------|---------------------------------------|--------------------|
-| GET    | 	api/filesystem/list?folderid={id} | Returns files/folders inside a folder | :heavy_check_mark: |
+| Method | 	Route                                                                      | 	Description                                                                                                        | Working            |
+|--------|-----------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|--------------------|
+| GET    | 	api/filesystem/list?folderid={id}                                          | Returns files/folders inside a folder                                                                               | :heavy_check_mark: |
+| GET    | 	api/filesystem/list?folderid={id}&sortBy={sortOption}                      | Sorts and returns files/folders inside a folder                                                                     | :heavy_check_mark: |
+| GET    | 	api/filesystem/list?folderid={id}&filterby={filterOption}                  | Filters (without sorting) and returns files/folders inside a folder                                                 | :heavy_check_mark: |
+| GET    | 	api/filesystem/list?folderid={id}&filterby={filterOption}&filter={keyword} | Filters (without sorting) by KEYWORD and returns files/folders inside a folder (Only applicable for KEYWORD option) | :heavy_check_mark: |
 
 ## User Endpoints
 
