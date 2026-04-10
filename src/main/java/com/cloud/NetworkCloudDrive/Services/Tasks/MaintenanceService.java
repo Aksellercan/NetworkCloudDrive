@@ -81,6 +81,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 scanDirectory(startingDirectory, Files::exists, true, false);
                 break;
         }
+        scanResults.stopTimerAndGetTimeTaken();
         logger.info(scanResults.toString());
         return scanResults;
     }
@@ -119,7 +120,7 @@ public class MaintenanceService implements MaintenanceRepository {
                     if (Files.isDirectory(files)) {
                         scanResults.incrementDiscoveredFolderCount();
                         if (useRecursion) {
-                            if (!scanDirectory(files, filter, useRecursion))
+                            if (!scanDirectory(files, filter, true))
                                 throw new RuntimeException("Failed to enter folder");
                         }
                     }
@@ -130,7 +131,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 scanResults.incrementDiscoveredFolderCount();
                 File createdFolder = handleFolderCheck(files.toFile(), folderId);
                 if (useRecursion) {
-                    if (!scanDirectory(createdFolder.toPath(), filter, useRecursion))
+                    if (!scanDirectory(createdFolder.toPath(), filter, true))
                         throw new RuntimeException("Failed to enter created folder");
                 }
             }
@@ -146,6 +147,7 @@ public class MaintenanceService implements MaintenanceRepository {
         ThumbnailScanResults thumbnailScanResults = new ThumbnailScanResults();
         List<FolderMetadata> folderMetadataContainingPath = sqLiteDAO.findAllStartsWithIdPath(sqLiteDAO.getIdPath(folderId) + "/");
         scanAndCreateThumbnailsRecursive(folderMetadataContainingPath, 0, thumbnailScanResults);
+        thumbnailScanResults.stopTimerAndGetTimeTaken();
         return thumbnailScanResults;
     }
 
