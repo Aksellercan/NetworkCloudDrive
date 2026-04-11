@@ -8,8 +8,6 @@ import java.util.List;
 public interface SQLiteFileRepository extends JpaRepository<FileMetadata, Long> {
     List<FileMetadata> searchFileMetadataByName(String name);
     boolean existsFileMetadataByName(String name);
-
     List<FileMetadata> findAllByUseridAndHasThumbnail(Long userid, boolean hasThumbnail);
-
     List<FileMetadata> findAllByUseridAndHasThumbnailAndFolderId(Long userid, boolean hasThumbnail, Long folderId);
 }

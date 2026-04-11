@@ -38,7 +38,7 @@ public class ThumbnailScanResults extends ScanResults {
 
     @Override
     public String toString() {
-        return String.format("Results\nDiscovered Files: %d\nCreated thumbnails: %d\nFailed thumbnails count: %d",
-                getDiscoveredFiles(), this.createdThumbnails, this.failedThumbnails);
+        return String.format("Results\nDiscovered Files: %d\nCreated thumbnails: %d\nFailed thumbnails count: %d\nTime taken: %d",
+                getDiscoveredFiles(), this.createdThumbnails, this.failedThumbnails, this.getTimeTaken());
     }
 }
