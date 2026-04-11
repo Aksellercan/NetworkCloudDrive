@@ -17,7 +17,9 @@ public class IgnoreFileListProperties {
                 //ignore thumbnails folder in user dir
                 ".thumbnails",
                 //ignore compression folder in user dir
-                ".compression"
+                ".compression",
+                //ignore recycle bin folder in user dir
+                ".recyclebin"
         );
     }
 

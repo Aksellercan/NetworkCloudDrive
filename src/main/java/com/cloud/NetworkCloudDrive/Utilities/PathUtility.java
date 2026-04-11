@@ -201,7 +201,7 @@ public class PathUtility {
 
     public Path getRecycleBinPath() throws IOException {
         Path userPath = userUtility.returnUserFolderasPath();
-        Path recycleBinPath = Path.of(userPath.toString(), ".recycleBin");
+        Path recycleBinPath = Path.of(userPath.toString(), ".recyclebin");
         if (Files.exists(recycleBinPath)) {
             return recycleBinPath;
         }
