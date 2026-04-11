@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
@@ -196,5 +197,15 @@ public class PathUtility {
         }
         idPath.setLength(idPath.length() - 1);
         return idPath.toString();
+    }
+
+    public Path getRecycleBinPath() throws IOException {
+        Path userPath = userUtility.returnUserFolderasPath();
+        Path recycleBinPath = Path.of(userPath.toString(), ".recycleBin");
+        if (Files.exists(recycleBinPath)) {
+            return recycleBinPath;
+        }
+        Files.createDirectory(recycleBinPath);
+        return recycleBinPath;
     }
 }
