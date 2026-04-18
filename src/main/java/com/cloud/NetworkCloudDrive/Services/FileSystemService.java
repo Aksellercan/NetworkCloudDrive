@@ -100,8 +100,8 @@ public class FileSystemService implements FileSystemRepository {
         List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
         return sortAndFilterUtility.sortFileList(
                 sortListEnum,
-                (Stream<FileListItemDTO>) results.get(0).stream(),
-                (Stream<FolderListItemDTO>) results.get(1).stream()
+                (List<FileListItemDTO>) results.get(0),
+                (List<FolderListItemDTO>) results.get(1)
         );
     }
 

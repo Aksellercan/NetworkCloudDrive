@@ -1,10 +1,11 @@
 package com.cloud.NetworkCloudDrive.Models.DTO;
 
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
+import com.cloud.NetworkCloudDrive.Models.Implementations.ASCIIRanker;
 
 import java.time.Instant;
 
-public class FileListItemDTO {
+public class FileListItemDTO  extends ASCIIRanker implements Comparable<FileListItemDTO> {
     private long id;
     private String name;
     private String mimeType;
@@ -59,5 +60,10 @@ public class FileListItemDTO {
     }
     public void setHasThumbnail(boolean hasThumbnail) {
         this.hasThumbnail = hasThumbnail;
+    }
+
+    @Override
+    public int compareTo(FileListItemDTO fl2) {
+        return Integer.compare(calculateRank(this.name.toLowerCase()), calculateRank(fl2.getName().toLowerCase()));
     }
 }
