@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 @Component
 public class SortAndFilterUtility {
+
     public SortAndFilterUtility() {}
 
     public Map<String, List<?>> sortFileList(SortListEnum sortListEnum, List<FileListItemDTO> fileList, List<FolderListItemDTO> folderList) {
