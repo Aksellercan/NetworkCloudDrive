@@ -17,7 +17,8 @@ public class ThumbnailProperties {
                 "image/png",
                 "image/webp",
                 "image/vnd.microsoft.icon",
-                "image/avif"
+                "image/avif",
+                "image/gif"
         );
         this.allowedVideoFormats = List.of(
                 "video/webm",

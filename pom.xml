@@ -11,7 +11,7 @@
     <groupId>com.cloud</groupId>
     <artifactId>NetworkCloudDrive</artifactId>
 <!--    <version>0.4.0-SNAPSHOT</version>-->
-    <version>0.4.4</version>
+    <version>0.4.5</version>
     <name>NetworkCloudDrive</name>
     <description>NetworkCloudDrive project built with Spring Boot</description>
     <url/>
