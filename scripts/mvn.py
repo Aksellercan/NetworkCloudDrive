@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 import sys
 import re
+import subprocess
+
+print("hint: run this script from root directory of the project");
+
+def get_current_pom_version():
+    return subprocess.run('mvn help:evaluate -Dexpression=project.version -q -DforceStdout', shell=True, capture_output=True).stdout.decode();
 
 def enumerator(choice:int):
     match choice:
@@ -15,6 +21,9 @@ def enumerator(choice:int):
 
 def split_string(string_to_split:str, regex:str):
    return re.split(regex, string_to_split)
+
+def only_version(string_arg):
+    return split_string(string_arg, "[-]");
 
 def increment_version(argument:str, offset:int):
     result = split_string(argument, "[.-]")
@@ -37,10 +46,23 @@ def release_type(argument:str, offset:int, release_type:int):
         j += 1
     return result
 
-
-def build_string(string_arr):
+def build_string_type(string_arr):
     final_string:str = ''
-    j:num = 0
+    j:int = 0
+    delimiter_dash:str= '-'
+    for i in string_arr:
+        final_string += i
+        if (j == len(string_arr) - 1):
+            break;
+        final_string += delimiter_dash
+        j += 1;
+    return final_string
+
+
+
+def build_string_version(string_arr):
+    final_string:str = ''
+    j:int = 0
     delimiter_dot:str= '.'
     delimiter_dash:str= '-'
 
@@ -55,25 +77,43 @@ def build_string(string_arr):
         j += 1
     return final_string
 
+def exec_mvn_command(final_string):
+    print(final_string)
+    subprocess.run(f"mvn -DnewVersion=\"{final_string}\" versions:set", shell=True);
+
 def debug_print():
-    print("Expected 3 arguments.", "Total arguments given:", len(sys.argv))
+    print("Expected at least 2 arguments.", "Total arguments passed:", len(sys.argv))
 
 def help_print():
     print("Invalid usage: [OPTION] [ARGUMENT]")
 
-if (len(sys.argv) < 3):
+if (len(sys.argv) < 2):
     debug_print()
     help_print()
     quit()
 
+version_current = ''
+
+if (len(sys.argv) == 3):
+    version_current = sys.argv[2]
+else:
+   version_current = get_current_pom_version()
+
+if (len(version_current) == 0):
+    print("Shell returned empty string")
+    quit()
 match sys.argv[1]:
     case "-m":
-        print(build_string(increment_version(sys.argv[2], 2)))
+        exec_mvn_command(build_string_version(increment_version(version_current, 2)))
     case "-M":
-        print(increment_version(sys.argv[2], 1))
+        exec_mvn_command(increment_version(version_current, 1))
     case "-s":
-        print(build_string(release_type(sys.argv[2],1, 1)))
+        exec_mvn_command(build_string_type(release_type(version_current,1, 1)))
     case "-r":
-        print(build_string(release_type(sys.argv[2],1, 2)))
+        exec_mvn_command(build_string_type(release_type(version_current,1, 2)))
+    case "-n":
+        exec_mvn_command(only_version(version_current)[0])
+    case "-h":
+        help_print()
     case _:
         help_print()
