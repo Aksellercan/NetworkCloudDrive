@@ -50,10 +50,11 @@ public class SortAndFilterUtility {
     }
 
     private Map<String, List<?>> sortName(SortListEnum sortOption, List<FileListItemDTO> fileListItemDTO, List<FolderListItemDTO> folderListItemDTO) {
-        Collections.sort(fileListItemDTO);
-        Collections.sort(folderListItemDTO);
+
         switch (sortOption) {
             case ALPHABETICAL:
+                fileListItemDTO.sort(Comparator.naturalOrder());
+                folderListItemDTO.sort(Comparator.naturalOrder());
                 break;
             case REVERSE_ALPHABETICAL:
                 fileListItemDTO.sort(Comparator.reverseOrder());

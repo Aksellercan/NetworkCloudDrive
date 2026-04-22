@@ -81,20 +81,30 @@ def exec_mvn_command(final_string):
     print(final_string)
     subprocess.run(f"mvn -DnewVersion=\"{final_string}\" versions:set", shell=True);
 
-def debug_print():
-    print("Expected at least 2 arguments.", "Total arguments passed:", len(sys.argv))
+def debug_print(passed_argument_length:int):
+    print("Expected at least 1 argument.", "Total arguments passed:", passed_argument_length - 1)
 
 def help_print():
-    print("Invalid usage: [OPTION] [ARGUMENT]")
+    print("Usage: [OPTION] [ARGUMENT]")
+    print("""
+        -m, --minor\tincrements version as minor ex. 0.1.(x+1)
+        -M, --major\tincrements version as major ex. 0.(x+1).1
+        -s, --snapshot\tsets the version with snapshot tag
+        -r, --release\tsets the version with release tag
+        -n, --none\tsets the version without tag
+        -h, --help\tprint this menu
+    """)
 
-if (len(sys.argv) < 2):
-    debug_print()
+argument_length: int = len(sys.argv)
+
+if (argument_length < 2):
+    debug_print(argument_length)
     help_print()
     quit()
 
 version_current = ''
 
-if (len(sys.argv) == 3):
+if (argument_length == 3):
     version_current = sys.argv[2]
 else:
    version_current = get_current_pom_version()
@@ -102,18 +112,19 @@ else:
 if (len(version_current) == 0):
     print("Shell returned empty string")
     quit()
+
 match sys.argv[1]:
-    case "-m":
+    case "-m" | "--minor":
         exec_mvn_command(build_string_version(increment_version(version_current, 2)))
-    case "-M":
+    case "-M" | "--major":
         exec_mvn_command(increment_version(version_current, 1))
-    case "-s":
+    case "-s" | "--snapshot":
         exec_mvn_command(build_string_type(release_type(version_current,1, 1)))
-    case "-r":
+    case "-r" | "--release":
         exec_mvn_command(build_string_type(release_type(version_current,1, 2)))
-    case "-n":
+    case "-n" | "--none":
         exec_mvn_command(only_version(version_current)[0])
-    case "-h":
+    case "-h" | "--help":
         help_print()
     case _:
         help_print()
