@@ -145,17 +145,23 @@ public class MaintenanceService implements MaintenanceRepository {
     @Override
     public ThumbnailScanResults recursiveThumbnailScanInvoker(long folderId) throws SQLException {
         ThumbnailScanResults thumbnailScanResults = new ThumbnailScanResults();
-        List<FolderMetadata> folderMetadataContainingPath = sqLiteDAO.findAllStartsWithIdPath(sqLiteDAO.getIdPath(folderId) + "/");
+        List<Long> folderMetadataContainingPath = sqLiteDAO.findAllStartsWithIdPathReturnsLongList(sqLiteDAO.getIdPath(folderId));
+        logger.info("size {}", folderMetadataContainingPath.size());
+        folderMetadataContainingPath.forEach(l -> logger.info("item {}", l));
+        //temp
+        if (folderId == 0) {
+            folderMetadataContainingPath.add(0L);
+        }
         scanAndCreateThumbnailsRecursive(folderMetadataContainingPath, 0, thumbnailScanResults);
         thumbnailScanResults.stopTimerAndGetTimeTaken();
         return thumbnailScanResults;
     }
 
-    public boolean scanAndCreateThumbnailsRecursive(List<FolderMetadata> files, int index, ThumbnailScanResults thumbnailScanResults) {
+    public boolean scanAndCreateThumbnailsRecursive(List<Long> files, int index, ThumbnailScanResults thumbnailScanResults) {
         if (index == files.size())
             return true;
 
-        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(files.get(index).getId(), userSession.getId());
+        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(files.get(index), userSession.getId());
 
         for (FileMetadata fileMetadata : fileMetadataList) {
             thumbnailScanResults.incrementDiscoveredFileCount();
