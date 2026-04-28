@@ -3,7 +3,7 @@ package com.cloud.NetworkCloudDrive.Models.Implementations;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ASCIIRanker {
+public class AlphanumericalSorter {
 
     public int compareByGroups(String firstItem, String secondItem) {
         boolean secondIsBigger = false;
@@ -16,7 +16,7 @@ public class ASCIIRanker {
         }
 
         List<Integer> digits = new ArrayList<>();
-        List<String> characters = new ArrayList<>();
+        List<Character[]> characters = new ArrayList<>();
 
         for (int i = 0; i < length; i++) {
         /*
@@ -33,10 +33,20 @@ public class ASCIIRanker {
             char firstStringChar = firstItem.charAt(i);
             char secondStringChar = secondItem.charAt(i);
             if (Character.isDigit(firstStringChar)) {
-
+                digits.add(firstStringChar - '0');
+                continue;
             }
+            characters.add(new Character[]{firstStringChar, secondStringChar});
         }
         return 1;
+    }
+
+    private boolean handleStrings(char[] firstChars, char[] secondChars) {
+        for (int i = 0; i < firstChars.length; i++) {
+            int j = i + 1;
+
+        }
+        return false;
     }
 
     /*

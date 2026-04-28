@@ -19,7 +19,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.FileNotFoundException;
 import java.nio.file.FileSystemException;
 import java.sql.SQLException;
 import java.util.List;
@@ -333,7 +332,7 @@ public class SQLiteDAO {
         dummyFolderMetadata.setPath(idPath);
         dummyFolderMetadata.setId(null);
         dummyFolderMetadata.setCreatedAt(null);
-        dummyFolderMetadata.setUserid(userId); //current logged in user id
+        dummyFolderMetadata.setUserid(userId); //current logged-in user id
         Example<FolderMetadata> folderMetadataExample = Example.of(dummyFolderMetadata);
         Optional<FolderMetadata> optionalFolderMetadata = sqLiteFolderRepository.findOne(folderMetadataExample);
         if (optionalFolderMetadata.isEmpty())

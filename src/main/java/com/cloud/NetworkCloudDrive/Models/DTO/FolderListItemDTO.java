@@ -1,11 +1,11 @@
 package com.cloud.NetworkCloudDrive.Models.DTO;
 
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Models.Implementations.ASCIIRanker;
+import com.cloud.NetworkCloudDrive.Models.Implementations.AlphanumericalSorter;
 
 import java.time.Instant;
 
-public class FolderListItemDTO extends ASCIIRanker implements Comparable<FolderListItemDTO> {
+public class FolderListItemDTO extends AlphanumericalSorter implements Comparable<FolderListItemDTO> {
     private long id;
     private String name;
     private String path;
