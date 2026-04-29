@@ -38,7 +38,11 @@ def increment_version(argument:str, offset:int):
 
 def release_type(argument:str, offset:int, release_type:int):
     result = split_string(argument, "[-]")
+    resultLen:int = len(result)
     print(result)
+    if (resultLen == 1):
+        result.append(enumerator(release_type))
+        return result
     j:int = 0;
     for i in result:
         if (j == offset):
@@ -57,8 +61,6 @@ def build_string_type(string_arr):
         final_string += delimiter_dash
         j += 1;
     return final_string
-
-
 
 def build_string_version(string_arr):
     final_string:str = ''
@@ -107,7 +109,7 @@ version_current = ''
 if (argument_length == 3):
     version_current = sys.argv[2]
 else:
-   version_current = get_current_pom_version()
+    version_current = get_current_pom_version()
 
 if (len(version_current) == 0):
     print("Shell returned empty string")

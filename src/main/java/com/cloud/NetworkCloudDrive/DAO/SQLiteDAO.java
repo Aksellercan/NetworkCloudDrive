@@ -389,4 +389,10 @@ public class SQLiteDAO {
     public String getIdPath(long folderId) throws SQLException {
         return folderId != 0 ? queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
     }
+
+    @Transactional
+    public void deleteAllUserRelatedEntries(long userId) {
+        sqLiteFileRepository.deleteAll(sqLiteFileRepository.findAllByUserid(userId));
+        sqLiteFolderRepository.deleteAll(sqLiteFolderRepository.findAllById());
+    }
 }
