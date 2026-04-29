@@ -20,7 +20,7 @@ def enumerator(choice:int):
             return ""
 
 def split_string(string_to_split:str, regex:str):
-   return re.split(regex, string_to_split)
+    return re.split(regex, string_to_split)
 
 def only_version(string_arg):
     return split_string(string_arg, "[-]");
@@ -32,13 +32,13 @@ def increment_version(argument:str, offset:int):
         if (j == offset):
             num:int = int(i)
             num += 1
-            result[j]:str = str(num)
+            result[j] = str(num)
         j += 1
     return result
 
 def release_type(argument:str, offset:int, release_type:int):
     result = split_string(argument, "[-]")
-    resultLen:int = len(result)
+    resultLen:int = len(result) 
     print(result)
     if (resultLen == 1):
         result.append(enumerator(release_type))
