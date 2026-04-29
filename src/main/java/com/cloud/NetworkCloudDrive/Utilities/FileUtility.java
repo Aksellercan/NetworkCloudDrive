@@ -16,6 +16,9 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
 
+/**
+ * Utility for file related operations
+ */
 @Component
 public class FileUtility {
     private final EncodingUtility encodingUtility;
@@ -23,6 +26,12 @@ public class FileUtility {
     private final IgnoreFileListProperties ignoreFileListProperties;
     private final PathUtility pathUtility;
 
+    /**
+     * Constructor
+     * @param encodingUtility   used for encoding and decoding files
+     * @param ignoreFileListProperties  list of files to ignore
+     * @param pathUtility   For retrieving path, generating paths and validation
+     */
     public FileUtility(
             EncodingUtility encodingUtility,
             IgnoreFileListProperties ignoreFileListProperties,
@@ -164,8 +173,8 @@ public class FileUtility {
     /**
      * Deletes entire folders
      * @param dir   Directory to delete
-     * @return  Error count, if successful 0. 1 < ... failure
-     * @throws IOException  If file doesn't exist or cannot be deleted
+     * @return  Error count, if successful 0, otherwise fail (1 &lt;... failure)
+     * @throws IOException  If an I/O error occurs
      */
     public long deleteFolders(Path dir) throws IOException {
         List<Path> fileTreeStream = walkFsTree(dir, true);

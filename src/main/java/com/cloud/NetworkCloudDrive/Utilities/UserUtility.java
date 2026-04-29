@@ -49,6 +49,10 @@ public class UserUtility {
         return userDirectory;
     }
 
+    public boolean removeUserDirectories() {
+
+    }
+
     /**
      * Returns user folder, if it doesn't exist creates it
      * @return  user folder

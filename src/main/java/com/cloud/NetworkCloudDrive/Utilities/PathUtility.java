@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Utility class for path operations
+ */
 @Component
 public class PathUtility {
     private final Logger logger = LoggerFactory.getLogger(PathUtility.class);
@@ -28,6 +31,14 @@ public class PathUtility {
     private final UserSession userSession;
     private final EncodingUtility encodingUtility;
 
+    /**
+     * Constructor
+     * @param userUtility For getting User folder or any user related operation
+     * @param fileStorageProperties Holds, root directory path
+     * @param sqLiteDAO SQLite Database queries
+     * @param userSession Current User's session details
+     * @param encodingUtility   For encoding and decoding files/folders
+     */
     public PathUtility(
             UserUtility userUtility,
             FileStorageProperties fileStorageProperties,
@@ -41,18 +52,36 @@ public class PathUtility {
         this.encodingUtility = encodingUtility;
     }
 
+    /**
+     * Returns full path to user folder as String
+     * @param path  User folder
+     * @return  Full path to user folder as String
+     */
     public String getFullPathToString(String path) {
         return fileStorageProperties.getFullPath(path);
     }
 
+    /**
+     * Returns full path to user folder as Path
+     * @param path  User folder
+     * @return  Full path to user folder as Path
+     */
     public Path getFullPath(String path) {
         return Path.of(fileStorageProperties.getFullPath(path));
     }
 
+    /**
+     * Returns root folder path as Path
+     * @return Root folder path as Path
+     */
     public Path getBasePath() {
         return Path.of(fileStorageProperties.getBasePath());
     }
 
+    /**
+     * Returns root folder path as String
+     * @return  Root folder path as String
+     */
     public String getBasePathToString() {
         return fileStorageProperties.getBasePath();
     }
@@ -67,6 +96,11 @@ public class PathUtility {
         return Paths.get(".", path.normalize().toString()).startsWith(userUtility.returnUserFolderasPath());
     }
 
+    /**
+     * Filename validation
+     * @param filename  Filename to validate
+     * @return  True if its valid
+     */
     public boolean isFilenameAllowed(String filename) {
         if (filename == null || filename.isEmpty()
                 || filename.contains("..")
@@ -170,6 +204,18 @@ public class PathUtility {
     // Generate ID path from System path
     // rewrite
     // TODO can be replaced using StartsWith function in SQLiteDAO just like in moveFolders()
+    /**
+     * Generates ID path string
+     *<p>
+     * Splits path into a String array, then prepends given starting ID Path. For each folder fetches folders with similar ID Paths for a user
+     * , then checks for same name and depth. If it satisfies both depth increases and the folder's ID is added to StringBuilder.
+     * </p>
+     * @param filePath  Starting folder path
+     * @param startingIdPath    Starting folder's ID Path
+     * @return  Generated ID Path
+     * @throws IOException  I/O Error if user folder cannot be found or created
+     */
+    @Deprecated
     public String generateIdPaths(String filePath, String startingIdPath) throws IOException {
         String[] folders =
                 filePath.replaceAll(Pattern.quote(userUtility.returnUserFolder().getPath() + returnCorrectSeparatorRegex()), "")
