@@ -9,4 +9,6 @@ public interface SQLiteFolderRepository extends JpaRepository<FolderMetadata, Lo
     List<FolderMetadata> findAllByPathContainsIgnoreCase(String path);
     boolean existsFolderMetadataByName(String name);
     List<?> findAllByUserid(Long userid);
+
+    void deleteAllByUserid(Long userid);
 }

@@ -353,6 +353,17 @@ public class SQLiteDAO {
     }
 
     @Transactional
+    public List<Long> findAllStartsWithIdPathReturnsLongList(String prefixIdPath) {
+        return sqLiteFolderRepository.findAll()
+                .stream().filter(fl -> {
+                    //handle null values if they exist
+                    if (fl.getPath() == null || fl.getUserid() == null) return false;
+                    return fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId();
+                }).map(FolderMetadata::getId)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
     public List<FileMetadata> findAllFilesWithoutThumbnails(long userId) {
         return sqLiteFileRepository.findAllByUseridAndHasThumbnail(userId, false)
                 .stream()
@@ -378,5 +389,11 @@ public class SQLiteDAO {
     @Transactional
     public String getIdPath(long folderId) throws SQLException {
         return folderId != 0 ? queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
+    }
+
+    @Transactional
+    public void deleteAllUserRelatedEntries(long userId) {
+        sqLiteFileRepository.deleteAllByUserid(userId);
+        sqLiteFolderRepository.deleteAllByUserid(userId);
     }
 }

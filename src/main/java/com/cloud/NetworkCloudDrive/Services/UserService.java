@@ -5,8 +5,12 @@ import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Repositories.Services.UserRepository;
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,20 +19,25 @@ import java.sql.SQLException;
 
 @Service
 public class UserService implements UserRepository {
+    private final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final SQLiteDAO sqLiteDAO;
     private final EncodingUtility encodingUtility;
     private final PasswordEncoder passwordEncoder;
     private final UserUtility userUtility;
+    private final ThumbnailRepository thumbnailRepository;
+    private final FileUtility fileUtility;
 
     public UserService(
             SQLiteDAO sqLiteDAO,
             PasswordEncoder passwordEncoder,
             EncodingUtility encodingUtility,
-            UserUtility userUtility) {
+            UserUtility userUtility, ThumbnailRepository thumbnailRepository, FileUtility fileUtility) {
         this.sqLiteDAO = sqLiteDAO;
         this.encodingUtility = encodingUtility;
         this.passwordEncoder = passwordEncoder;
         this.userUtility = userUtility;
+        this.thumbnailRepository = thumbnailRepository;
+        this.fileUtility = fileUtility;
     }
 
     @Override
@@ -82,7 +91,10 @@ public class UserService implements UserRepository {
 
     //TODO delete function should delete user folder
     @Override
-    public void deleteUser(UserEntity user) {
+    public void deleteUser(UserEntity user) throws IOException, SQLException {
+        thumbnailRepository.deleteAllThumbnails();
+        fileUtility.deleteFolders(userUtility.returnUserFolderasPath());
+        sqLiteDAO.deleteAllUserRelatedEntries(user.getId());
         sqLiteDAO.deleteUser(user);
     }
 
