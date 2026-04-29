@@ -124,6 +124,8 @@ match sys.argv[1]:
         exec_mvn_command(build_string_type(release_type(version_current,1, 2)))
     case "-n" | "--none":
         exec_mvn_command(only_version(version_current)[0])
+    case "-pc" | "--print-current":
+        print(version_current)
     case "-h" | "--help":
         help_print()
     case _:
