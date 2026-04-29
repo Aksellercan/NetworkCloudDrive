@@ -393,7 +393,7 @@ public class SQLiteDAO {
 
     @Transactional
     public void deleteAllUserRelatedEntries(long userId) {
-        sqLiteFileRepository.deleteAll(sqLiteFileRepository.findAllByUserid(userId));
-        sqLiteFolderRepository.deleteAll(sqLiteFolderRepository.findAllById());
+        sqLiteFileRepository.deleteAllByUserid(userId);
+        sqLiteFolderRepository.deleteAllByUserid(userId);
     }
 }

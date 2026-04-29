@@ -10,6 +10,7 @@ public interface SQLiteFileRepository extends JpaRepository<FileMetadata, Long> 
     boolean existsFileMetadataByName(String name);
     List<FileMetadata> findAllByUseridAndHasThumbnail(Long userid, boolean hasThumbnail);
     List<FileMetadata> findAllByUseridAndHasThumbnailAndFolderId(Long userid, boolean hasThumbnail, Long folderId);
-
     List<FileMetadata> findAllByUserid(Long userid);
+
+    void deleteAllByUserid(Long userid);
 }

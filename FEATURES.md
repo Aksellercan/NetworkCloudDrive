@@ -50,7 +50,7 @@
 | PATCH  | 	api/user/update/mail     | Updates user mail                                            | :heavy_check_mark: |
 | PATCH  | 	api/user/update/name     | Updates user name                                            | :heavy_check_mark: |
 | PATCH  | 	api/user/update/password | Updates and hashes user password                             | :heavy_check_mark: |
-| DELETE | 	api/user/delete          | Deletes User from database and folders belonging to the user | :heavy_minus_sign: |
+| DELETE | 	api/user/delete          | Deletes User from database and folders belonging to the user | :heavy_check_mark: |
 
 ## Maintenance Endpoints
 
