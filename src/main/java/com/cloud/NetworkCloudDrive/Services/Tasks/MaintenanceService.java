@@ -146,8 +146,6 @@ public class MaintenanceService implements MaintenanceRepository {
     public ThumbnailScanResults recursiveThumbnailScanInvoker(long folderId) throws SQLException {
         ThumbnailScanResults thumbnailScanResults = new ThumbnailScanResults();
         List<Long> folderMetadataContainingPath = sqLiteDAO.findAllStartsWithIdPathReturnsLongList(sqLiteDAO.getIdPath(folderId));
-        logger.info("size {}", folderMetadataContainingPath.size());
-        folderMetadataContainingPath.forEach(l -> logger.info("item {}", l));
         //temp
         if (folderId == 0) {
             folderMetadataContainingPath.add(0L);

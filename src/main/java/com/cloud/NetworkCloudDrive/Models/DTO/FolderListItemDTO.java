@@ -1,10 +1,11 @@
 package com.cloud.NetworkCloudDrive.Models.DTO;
 
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.Implementations.AlphanumericalSorter;
 
 import java.time.Instant;
 
-public class FolderListItemDTO {
+public class FolderListItemDTO extends AlphanumericalSorter implements Comparable<FolderListItemDTO> {
     private long id;
     private String name;
     private String path;
@@ -43,4 +44,10 @@ public class FolderListItemDTO {
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
+
+    @Override
+    public int compareTo(FolderListItemDTO f2) {
+        return Integer.compare(calculateRank(this.name.toLowerCase()), calculateRank(f2.getName().toLowerCase()));
+    }
 }
+
