@@ -336,6 +336,7 @@ public class SQLiteDAO {
         dummyFolderMetadata.setUserid(userId); //current logged in user id
         Example<FolderMetadata> folderMetadataExample = Example.of(dummyFolderMetadata);
         Optional<FolderMetadata> optionalFolderMetadata = sqLiteFolderRepository.findOne(folderMetadataExample);
+        logger.info("Example folder: {}", dummyFolderMetadata);
         if (optionalFolderMetadata.isEmpty())
             throw new FileSystemException("Folder not found in database. Is database synced?");
         return optionalFolderMetadata.get();

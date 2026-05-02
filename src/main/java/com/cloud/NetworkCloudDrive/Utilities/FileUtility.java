@@ -89,7 +89,7 @@ public class FileUtility {
      */
     public boolean checkIfFileExistsDecodeNames(String filePath, String decodedFileName) throws IOException {
         return getFileAndFolderPathsFromFolder(pathUtility.getFullPath(filePath)).stream().
-                anyMatch(file -> !ignoreFileListProperties.isInIgnoreList(file.toFile().getName())
+                anyMatch(file -> !isIgnoredFile(file.toFile().getName())
                         &&
                         encodingUtility.decodedBase32SplitArray(file.toFile().getName())[1].equals(decodedFileName));
     }
@@ -153,8 +153,31 @@ public class FileUtility {
         return !getFileExtension(filename).isEmpty();
     }
 
+    /**
+     * Checks if given filename is in ignore list. Checks for both API created files and System created files.
+     * @param filename  filename to check
+     * @return  true if its in ignore list
+     */
     public boolean isIgnoredFile(String filename) {
-        return ignoreFileListProperties.isInIgnoreList(filename);
+        return ignoreFileListProperties.isInIgnoreSystemFilesList(filename) || ignoreFileListProperties.isInIgnoreAPIFilesList(filename);
+    }
+
+    /**
+     * Checks if given filename is in ignore list. Checks for System created files only.
+     * @param filename  filename to check
+     * @return  true if its in System files ignore list
+     */
+    public boolean isIgnoredSystemFile(String filename) {
+        return ignoreFileListProperties.isInIgnoreSystemFilesList(filename);
+    }
+
+    /**
+     * Checks if given filename is in ignore list. Checks for API created files only.
+     * @param filename  filename to check
+     * @return  true if its in API files ignore list
+     */
+    public boolean isIgnoredAPIFile(String filename) {
+        return ignoreFileListProperties.isInIgnoreAPIFilesList(filename);
     }
 
     /**
@@ -165,7 +188,7 @@ public class FileUtility {
      */
     public boolean checkDuplicate(List<Path> files, String filename) {
         return files.stream().anyMatch(dup ->
-                !ignoreFileListProperties.isInIgnoreList(dup.toFile().getName())
+                !isIgnoredFile(dup.toFile().getName())
                         &&
                         encodingUtility.decodedBase32SplitArray(dup.toFile().getName())[1].equals(filename));
     }

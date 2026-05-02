@@ -151,13 +151,43 @@ public class FileSystemService implements FileSystemRepository {
         Path checkExists = fileUtility.returnPathIfItExists(pathToRemove);
         //remove Folder
         deleteFsTree(checkExists, folder.getPath());
-        if (!Files.deleteIfExists(checkExists))
-            throw new IOException("Failed to remove parent folder");
+        if (!emptyLeftoversDirectory(checkExists)) {
+            if (!Files.deleteIfExists(checkExists)) {
+                throw new IOException("Failed to remove parent folder");
+            }
+        } else {
+            throw new IOException("Failed to empty parent folder");
+        }
+
         sqLiteDAO.deleteFolder(folder);
         return checkExists.toString();
     }
 
+    //helper function
+    /**
+     * Checks if there are any left over unmanaged files in directory then removes them
+     * @param folder    Path of folder to check
+     * @return  true if there are leftovers
+     * @throws IOException  When I/O related error occurs
+     */
+    private boolean emptyLeftoversDirectory(Path folder) throws IOException {
+        List<Path> subFiles = fileUtility.getFileAndFolderPathsFromFolder(folder);
+        if (subFiles.isEmpty()) {
+            return false;
+        }
+
+        logger.info("Items inside folder {}", subFiles.size());
+        for (Path subFile : subFiles) {
+            if (fileUtility.isIgnoredSystemFile(subFile.getFileName().toString())) {
+                return !Files.deleteIfExists(subFile);
+            }
+        }
+        return false;
+    }
+
     //TODO instead of generating Id paths use startsWith from DAO and filter files by found folders id's then delete them both from db and system
+    //TODO needs a reworked function
+    @Deprecated
     private void deleteFsTree(Path dir, String startingIdPath) throws IOException {
         logger.info("Start File Tree deletion operation");
         long errorCount = 0;
@@ -171,11 +201,16 @@ public class FileSystemService implements FileSystemRepository {
                 errorCount++;
                 continue;
             }
+            // skip system dotfiles
+            if (fileUtility.isIgnoredSystemFile(file.getFileName().toString())) {
+                logger.debug("skip ignored system file {}", file.getFileName().toString());
+                continue;
+            }
             if (Files.exists(file) && Files.isRegularFile(file)) {
-                String parentFolderIdPath = pathUtility.generateIdPaths(file.getParent().toString(), startingIdPath);
-                logger.debug("generated file path: {}", parentFolderIdPath);
+//                String parentFolderIdPath = pathUtility.generateIdPaths(file.getParent().toString(), startingIdPath);
+//                logger.debug("generated file path: {}", parentFolderIdPath);
                 FolderMetadata folderMetadata =
-                        sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getParent().getFileName().toString(), userSession.getId());
+                        sqLiteDAO.getFolderMetadataFromIdPathAndName(null, file.getParent().getFileName().toString(), userSession.getId());
                 FileMetadata output = sqLiteDAO.getFileMetadataByFolderIdNameAndUserId(folderMetadata.getId(), file.getFileName().toString(), userSession.getId());
                 if (!Files.deleteIfExists(file)) {
                     errorCount++;
@@ -185,10 +220,15 @@ public class FileSystemService implements FileSystemRepository {
                 logger.debug("File metadata: name {} path {} Id {}", output.getName(), output.getFolderId(), output.getId());
                 continue;
             }
-            String parentFolderIdPath = pathUtility.generateIdPaths(file.toString(), startingIdPath);
-            logger.debug("generated folder path: {}", parentFolderIdPath);
-            FolderMetadata folderMetadata = sqLiteDAO.getFolderMetadataFromIdPathAndName(parentFolderIdPath, file.getFileName().toString(), userSession.getId());
+//            String parentFolderIdPath = pathUtility.generateIdPaths(file.toString(), startingIdPath);
+//            logger.debug("generated folder path: {}", parentFolderIdPath);
+            FolderMetadata folderMetadata = sqLiteDAO.getFolderMetadataFromIdPathAndName(null, file.getFileName().toString(), userSession.getId());
             // manage folders here
+            //get files inside folder if any such as DS_STORE
+            //TODO improve this overhead
+            if (emptyLeftoversDirectory(file)) {
+                continue;
+            }
             if (!Files.deleteIfExists(file)) {
                 errorCount++;
                 continue;

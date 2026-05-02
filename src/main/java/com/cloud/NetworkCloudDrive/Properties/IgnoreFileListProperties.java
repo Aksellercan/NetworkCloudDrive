@@ -8,12 +8,16 @@ import java.util.List;
 @ConfigurationProperties(prefix = "app.file-ignore-list")
 @Component
 public class IgnoreFileListProperties {
-    private List<String> ignoreFileList;
+    private final List<String> ignoreSystemFilesList;
+    private final List<String> ignoreAPIFilesList;
 
     public IgnoreFileListProperties() {
-        this.ignoreFileList = List.of(
+        this.ignoreSystemFilesList = List.of(
                 //ignore MacOS generated file
-                ".DS_Store",
+                ".DS_Store"
+        );
+
+        this.ignoreAPIFilesList = List.of(
                 //ignore thumbnails folder in user dir
                 ".thumbnails",
                 //ignore compression folder in user dir
@@ -21,15 +25,19 @@ public class IgnoreFileListProperties {
         );
     }
 
-    public boolean isInIgnoreList(String filename) {
-        return ignoreFileList.stream().anyMatch(file -> file.equals(filename));
+    public boolean isInIgnoreSystemFilesList(String filename) {
+        return ignoreSystemFilesList.stream().anyMatch(file -> file.equals(filename));
+    }
+
+    public boolean isInIgnoreAPIFilesList(String filename) {
+        return ignoreAPIFilesList.stream().anyMatch(file -> file.equals(filename));
+    }
+
+    public List<String> getIgnoreAPIFilesList() {
+        return ignoreAPIFilesList;
     }
 
     public List<String> getIgnoreFileList() {
-        return ignoreFileList;
-    }
-
-    public void setIgnoreFileList(List<String> ignoreFileList) {
-        this.ignoreFileList = ignoreFileList;
+        return ignoreSystemFilesList;
     }
 }
