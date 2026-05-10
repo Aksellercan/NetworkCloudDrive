@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.Data.DeletionResults;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Repositories.Services.UserRepository;
@@ -89,13 +90,13 @@ public class UserService implements UserRepository {
         return new CurrentUserDTO(user.getId(), user.getName(), user.getMail(), user.getRole(), user.getLastLogin());
     }
 
-    //TODO delete function should delete user folder
     @Override
-    public void deleteUser(UserEntity user) throws IOException, SQLException {
+    public DeletionResults deleteUser(UserEntity user) throws IOException, SQLException {
         thumbnailRepository.deleteAllThumbnails();
-        fileUtility.deleteFolders(userUtility.returnUserFolderasPath());
+        DeletionResults deletionResults = fileUtility.deleteFolders(userUtility.returnUserFolderasPath());
         sqLiteDAO.deleteAllUserRelatedEntries(user.getId());
         sqLiteDAO.deleteUser(user);
+        return deletionResults;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Repositories.Services;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.Data.DeletionResults;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 
 import java.io.IOException;
@@ -13,6 +14,6 @@ public interface UserRepository {
     CurrentUserDTO updatePassword(UserEntity user, String newPassword);
     CurrentUserDTO updateMail(UserEntity user, String newMail) throws IOException;
     CurrentUserDTO updateName(UserEntity user, String newName) throws IOException;
-    void deleteUser(UserEntity user) throws IOException, SQLException;
+    DeletionResults deleteUser(UserEntity user) throws IOException, SQLException;
     boolean elevateUserPrivileges();
 }

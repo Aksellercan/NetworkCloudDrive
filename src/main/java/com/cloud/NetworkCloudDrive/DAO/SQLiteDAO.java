@@ -254,6 +254,11 @@ public class SQLiteDAO {
     }
 
     @Transactional
+    public List<FileMetadata> getAllFilesBelongingToUser(long userId) {
+        return sqLiteFileRepository.findAllByUserid(userId);
+    }
+
+    @Transactional
     public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) throws SQLException {
         Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
                 .findByFileId(fileId)

@@ -1,6 +1,9 @@
 package com.cloud.NetworkCloudDrive.Controllers.Tasks;
 
+import com.cloud.NetworkCloudDrive.Models.Data.DeletionResults;
+import com.cloud.NetworkCloudDrive.Models.Enum.DeletionOptions;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
+import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
@@ -78,6 +81,26 @@ public class ThumbnailController {
         } catch (SQLException sql) {
             logger.error("Internal error occurred. {}", sql.getMessage());
             return ResponseEntity.internalServerError().body(new JSONErrorResponse(sql, "Thumbnail with ID %d does not exists in database", thumbId));
+        } catch (Exception e) {
+            logger.error("Thumbnail Controller {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(
+                    new JSONErrorResponse(e, "Failed to delete thumbnail"));
+        }
+    }
+
+    @DeleteMapping(value = "deleteall", params = "deletion_options")
+    public @ResponseBody ResponseEntity<?> deleteAllThumbnails(DeletionOptions deletion_options) {
+        try {
+            DeletionResults deletionResults = switch (deletion_options) {
+                case NUCLEAR -> thumbnailRepository.nuclearDeleteAllThumbnails();
+                case ONLY_IO -> thumbnailRepository.deleteOnlyFromIO();
+                default -> thumbnailRepository.deleteAllThumbnails();
+            };
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
+                    body(new JSONObjectResponse(deletionResults, "Removed all thumbnails"));
+        } catch (FileNotFoundException fnf) {
+            logger.error("Internal error occurred. {}", fnf.getMessage());
+            return ResponseEntity.internalServerError().body(new JSONErrorResponse(fnf, "Internal error occurred"));
         } catch (Exception e) {
             logger.error("Thumbnail Controller {}", e.getMessage());
             return ResponseEntity.internalServerError().body(

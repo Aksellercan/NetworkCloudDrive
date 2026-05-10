@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
+import com.cloud.NetworkCloudDrive.Models.Data.DeletionResults;
 import com.cloud.NetworkCloudDrive.Properties.IgnoreFileListProperties;
 import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import org.apache.tika.Tika;
@@ -199,13 +200,17 @@ public class FileUtility {
      * @return  Error count, if successful 0, otherwise fail (1 &lt;... failure)
      * @throws IOException  If an I/O error occurs
      */
-    public long deleteFolders(Path dir) throws IOException {
+    public DeletionResults deleteFolders(Path dir) throws IOException {
         List<Path> fileTreeStream = walkFsTree(dir, true);
-        long errorCount = 0;
+        DeletionResults deletionResults = new DeletionResults();
         for (Path file : fileTreeStream) {
-            if (!Files.deleteIfExists(file)) errorCount++;
+            if (!Files.deleteIfExists(file)) {
+                deletionResults.incrementRemovalFailures();
+                continue;
+            }
+            deletionResults.incrementSuccessfulRemovals();
             logger.debug("Deleted file at path {}", file);
         }
-        return errorCount;
+        return deletionResults;
     }
 }

@@ -1,11 +1,10 @@
 package com.cloud.NetworkCloudDrive.Models.Data;
 
-public class ScanResults {
+public class ScanResults extends Benchmark {
     private int discoveredFiles = 0;
     private int discoveredFolders = 0;
     private int createdFiles = 0;
     private int createdFolders = 0;
-    private long timeTaken = System.currentTimeMillis();
 
     public ScanResults() {}
 
@@ -57,23 +56,10 @@ public class ScanResults {
         this.createdFolders = createdFolders;
     }
 
-    public long getTimeTaken() {
-        return timeTaken;
-    }
-
-    public void setTimeTaken(long timeTaken) {
-        this.timeTaken = timeTaken;
-    }
-
-    public long stopTimerAndGetTimeTaken() {
-        this.timeTaken = System.currentTimeMillis() - this.timeTaken;
-        return this.timeTaken;
-    }
-
     @Override
     public String toString() {
         return String.format(
                 "Results\nDiscovered Folders: %d\nDiscovered Files: %d\nCreated Files: %d\nCreated Folders: %d\nTime Taken: %d ms\n",
-                this.discoveredFolders, this.discoveredFiles, this.createdFiles, this.createdFolders, this.timeTaken);
+                this.discoveredFolders, this.discoveredFiles, this.createdFiles, this.createdFolders, getTimeTaken());
     }
 }

@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services.Tasks;
 
 import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Models.Data.DeletionResults;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
@@ -90,7 +91,7 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public void deleteAllThumbnails() throws IOException, SQLException {
+    public DeletionResults deleteAllThumbnails() throws IOException, SQLException {
         List<ThumbnailMetadata> thumbnailMetadataList = sqLiteDAO.findAllThumbnailsByUserID(userSession.getId());
         List<FileMetadata> fileMetadataList = new ArrayList<>();
         for  (ThumbnailMetadata thumbnailMetadata : thumbnailMetadataList) {
@@ -99,11 +100,9 @@ public class ThumbnailService implements ThumbnailRepository {
             fileMetadataList.add(fileMetadata);
         }
         sqLiteDAO.saveAllFiles(fileMetadataList);
-        long errorCount = fileUtility.deleteFolders(imageUtility.getThumbnailPath());
+        DeletionResults deletionResults = fileUtility.deleteFolders(imageUtility.getThumbnailPath());
         sqLiteDAO.deleteAllThumbnails(thumbnailMetadataList);
-        if (errorCount > 0) {
-            logger.error("Failed to delete {} thumbnail(s)", errorCount);
-        }
+        return deletionResults;
     }
 
     @Override
@@ -121,6 +120,32 @@ public class ThumbnailService implements ThumbnailRepository {
         ThumbnailMetadata thumbnailMetadata = sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId());
         sqLiteDAO.deleteThumbnail(thumbnailMetadata);
         deleteThumbnailFile(thumbnailMetadata.getFileName(), thumbnailMetadata.isPortrait());
+    }
+
+    @Override
+    public DeletionResults nuclearDeleteAllThumbnails() throws IOException {
+        List<ThumbnailMetadata> thumbnailMetadataList = sqLiteDAO.findAllThumbnailsByUserID(userSession.getId());
+        sqLiteDAO.deleteAllThumbnails(thumbnailMetadataList);
+        DeletionResults deletionResults = fileUtility.deleteFolders(imageUtility.getThumbnailPath());
+        resetHasThumbnailValue();
+        return deletionResults;
+    }
+
+    @Override
+    public DeletionResults deleteOnlyFromIO() throws IOException {
+        List<ThumbnailMetadata> thumbnailMetadataList = sqLiteDAO.findAllThumbnailsByUserID(userSession.getId());
+        sqLiteDAO.deleteAllThumbnails(thumbnailMetadataList);
+        return fileUtility.deleteFolders(imageUtility.getThumbnailPath());
+    }
+
+    private void resetHasThumbnailValue() {
+        List<FileMetadata> getAllFilesOfUser = sqLiteDAO.getAllFilesBelongingToUser(userSession.getId());
+        List<FileMetadata> mutableList = new ArrayList<>();
+        for (FileMetadata fileMetadata : getAllFilesOfUser) {
+            fileMetadata.setHasThumbnail(false);
+            mutableList.add(fileMetadata);
+        }
+        sqLiteDAO.saveAllFiles(mutableList);
     }
 
     @Override

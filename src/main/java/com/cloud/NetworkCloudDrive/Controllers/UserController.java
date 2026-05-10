@@ -7,7 +7,6 @@ import com.cloud.NetworkCloudDrive.Models.*;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
 import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
 import com.cloud.NetworkCloudDrive.Repositories.Services.UserRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.ImageUtility;
@@ -113,9 +112,10 @@ public class UserController {
     @DeleteMapping("delete")
     public @ResponseBody ResponseEntity<?> deleteUser() {
         try {
-            userRepository.deleteUser(sqLiteDAO.findUserByMail(userSession.getMail()));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
-                    body(new JSONResponse("Successfully deleted user"));
+                    body(new JSONObjectResponse(
+                            userRepository.deleteUser(sqLiteDAO.findUserByMail(userSession.getMail())),
+                            "Successfully deleted user"));
         } catch (Exception e) {
             logger.error("Failed to delete user reason: {}", e.getMessage());
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).
