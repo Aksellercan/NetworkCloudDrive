@@ -2,10 +2,10 @@ package com.cloud.NetworkCloudDrive.Controllers;
 
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Repositories.Services.InformationRepository;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONErrorResponse;
+import com.cloud.NetworkCloudDrive.Repositories.InformationRepository;
+import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;

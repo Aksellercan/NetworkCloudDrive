@@ -1,10 +1,10 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONResponse;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONObjectResponse;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONResponse;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
+import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

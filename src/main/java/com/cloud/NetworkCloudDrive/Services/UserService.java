@@ -1,14 +1,14 @@
 package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
-import com.cloud.NetworkCloudDrive.Models.Data.DeletionResults;
+import com.cloud.NetworkCloudDrive.Models.Domain.DeletionResults;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
-import com.cloud.NetworkCloudDrive.Repositories.Services.UserRepository;
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Repositories.UserRepository;
+import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
-import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

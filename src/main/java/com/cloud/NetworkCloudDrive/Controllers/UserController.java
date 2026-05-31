@@ -1,13 +1,13 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateUserDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
-import com.cloud.NetworkCloudDrive.Models.*;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONMapResponse;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONObjectResponse;
-import com.cloud.NetworkCloudDrive.Repositories.Services.UserRepository;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONErrorResponse;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONMapResponse;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONObjectResponse;
+import com.cloud.NetworkCloudDrive.Models.UserEntity;
+import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Repositories.UserRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.ImageUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;

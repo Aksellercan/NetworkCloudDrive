@@ -1,12 +1,13 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CreateFolderDTO;
-import com.cloud.NetworkCloudDrive.Models.*;
 import com.cloud.NetworkCloudDrive.Models.Enum.UploadOptions;
-import com.cloud.NetworkCloudDrive.Models.Responses.JSONErrorResponse;
-import com.cloud.NetworkCloudDrive.Repositories.Services.FileRepository;
-import com.cloud.NetworkCloudDrive.Repositories.Services.InformationRepository;
-import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
+import com.cloud.NetworkCloudDrive.Models.FileMetadata;
+import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONErrorResponse;
+import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
+import com.cloud.NetworkCloudDrive.Repositories.InformationRepository;
+import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,7 @@ public class FileController {
                 throw new NullPointerException("No files provided");
             String folderPath = pathUtility.getFolderPath(folderid);
             return ResponseEntity.ok().body(fileRepository.uploadFiles(files, folderPath, folderid));
-        } catch(FileAlreadyExistsException fileAlreadyExistsException) {
+        } catch (FileAlreadyExistsException fileAlreadyExistsException) {
             logger.error("File already exists at destination {}", fileAlreadyExistsException.getMessage());
             return ResponseEntity.badRequest().body(new JSONErrorResponse(fileAlreadyExistsException));
         } catch (SQLException sqlException) {
@@ -67,7 +68,7 @@ public class FileController {
                 throw new NullPointerException("No files provided");
             String folderPath = pathUtility.getFolderPath(folderid);
             return ResponseEntity.ok().body(fileRepository.uploadFiles(files, folderPath, folderid));
-        } catch(FileAlreadyExistsException fileAlreadyExistsException) {
+        } catch (FileAlreadyExistsException fileAlreadyExistsException) {
             logger.error("File already exists at destination {}", fileAlreadyExistsException.getMessage());
             return ResponseEntity.badRequest().body(new JSONErrorResponse(fileAlreadyExistsException));
         } catch (SQLException sqlException) {
@@ -85,19 +86,18 @@ public class FileController {
             FileMetadata metadata = informationRepository.getFileMetadata(fileid);
             String actualPath = pathUtility.getFolderPath(metadata.getFolderId());
             String decodedFileName = encodingUtility.decodedBase32SplitArray(metadata.getName())[1];
+            String safeQuotes = decodedFileName.replace("\"", "\\\"");
             Resource file = fileRepository.getFile(metadata, actualPath);
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + decodedFileName + "\" ")
+                            "attachment; filename=\"" + safeQuotes + "\" ")
                     .contentType(MediaType.parseMediaType(metadata.getMimiType()))
                     .contentLength(metadata.getSize())
                     .body(file);
-        }
-        catch (FileSystemException fse) {
+        } catch (FileSystemException fse) {
             logger.error("Internal error occurred. {}", fse.getMessage());
             return ResponseEntity.internalServerError().body(new JSONErrorResponse(fse, "Internal error occurred"));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Failed to download file. {}", e.getMessage());
             return ResponseEntity.internalServerError().body(
                     new JSONErrorResponse(e, "Failed to download file"));

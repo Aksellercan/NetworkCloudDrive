@@ -2,10 +2,10 @@ package com.cloud.NetworkCloudDrive.Services;
 
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Repositories.Services.InformationRepository;
+import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Repositories.InformationRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

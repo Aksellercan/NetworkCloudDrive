@@ -1,15 +1,15 @@
 package com.cloud.NetworkCloudDrive.Services;
 
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UploadFileMetadataDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
+import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
-import com.cloud.NetworkCloudDrive.Repositories.Services.FileRepository;
-import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
+import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
@@ -54,7 +54,7 @@ public class FileService implements FileRepository {
     }
 
     @Override
-    public Map<String ,?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
+    public Map<String, ?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
         List<UploadFileMetadataDTO> uploadedFiles = new ArrayList<>();
         int savedFileCount = 0;
         List<Long> thumbnailIdList = new ArrayList<>();
@@ -111,7 +111,7 @@ public class FileService implements FileRepository {
         ThumbnailMetadata thumbnail;
         try {
             thumbnail = thumbnailRepository.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
-        } catch (IOException | NullPointerException  e) {
+        } catch (IOException | NullPointerException e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());
             return null;
         }

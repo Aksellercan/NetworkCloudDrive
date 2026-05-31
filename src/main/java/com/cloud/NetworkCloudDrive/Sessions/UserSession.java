@@ -1,8 +1,8 @@
 package com.cloud.NetworkCloudDrive.Sessions;
 
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
+import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +12,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.context.annotation.SessionScope;
 
 //TODO temporarily use RequestScope instead of SessionScope (Reason: Session won't update on Postman/Yaak/Bruno. Should work for browser)
@@ -57,24 +56,31 @@ public class UserSession {
     public long getId() {
         return id;
     }
+
     public void setId(long id) {
         this.id = id;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getMail() {
         return mail;
     }
+
     public void setMail(String mail) {
         this.mail = mail;
     }
+
     public UserRole getRole() {
         return role;
     }
+
     public void setRole(UserRole role) {
         this.role = role;
     }

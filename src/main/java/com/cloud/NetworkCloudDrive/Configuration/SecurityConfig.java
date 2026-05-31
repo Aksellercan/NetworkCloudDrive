@@ -1,6 +1,6 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
-import com.cloud.NetworkCloudDrive.Utilities.Security.SecurityUtility;
+import com.cloud.NetworkCloudDrive.Security.SecurityUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -40,11 +40,11 @@ public class SecurityConfig {
     protected SecurityFilterChain configure(HttpSecurity http) {
         http
                 .authorizeHttpRequests((requests) -> requests
-                                // give everyone access to register endpoint
-                                .requestMatchers("/api/user/register").permitAll()
-                                // but require authentication for any other endpoint
-                                .anyRequest()
-                                .authenticated()
+                        // give everyone access to register endpoint
+                        .requestMatchers("/api/user/register").permitAll()
+                        // but require authentication for any other endpoint
+                        .anyRequest()
+                        .authenticated()
                 )
                 .formLogin(formLogin ->
                         formLogin.successHandler(authenticationHandler())

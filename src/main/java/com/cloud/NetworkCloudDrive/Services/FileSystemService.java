@@ -6,12 +6,12 @@ import com.cloud.NetworkCloudDrive.Models.Enum.FilterListEnum;
 import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Repositories.Services.FileSystemRepository;
-import com.cloud.NetworkCloudDrive.Repositories.Tasks.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
+import com.cloud.NetworkCloudDrive.Repositories.FileSystemRepository;
+import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.SortAndFilterUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
@@ -23,7 +23,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 @Service
@@ -164,11 +167,13 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     //helper function
+
     /**
      * Checks if there are any left over unmanaged files in directory then removes them
-     * @param folder    Path of folder to check
-     * @return  true if there are leftovers
-     * @throws IOException  When I/O related error occurs
+     *
+     * @param folder Path of folder to check
+     * @return true if there are leftovers
+     * @throws IOException When I/O related error occurs
      */
     private boolean emptyLeftoversDirectory(Path folder) throws IOException {
         List<Path> subFiles = fileUtility.getFileAndFolderPathsFromFolder(folder);

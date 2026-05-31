@@ -1,10 +1,10 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
-import com.cloud.NetworkCloudDrive.DAO.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
+import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Utilities.Security.EncodingUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -33,11 +33,12 @@ public class PathUtility {
 
     /**
      * Constructor
-     * @param userUtility For getting User folder or any user related operation
+     *
+     * @param userUtility           For getting User folder or any user related operation
      * @param fileStorageProperties Holds, root directory path
-     * @param sqLiteDAO SQLite Database queries
-     * @param userSession Current User's session details
-     * @param encodingUtility   For encoding and decoding files/folders
+     * @param sqLiteDAO             SQLite Database queries
+     * @param userSession           Current User's session details
+     * @param encodingUtility       For encoding and decoding files/folders
      */
     public PathUtility(
             UserUtility userUtility,
@@ -54,8 +55,9 @@ public class PathUtility {
 
     /**
      * Returns full path to user folder as String
-     * @param path  User folder
-     * @return  Full path to user folder as String
+     *
+     * @param path User folder
+     * @return Full path to user folder as String
      */
     public String getFullPathToString(String path) {
         return fileStorageProperties.getFullPath(path);
@@ -63,8 +65,9 @@ public class PathUtility {
 
     /**
      * Returns full path to user folder as Path
-     * @param path  User folder
-     * @return  Full path to user folder as Path
+     *
+     * @param path User folder
+     * @return Full path to user folder as Path
      */
     public Path getFullPath(String path) {
         return Path.of(fileStorageProperties.getFullPath(path));
@@ -72,6 +75,7 @@ public class PathUtility {
 
     /**
      * Returns root folder path as Path
+     *
      * @return Root folder path as Path
      */
     public Path getBasePath() {
@@ -80,7 +84,8 @@ public class PathUtility {
 
     /**
      * Returns root folder path as String
-     * @return  Root folder path as String
+     *
+     * @return Root folder path as String
      */
     public String getBasePathToString() {
         return fileStorageProperties.getBasePath();
@@ -88,8 +93,9 @@ public class PathUtility {
 
     /**
      * Normalizes path then checks if path starts with user folder path
-     * @param path  Path to validate
-     * @return  true if path is valid (starts with user folder path "./root/userfolderBase32/...") else returns false
+     *
+     * @param path Path to validate
+     * @return true if path is valid (starts with user folder path "./root/userfolderBase32/...") else returns false
      * @throws IOException When user folder doesn't exist or not found it will create it however will throw IOException if it can't
      */
     public boolean isPathAllowed(Path path) throws IOException {
@@ -98,8 +104,9 @@ public class PathUtility {
 
     /**
      * Filename validation
-     * @param filename  Filename to validate
-     * @return  True if its valid
+     *
+     * @param filename Filename to validate
+     * @return True if its valid
      */
     public boolean isFilenameAllowed(String filename) {
         if (filename == null || filename.isEmpty()
@@ -143,9 +150,10 @@ public class PathUtility {
 
     /**
      * Returns Folder Metadata that matches target ID
-     * @param list  list to loop
-     * @param targetId  target ID of Folder Metadata to return
-     * @return  Folder Metadata that matches target ID
+     *
+     * @param list     list to loop
+     * @param targetId target ID of Folder Metadata to return
+     * @return Folder Metadata that matches target ID
      */
     private FolderMetadata getFolderMetadataByIdFromList(List<FolderMetadata> list, long targetId) {
         return list.stream().filter(metadata -> metadata.getId() == targetId).toList().get(0);
@@ -153,9 +161,10 @@ public class PathUtility {
 
     /**
      * Resolves folder path from ID path to system path. Ex. turns 0/1/2 into username/folder1/folder2
-     * @param idString  ID Path of the folder
-     * @return  full system path of folder
-     * @throws FileSystemException  if the path is invalid or the database is out of sync
+     *
+     * @param idString ID Path of the folder
+     * @return full system path of folder
+     * @throws FileSystemException if the path is invalid or the database is out of sync
      */
     public String resolvePathFromIdString(String idString) throws FileSystemException {
         String[] splitLine = idString.split("/");
@@ -168,9 +177,10 @@ public class PathUtility {
 
     /**
      * Appends folder names from List of folder ID's
-     * @param folderIdList  List of folder ID's
-     * @return  system path
-     * @throws FileSystemException  if no match found for one of the ID's in list
+     *
+     * @param folderIdList List of folder ID's
+     * @return system path
+     * @throws FileSystemException if no match found for one of the ID's in list
      */
     protected String appendFolderNames(List<Long> folderIdList) throws FileSystemException {
         StringBuilder fullPath = new StringBuilder();
@@ -195,7 +205,8 @@ public class PathUtility {
 
     /**
      * Return correct file separator (regex compliant)
-     * @return  correct file separator
+     *
+     * @return correct file separator
      */
     private String returnCorrectSeparatorRegex() {
         return System.getProperty("os.name").toLowerCase().contains("windows") ? "\\\\" : "/";
@@ -204,16 +215,18 @@ public class PathUtility {
     // Generate ID path from System path
     // rewrite
     // TODO can be replaced using StartsWith function in SQLiteDAO just like in moveFolders()
+
     /**
      * Generates ID path string
-     *<p>
+     * <p>
      * Splits path into a String array, then prepends given starting ID Path. For each folder fetches folders with similar ID Paths for a user
      * , then checks for same name and depth. If it satisfies both depth increases and the folder's ID is added to StringBuilder.
      * </p>
-     * @param filePath  Starting folder path
-     * @param startingIdPath    Starting folder's ID Path
-     * @return  Generated ID Path
-     * @throws IOException  I/O Error if user folder cannot be found or created
+     *
+     * @param filePath       Starting folder path
+     * @param startingIdPath Starting folder's ID Path
+     * @return Generated ID Path
+     * @throws IOException I/O Error if user folder cannot be found or created
      */
     @Deprecated
     public String generateIdPaths(String filePath, String startingIdPath) throws IOException {
