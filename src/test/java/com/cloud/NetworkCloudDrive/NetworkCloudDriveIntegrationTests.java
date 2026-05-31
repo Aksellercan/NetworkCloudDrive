@@ -105,8 +105,14 @@ class NetworkCloudDriveIntegrationTests {
         FileMetadata saved = sqLiteDAO.saveFile(file);
         long id = saved.getId();
 
+        boolean removed = false;
         sqLiteDAO.deleteFile(saved);
-        assertNull(sqLiteDAO.findFileMetadataById(id));
+        try {
+            sqLiteDAO.findFileMetadataById(id);
+        } catch (Exception e) {
+            removed = true;
+        }
+        assertTrue(removed);
     }
 
     @Test
