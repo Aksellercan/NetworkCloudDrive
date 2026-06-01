@@ -1,6 +1,6 @@
 package com.cloud.NetworkCloudDrive.Configuration;
 
-import com.cloud.NetworkCloudDrive.Security.SecurityUtility;
+import com.cloud.NetworkCloudDrive.Security.UserSecurity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -27,12 +27,12 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private final SecurityUtility securityUtility;
+    private final UserSecurity userSecurity;
     private final Environment env;
     private final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
-    public SecurityConfig(SecurityUtility securityUtility, Environment env) {
-        this.securityUtility = securityUtility;
+    public SecurityConfig(UserSecurity userSecurity, Environment env) {
+        this.userSecurity = userSecurity;
         this.env = env;
     }
 
@@ -104,7 +104,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(securityUtility);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userSecurity);
         provider.setPasswordEncoder(passwordEncoder());
         return new ProviderManager(provider);
     }
