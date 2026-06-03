@@ -9,9 +9,12 @@ import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Repositories.UserRepository;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
+import com.cloud.NetworkCloudDrive.Utilities.ImageUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NonUniqueResultException;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -45,6 +51,10 @@ class NetworkCloudDriveIntegrationTests {
     PathUtility pathUtility;
     @Autowired
     UserUtility userUtility;
+    @Autowired
+    FileUtility fileUtility;
+    @Autowired
+    ImageUtility imageUtility;
 
     @Test
     @Transactional
@@ -158,8 +168,8 @@ class NetworkCloudDriveIntegrationTests {
 
     @Test
     @Transactional
-    void saveThumbnail_And_FindByFileId() throws SQLException {
-        FileMetadata file = new FileMetadata("img_for_thumb.jpg", 0L, 0L, "image/jpeg", 500L);
+    void saveThumbnail_And_FindByFileId() {
+        FileMetadata file = new FileMetadata("img_thumbnail.jpg", 0L, 0L, "image/jpeg", 500L);
         FileMetadata savedFile = sqLiteDAO.saveFile(file);
 
         ThumbnailMetadata thumb = new ThumbnailMetadata();
@@ -168,11 +178,18 @@ class NetworkCloudDriveIntegrationTests {
         thumb.setUserId(0L);
         thumb.setPortrait(true);
         ThumbnailMetadata savedThumb = sqLiteDAO.saveThumbnail(thumb);
-        assertNotNull(savedThumb.getId());
+        logger.info("{}", savedThumb);
+        boolean thumbFound;
 
-        ThumbnailMetadata found = sqLiteDAO.queryThumbnailMetadataUsingFileId(savedFile.getId(), 0L);
-        assertNotNull(found);
-        assertTrue(found.isPortrait());
+        try {
+            ThumbnailMetadata found = sqLiteDAO.queryThumbnailMetadataUsingFileId(savedFile.getId(), 0L);
+            assertNotNull(found);
+            thumbFound = true;
+            assertTrue(found.isPortrait());
+        } catch (NonUniqueResultException e) {
+            thumbFound = false;
+        }
+        assertTrue(thumbFound);
     }
 
     @Test
@@ -185,5 +202,40 @@ class NetworkCloudDriveIntegrationTests {
 
         List<FileMetadata> files = sqLiteDAO.getAllFilesBelongingToUser(99L);
         assertEquals(2, files.size());
+    }
+
+    @Test
+    @Transactional
+    void deleteUser_RemovesUserFolderFromDisk() throws Exception {
+        UserEntity user = new UserEntity("delete_folder_user", "delete_folder@test.com", "password", UserRole.GUEST);
+        UserEntity saved = userRepository.registerUser(user.getName(), user.getMail(), user.getPassword());
+
+        userSession.setId(saved.getId());
+        userSession.setName(saved.getName());
+        userSession.setMail(saved.getMail());
+        userSession.setRole(saved.getRole());
+
+        Path userDir = userUtility.createUserDirectory(saved.getId(), saved.getName(), saved.getMail());
+        imageUtility.createThumbnailDirectories(userDir);
+
+        assertTrue(Files.exists(userDir));
+        userRepository.deleteUser(saved);
+        assertTrue(Files.notExists(userDir));
+    }
+
+    @Test
+    @Transactional
+    void saveFile_WithTikaDetectedMimeType_PersistsCorrectly() throws IOException, SQLException {
+        Path tempFile = Files.createTempFile("integration_mime_test", ".html");
+        Files.writeString(tempFile, "<html><body>test</body></html>");
+
+        String mimeType = fileUtility.getMimeTypeFromExtensionUsingTikaCore(tempFile.toFile());
+        Files.deleteIfExists(tempFile);
+
+        FileMetadata file = new FileMetadata("integration_test.html", 0L, 0L, mimeType, 100L);
+        FileMetadata saved = sqLiteDAO.saveFile(file);
+
+        FileMetadata retrieved = sqLiteDAO.findFileMetadataById(saved.getId());
+        assertEquals("text/html", retrieved.getMimiType());
     }
 }

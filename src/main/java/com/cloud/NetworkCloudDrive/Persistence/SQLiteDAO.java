@@ -258,13 +258,11 @@ public class SQLiteDAO {
     }
 
     @Transactional
-    public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) throws SQLException {
+    public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) {
         Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
                 .findByFileId(fileId)
                 .filter(tm -> tm.getUserId() == userId);
-        if (thumbnailMetadata.isEmpty())
-            throw new SQLException("No Thumbnail found for file Id " + fileId);
-        return thumbnailMetadata.get();
+        return thumbnailMetadata.orElse(null);
     }
 
     @Transactional

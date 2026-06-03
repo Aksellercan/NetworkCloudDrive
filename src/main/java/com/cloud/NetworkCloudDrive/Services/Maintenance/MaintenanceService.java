@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 
 @Service
@@ -275,9 +276,9 @@ public class MaintenanceService implements MaintenanceRepository {
         }
         ThumbnailMetadata thumbnail;
         try {
-            thumbnail = thumbnailRepository.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
+            thumbnail = thumbnailRepository.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId).get();
             return thumbnail != null;
-        } catch (IOException | NullPointerException e) {
+        } catch (IOException | NullPointerException | ExecutionException | InterruptedException e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());
             return false;
         }

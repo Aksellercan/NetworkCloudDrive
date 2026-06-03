@@ -5,16 +5,22 @@ import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FileUtilityTest {
@@ -27,10 +33,33 @@ class FileUtilityTest {
     private IgnoreFileListProperties ignoreFileListProperties;
     private FileUtility fileUtility;
 
+    @TempDir
+    Path tempDir;
+
     @BeforeEach
     void setUp() {
         ignoreFileListProperties = new IgnoreFileListProperties();
         fileUtility = new FileUtility(encodingUtility, ignoreFileListProperties, pathUtility);
+    }
+
+    @ParameterizedTest
+    @MethodSource("mimeTypeTestCases")
+    void getMimeTypeFromExtensionUsingTikaCore_ReturnsCorrectType(String fileName, String content, String expectedMimeType) throws IOException {
+        Path filePath = tempDir.resolve(fileName);
+        Files.writeString(filePath, content);
+        String mimeType = fileUtility.getMimeTypeFromExtensionUsingTikaCore(filePath.toFile());
+        assertEquals(expectedMimeType, mimeType);
+    }
+
+    private static Stream<Arguments> mimeTypeTestCases() {
+        return Stream.of(
+                Arguments.of("test.txt", "hello world", "text/plain"),
+                Arguments.of("test.html", "<html></html>", "text/html"),
+                Arguments.of("test.json", "{}", "application/json"),
+                Arguments.of("test.xml", "<root/>", "application/xml"),
+                Arguments.of("test.css", "body {}", "text/css"),
+                Arguments.of("test.csv", "a,b,c", "text/csv")
+        );
     }
 
     @Test
@@ -145,6 +174,71 @@ class FileUtilityTest {
 
     private static Stream<String> apiIgnoreFiles() {
         return new IgnoreFileListProperties().getIgnoreAPIFilesList().stream();
+    }
+
+    @Test
+    void deleteFolders_RemovesDirectoryAndContents() throws IOException {
+        Path dir = tempDir.resolve("delete_me");
+        Files.createDirectories(dir);
+        Path subDir = Files.createDirectory(dir.resolve("sub"));
+        Path file1 = Files.createFile(dir.resolve("file1.txt"));
+        Path file2 = Files.createFile(subDir.resolve("file2.txt"));
+
+        assertTrue(Files.exists(dir));
+        assertTrue(Files.exists(subDir));
+        assertTrue(Files.exists(file1));
+        assertTrue(Files.exists(file2));
+
+        fileUtility.deleteFolders(dir);
+
+        assertTrue(Files.notExists(dir));
+        assertTrue(Files.notExists(subDir));
+        assertTrue(Files.notExists(file1));
+        assertTrue(Files.notExists(file2));
+    }
+
+    @Test
+    void deleteFolders_WhenDirectoryDoesNotExist_ThrowsException() {
+        Path nonExistent = tempDir.resolve("nonexistent");
+
+        assertThrows(IOException.class,
+                () -> fileUtility.deleteFolders(nonExistent));
+    }
+
+    @Test
+    void checkIfFileExistsDecodeNames_WhenFileExists_ReturnsTrue() throws IOException {
+        String encodedName = "encodedFile123";
+        String decodedName = "myfile.txt";
+        when(pathUtility.getFullPath("test/path")).thenReturn(tempDir);
+        when(encodingUtility.decodedBase32SplitArray(encodedName)).thenReturn(new String[]{"1", decodedName, "99"});
+        Files.createFile(tempDir.resolve(encodedName));
+
+        boolean result = fileUtility.checkIfFileExistsDecodeNames("test/path", decodedName);
+
+        assertTrue(result);
+    }
+
+    @Test
+    void checkIfFileExistsDecodeNames_WhenFileDoesNotMatch_ReturnsFalse() throws IOException {
+        String encodedName = "encodedFile456";
+        when(pathUtility.getFullPath("test/path")).thenReturn(tempDir);
+        when(encodingUtility.decodedBase32SplitArray(encodedName)).thenReturn(new String[]{"1", "other.txt", "99"});
+        Files.createFile(tempDir.resolve(encodedName));
+
+        boolean result = fileUtility.checkIfFileExistsDecodeNames("test/path", "myfile.txt");
+
+        assertFalse(result);
+    }
+
+    @Test
+    void checkIfFileExistsDecodeNames_WhenOnlyIgnoredFileExists_ReturnsFalse() throws IOException {
+        when(pathUtility.getFullPath("test/path")).thenReturn(tempDir);
+        Files.createFile(tempDir.resolve(".DS_Store"));
+
+        boolean result = fileUtility.checkIfFileExistsDecodeNames("test/path", "anyfile.txt");
+
+        assertFalse(result);
+        verifyNoInteractions(encodingUtility);
     }
 
     @Test

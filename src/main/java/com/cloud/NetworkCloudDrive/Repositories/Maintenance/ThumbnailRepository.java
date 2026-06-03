@@ -8,10 +8,11 @@ import org.springframework.stereotype.Repository;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.concurrent.CompletableFuture;
 
 @Repository
 public interface ThumbnailRepository {
-    ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException;
+    CompletableFuture<ThumbnailMetadata> createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException;
 
     DeletionResults nuclearDeleteAllThumbnails() throws IOException;
 
@@ -30,4 +31,5 @@ public interface ThumbnailRepository {
     ThumbnailMetadata getThumbnailByID(long thumbnailId) throws SQLException;
 
     void deleteThumbnailByFileIDAndSetThumbnailStatus(long fileId) throws SQLException, IOException;
+
 }

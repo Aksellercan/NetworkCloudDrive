@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 
@@ -170,6 +171,29 @@ class UserControllerTest {
         ResponseEntity<?> response = controller.deleteUser();
 
         assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    void deleteUser_WhenFindUserFails_ReturnsBadRequest() throws Exception {
+        when(userSession.getMail()).thenReturn("test@test.com");
+        when(sqLiteDAO.findUserByMail("test@test.com")).thenThrow(new RuntimeException("DB error"));
+
+        ResponseEntity<?> response = controller.deleteUser();
+
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    void deleteUser_WhenDeleteFails_ReturnsBadRequest() throws Exception {
+        when(userSession.getMail()).thenReturn("test@test.com");
+        UserEntity user = new UserEntity("testuser", "test@test.com", "hash", UserRole.GUEST);
+        user.setId(1L);
+        when(sqLiteDAO.findUserByMail("test@test.com")).thenReturn(user);
+        when(userRepository.deleteUser(user)).thenThrow(new IOException("Disk full"));
+
+        ResponseEntity<?> response = controller.deleteUser();
+
+        assertEquals(400, response.getStatusCode().value());
     }
 
     @Test

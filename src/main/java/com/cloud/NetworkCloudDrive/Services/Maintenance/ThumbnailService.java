@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ThumbnailService implements ThumbnailRepository {
@@ -53,14 +55,25 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    public ThumbnailMetadata createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException {
+    @Async
+    public CompletableFuture<ThumbnailMetadata> createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException {
         logger.warn("thumbnail filepath = {}", filePath);
         int[] dimensions = imageUtility.getThumbnailDimensions(filePath);
         boolean isPortrait = imageUtility.isPortrait(dimensions[0], dimensions[1]);
         Path path = saveThumbnails(createThumbnailOfAnImage(filePath, dimensions[0], dimensions[1]), encodedFileName, "jpg", isPortrait);
-        ThumbnailMetadata metadata = saveThumbnailToDatabase(path.getFileName().toString(), path, fileId, isPortrait);
+        ThumbnailMetadata metadata;
+        // If entry exists save transaction of creating new entry by creating thumbnail immediately
+        if (alreadyExists(fileId)) {
+            metadata = sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId());
+        } else {
+            metadata = saveThumbnailToDatabase(path.getFileName().toString(), path, fileId, isPortrait);
+        }
         logger.info("Created thumbnail entry {}", metadata.toString());
-        return metadata;
+        return CompletableFuture.completedFuture(metadata);
+    }
+
+    private boolean alreadyExists(long fileId) {
+        return sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId()) != null;
     }
 
     private ThumbnailMetadata saveThumbnailToDatabase(String filename, Path thumbnailPath, long fileId, boolean isPortrait) throws IOException {

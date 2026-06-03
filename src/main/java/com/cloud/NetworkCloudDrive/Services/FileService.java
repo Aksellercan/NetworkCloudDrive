@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class FileService implements FileRepository {
@@ -54,7 +57,7 @@ public class FileService implements FileRepository {
     }
 
     @Override
-    public Map<String, ?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException {
+    public Map<String, ?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException, ExecutionException, InterruptedException {
         List<UploadFileMetadataDTO> uploadedFiles = new ArrayList<>();
         int savedFileCount = 0;
         List<Long> thumbnailIdList = new ArrayList<>();
@@ -78,7 +81,7 @@ public class FileService implements FileRepository {
             sqLiteDAO.persistObjects(metadata);
             // Encode in BASE32
             String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), fileName, userSession.getId());
-            Path storagePath = storeFile(file.getInputStream(), encodedFileName, folderPath);
+            Path storagePath = storeFile(file.getInputStream(), encodedFileName, folderPath).get();
             logger.debug("storage path {}", storagePath);
             savedFileCount++;
             metadata.setName(encodedFileName);
@@ -110,15 +113,16 @@ public class FileService implements FileRepository {
     private ThumbnailMetadata handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId) {
         ThumbnailMetadata thumbnail;
         try {
-            thumbnail = thumbnailRepository.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId);
-        } catch (IOException | NullPointerException e) {
+            thumbnail = thumbnailRepository.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId).get();
+        } catch (IOException | NullPointerException | ExecutionException | InterruptedException e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());
             return null;
         }
         return thumbnail;
     }
 
-    public Path storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
+    @Async
+    public CompletableFuture<Path> storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException {
         Path userDirectory = pathUtility.getBasePath().resolve(Path.of(parentPath)); /* To be extended */
         Files.createDirectories(userDirectory);
         Path filePath = userDirectory.resolve(fileName);
@@ -127,18 +131,19 @@ public class FileService implements FileRepository {
         if (!pathUtility.isFilenameAllowed(fileName))
             throw new IOException("Filename is not allowed");
         StreamUtils.copy(inputStream, Files.newOutputStream(filePath, StandardOpenOption.CREATE_NEW));
-        return pathUtility.getBasePath().relativize(filePath);
+        return CompletableFuture.completedFuture(pathUtility.getBasePath().relativize(filePath));
     }
 
     @Override
-    public Resource getFile(FileMetadata file, String path) throws Exception {
+    @Async
+    public CompletableFuture<Resource> getFile(FileMetadata file, String path) throws Exception {
         Path filePath = Paths.get(pathUtility.getFullPathToString(path), file.getName());
         Path normalizedRoot = pathUtility.getBasePath().normalize().toAbsolutePath();
         if (filePath.startsWith(normalizedRoot))
             throw new SecurityException("Unauthorized access");
         if (!Files.exists(filePath))
             throw new IOException("File does not exist");
-        return new UrlResource(filePath.toAbsolutePath().toUri());
+        return CompletableFuture.completedFuture(new UrlResource(filePath.toAbsolutePath().toUri()));
     }
 
     @Override

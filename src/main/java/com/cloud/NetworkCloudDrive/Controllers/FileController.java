@@ -87,7 +87,7 @@ public class FileController {
             String actualPath = pathUtility.getFolderPath(metadata.getFolderId());
             String decodedFileName = encodingUtility.decodedBase32SplitArray(metadata.getName())[1];
             String safeQuotes = decodedFileName.replace("\"", "\\\"");
-            Resource file = fileRepository.getFile(metadata, actualPath);
+            Resource file = fileRepository.getFile(metadata, actualPath).get();
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"" + safeQuotes + "\" ")
