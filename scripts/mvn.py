@@ -119,7 +119,7 @@ match sys.argv[1]:
     case "-m" | "--minor":
         exec_mvn_command(build_string_version(increment_version(version_current, 2)))
     case "-M" | "--major":
-        exec_mvn_command(increment_version(version_current, 1))
+        exec_mvn_command(build_string_version(increment_version(version_current, 1))
     case "-s" | "--snapshot":
         exec_mvn_command(build_string_type(release_type(version_current,1, 1)))
     case "-r" | "--release":
