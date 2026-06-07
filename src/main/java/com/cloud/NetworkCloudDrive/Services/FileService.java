@@ -11,7 +11,6 @@ import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Queues.JobQueue;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
-import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
@@ -42,7 +41,6 @@ public class FileService implements FileRepository {
     private final EncodingUtility encodingUtility;
     private final PathUtility pathUtility;
     private final ThumbnailProperties thumbnailProperties;
-    private final ThumbnailRepository thumbnailRepository;
 
     public FileService(
             SQLiteDAO sqLiteDAO,
@@ -51,7 +49,6 @@ public class FileService implements FileRepository {
             EncodingUtility encodingUtility,
             PathUtility pathUtility,
             ThumbnailProperties thumbnailProperties,
-            ThumbnailRepository thumbnailRepository,
             JobQueue jobQueue) {
         this.sqLiteDAO = sqLiteDAO;
         this.userSession = userSession;
@@ -59,7 +56,6 @@ public class FileService implements FileRepository {
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
         this.thumbnailProperties = thumbnailProperties;
-        this.thumbnailRepository = thumbnailRepository;
         this.jobQueue = jobQueue;
     }
 
@@ -94,7 +90,7 @@ public class FileService implements FileRepository {
             testJob.setJobType(JobType.IO_FUNCTION);
             testJob.setJobDescription("Test job for file " + fileName);
             jobQueue.addToQueue(testJob);
-            
+
             logger.debug("storage path {}", storagePath);
             savedFileCount++;
             metadata.setName(encodedFileName);

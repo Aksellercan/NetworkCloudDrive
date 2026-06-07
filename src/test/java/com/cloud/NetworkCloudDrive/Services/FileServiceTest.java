@@ -4,6 +4,7 @@ import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
+import com.cloud.NetworkCloudDrive.Queues.JobQueue;
 import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
@@ -49,6 +50,8 @@ class FileServiceTest {
     private ThumbnailProperties thumbnailProperties;
     @Mock
     private ThumbnailRepository thumbnailRepository;
+    @Mock
+    private JobQueue jobQueue;
 
     private FileService fileService;
 
@@ -58,7 +61,7 @@ class FileServiceTest {
     @BeforeEach
     void setUp() {
         fileService = new FileService(sqLiteDAO, userSession, fileUtility,
-                encodingUtility, pathUtility, thumbnailProperties, thumbnailRepository);
+                encodingUtility, pathUtility, thumbnailProperties, jobQueue);
     }
 
     @Test
@@ -290,37 +293,6 @@ class FileServiceTest {
 
         assertThrows(java.nio.file.FileAlreadyExistsException.class,
                 () -> fileService.uploadFiles(files, "user/folder", 1L));
-    }
-
-    @Test
-    void uploadFiles_WithThumbnailSupport_IncludesThumbnailId() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("files", "image.jpg", "image/jpeg", "fake-jpeg-data".getBytes());
-        MockMultipartFile[] files = new MockMultipartFile[]{file};
-
-        when(pathUtility.getFullPath("user/folder")).thenReturn(tempDir.resolve("user/folder"));
-        when(fileUtility.getFileAndFolderPathsFromFolder(any(Path.class))).thenReturn(List.of());
-        when(pathUtility.isFilenameAllowed("image.jpg")).thenReturn(true);
-        when(pathUtility.isFilenameAllowed("1:image.jpg:1")).thenReturn(true);
-        when(encodingUtility.encodeBase32FileName(anyLong(), eq("image.jpg"), anyLong())).thenReturn("1:image.jpg:1");
-        when(userSession.getId()).thenReturn(1L);
-        when(pathUtility.getBasePath()).thenReturn(tempDir);
-        when(pathUtility.isPathAllowed(any(Path.class))).thenReturn(true);
-        when(thumbnailProperties.isAllowedImageFormat("image/jpeg")).thenReturn(true);
-
-        doAnswer(invocation -> {
-            FileMetadata m = invocation.getArgument(0);
-            m.setId(1L);
-            return null;
-        }).when(sqLiteDAO).persistObjects(any());
-        doAnswer(invocation -> invocation.getArgument(0)).when(sqLiteDAO).saveFile(any());
-
-        when(thumbnailRepository.createAndSaveThumbnailDefaultSettings(any(Path.class), anyString(), anyLong()))
-                .thenReturn(CompletableFuture.completedFuture(null));
-
-        Map<String, ?> result = fileService.uploadFiles(files, "user/folder", 1L);
-
-        assertEquals(1, result.get("uploaded_file_count"));
-        assertTrue(result.containsKey("files"));
     }
 
     @Test
