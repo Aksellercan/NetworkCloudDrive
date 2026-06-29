@@ -11,7 +11,7 @@ Local network storage API that can store files and manage them. Uses SQLite for 
 # Run
 
 - [Using Containers (Docker)](DOCKER/DOCKER.md)
-- [Using Artifacts binaries](ARTIFACTS.md)
+- [Using Artifacts binaries](ARTIFACT.md)
 
 # Configuration
 
