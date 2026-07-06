@@ -3,7 +3,6 @@ package com.cloud.NetworkCloudDrive.Utilities;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,9 +24,9 @@ public class ImageUtility {
 
     public int[] getThumbnailDimensions(Path image) throws IOException {
         if (isPortrait(image)) {
-            return new int[] {portraitWidth, portraitHeight};
+            return new int[]{portraitWidth, portraitHeight};
         }
-        return new int[] {landscapeWidth, landscapeHeight};
+        return new int[]{landscapeWidth, landscapeHeight};
     }
 
     public boolean isPortrait(Path imagePath) throws IOException {
@@ -54,6 +53,10 @@ public class ImageUtility {
 
     public Path getThumbnailPath(boolean isPortrait) throws IOException {
         return getSizeFolder(userUtility.returnUserFolderasPath().toString(), isPortrait);
+    }
+
+    public Path getThumbnailPathBackgroundTask(boolean isPortrait, long userId, String name, String mail) throws IOException {
+        return getSizeFolder(userUtility.returnUserFolderAsPathBackgroundTask(userId, name, mail).toString(), isPortrait);
     }
 
     public Path getThumbnailPath() throws IOException {

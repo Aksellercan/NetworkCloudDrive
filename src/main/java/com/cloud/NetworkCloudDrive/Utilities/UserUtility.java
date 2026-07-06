@@ -70,6 +70,10 @@ public class UserUtility {
         return createUserDirectory(userSession.getId(), userSession.getName(), userSession.getMail());
     }
 
+    public Path returnUserFolderAsPathBackgroundTask(long userId, String name, String mail) throws IOException {
+        return createUserDirectory(userId, name, mail);
+    }
+
     /**
      * Updates User Folder's encoding
      *

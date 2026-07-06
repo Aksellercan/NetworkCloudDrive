@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Services.Maintenance;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Domain.DeletionResults;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
@@ -54,32 +55,44 @@ public class ThumbnailService implements ThumbnailRepository {
         this.imageUtility = imageUtility;
     }
 
-    @Override
     @Async
-    public CompletableFuture<ThumbnailMetadata> createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException {
+    @Override
+    public CompletableFuture<ThumbnailMetadata> createAndSaveThumbnail(Path filePath, String encodedFileName, long fileId, UserDTO userDTO) throws IOException {
         logger.warn("thumbnail filepath = {}", filePath);
         int[] dimensions = imageUtility.getThumbnailDimensions(filePath);
         boolean isPortrait = imageUtility.isPortrait(dimensions[0], dimensions[1]);
-        Path path = saveThumbnails(createThumbnailOfAnImage(filePath, dimensions[0], dimensions[1]), encodedFileName, "jpg", isPortrait);
+        Path path = saveThumbnails(createThumbnailOfAnImage(filePath, dimensions[0], dimensions[1]), encodedFileName, "jpg", isPortrait, userDTO);
         ThumbnailMetadata metadata;
         // If entry exists save transaction of creating new entry by creating thumbnail immediately
-        if (alreadyExists(fileId)) {
-            metadata = sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId());
+        if (alreadyExists(fileId, userDTO.getUserId())) {
+            metadata = sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userDTO.getUserId());
         } else {
-            metadata = saveThumbnailToDatabase(path.getFileName().toString(), path, fileId, isPortrait);
+            metadata = saveThumbnailToDatabaseBackgroundTask(path.getFileName().toString(), path, fileId, isPortrait, userDTO.getUserId());
         }
         logger.info("Created thumbnail entry {}", metadata.toString());
         return CompletableFuture.completedFuture(metadata);
     }
 
-    private boolean alreadyExists(long fileId) {
-        return sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userSession.getId()) != null;
+    @Override
+    @Async
+    public CompletableFuture<ThumbnailMetadata> createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException {
+        return createAndSaveThumbnail(filePath, encodedFileName, fileId, new UserDTO(userSession));
+    }
+
+    private boolean alreadyExists(long fileId, long userId) {
+        return sqLiteDAO.queryThumbnailMetadataUsingFileId(fileId, userId) != null;
     }
 
     private ThumbnailMetadata saveThumbnailToDatabase(String filename, Path thumbnailPath, long fileId, boolean isPortrait) throws IOException {
         long size = Files.size(thumbnailPath);
         String mimeType = fileUtility.getMimeTypeFromExtensionUsingTikaCore(thumbnailPath.toFile());
         return sqLiteDAO.saveThumbnail(new ThumbnailMetadata(filename, userSession.getId(), mimeType, size, fileId, isPortrait));
+    }
+
+    private ThumbnailMetadata saveThumbnailToDatabaseBackgroundTask(String filename, Path thumbnailPath, long fileId, boolean isPortrait, long userId) throws IOException {
+        long size = Files.size(thumbnailPath);
+        String mimeType = fileUtility.getMimeTypeFromExtensionUsingTikaCore(thumbnailPath.toFile());
+        return sqLiteDAO.saveThumbnail(new ThumbnailMetadata(filename, userId, mimeType, size, fileId, isPortrait));
     }
 
     public BufferedImage createThumbnailOfAnImage(Path source, int width, int height) throws IOException {
@@ -95,6 +108,19 @@ public class ThumbnailService implements ThumbnailRepository {
         // if thumbnails folder does not exist
         imageUtility.createThumbnailDirectories(userUtility.returnUserFolderasPath());
         Path thumbnailPath = Path.of(imageUtility.getThumbnailPath(isPortrait).toString(), filename + "_thumbnail." + format);
+        logger.info("Saving thumbnail to {}", thumbnailPath);
+        if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
+            throw new IOException("Failed to write thumbnail to destination");
+        }
+        return thumbnailPath;
+    }
+
+    private Path saveThumbnails(BufferedImage thumbnail, String filename, String format, boolean isPortrait, UserDTO userDTO) throws IOException {
+        if (thumbnail == null)
+            throw new NullPointerException("Buffered Image is null");
+        // if thumbnails folder does not exist
+        imageUtility.createThumbnailDirectories(userUtility.returnUserFolderAsPathBackgroundTask(userDTO.getUserId(), userDTO.getUserName(), userDTO.getUserEmail()));
+        Path thumbnailPath = Path.of(imageUtility.getThumbnailPathBackgroundTask(isPortrait, userDTO.getUserId(), userDTO.getUserName(), userDTO.getUserEmail()).toString(), filename + "_thumbnail." + format);
         logger.info("Saving thumbnail to {}", thumbnailPath);
         if (!ImageIO.write(thumbnail, format, thumbnailPath.toFile())) {
             throw new IOException("Failed to write thumbnail to destination");

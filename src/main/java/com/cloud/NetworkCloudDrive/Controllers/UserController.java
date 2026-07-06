@@ -1,7 +1,7 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateUserDTO;
-import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.UserLoginRegisterDTO;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONMapResponse;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONObjectResponse;
@@ -45,9 +45,9 @@ public class UserController {
     }
 
     @PostMapping("register")
-    public @ResponseBody ResponseEntity<?> register(@RequestBody UserDTO userDTO) {
+    public @ResponseBody ResponseEntity<?> register(@RequestBody UserLoginRegisterDTO userLoginRegisterDTO) {
         try {
-            UserEntity registeredUserEntity = userRepository.registerUser(userDTO.getName(), userDTO.getMail(), userDTO.getPassword());
+            UserEntity registeredUserEntity = userRepository.registerUser(userLoginRegisterDTO.getName(), userLoginRegisterDTO.getMail(), userLoginRegisterDTO.getPassword());
             //create user directory
             imageUtility.createThumbnailDirectories(userUtility.createUserDirectory(registeredUserEntity.getId(), registeredUserEntity.getName(), registeredUserEntity.getMail()));
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).

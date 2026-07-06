@@ -1,18 +1,15 @@
 package com.cloud.NetworkCloudDrive.Services;
 
-import com.cloud.NetworkCloudDrive.Models.DTO.JobDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UploadFileMetadataDTO;
-import com.cloud.NetworkCloudDrive.Models.Enum.System.JobType;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Models.Jobs.Job;
 import com.cloud.NetworkCloudDrive.Models.Jobs.ThumbnailJob;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
-import com.cloud.NetworkCloudDrive.Queues.JobQueue;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+import com.cloud.NetworkCloudDrive.Tasks.Executor.Executor;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
@@ -34,36 +31,35 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class FileService implements FileRepository {
     private final SQLiteDAO sqLiteDAO;
-    private final JobQueue jobQueue;
     private final UserSession userSession;
     private final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
     private final PathUtility pathUtility;
     private final ThumbnailProperties thumbnailProperties;
+    private final Executor executor;
 
     public FileService(
             SQLiteDAO sqLiteDAO,
+            Executor executor,
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             PathUtility pathUtility,
-            ThumbnailProperties thumbnailProperties,
-            JobQueue jobQueue) {
+            ThumbnailProperties thumbnailProperties) {
         this.sqLiteDAO = sqLiteDAO;
+        this.executor = executor;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.pathUtility = pathUtility;
         this.thumbnailProperties = thumbnailProperties;
-        this.jobQueue = jobQueue;
     }
 
     @Override
     public Map<String, ?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException, ExecutionException, InterruptedException {
         List<UploadFileMetadataDTO> uploadedFiles = new ArrayList<>();
         int savedFileCount = 0;
-        List<JobDTO> jobList = new ArrayList<>();
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
         List<MultipartFile> sortedBySize = Arrays.stream(files).sorted(Comparator.comparingLong(MultipartFile::getSize)).toList();
@@ -86,17 +82,11 @@ public class FileService implements FileRepository {
             String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), fileName, userSession.getId());
             Path storagePath = storeFile(file.getInputStream(), encodedFileName, folderPath).get();
 
-            Job testJob = new Job();
-            testJob.setJobType(JobType.IO_FUNCTION);
-            testJob.setJobDescription("Test job for file " + fileName);
-            jobQueue.addToQueue(testJob);
-
             logger.debug("storage path {}", storagePath);
             savedFileCount++;
             metadata.setName(encodedFileName);
             if (thumbnailProperties.isAllowedImageFormat(file.getContentType())) {
-                JobDTO jobDTO = jobQueue.addToQueue(new ThumbnailJob(storagePath, encodedFileName, metadata.getId()));
-                jobList.add(jobDTO);
+                executor.queueJobs(new ThumbnailJob(storagePath, encodedFileName, metadata.getId()));
             }
             uploadedFiles.add(new UploadFileMetadataDTO(metadata));
             sqLiteDAO.saveFile(metadata);
@@ -104,12 +94,6 @@ public class FileService implements FileRepository {
         if (savedFileCount == 0)
             throw new FileAlreadyExistsException(
                     String.format("File%s already exists at destination", (files.length > 1 ? "s" : "")));
-        if (!jobList.isEmpty())
-            return Map
-                    .of(
-                            "uploaded_file_count", savedFileCount,
-                            "files", uploadedFiles,
-                            "job_list", jobList);
         return Map
                 .of(
                         "uploaded_file_count", savedFileCount,

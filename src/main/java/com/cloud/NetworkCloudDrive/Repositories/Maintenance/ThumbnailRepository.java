@@ -1,8 +1,10 @@
 package com.cloud.NetworkCloudDrive.Repositories.Maintenance;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Domain.DeletionResults;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import org.springframework.core.io.Resource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -12,6 +14,9 @@ import java.util.concurrent.CompletableFuture;
 
 @Repository
 public interface ThumbnailRepository {
+    @Async
+    CompletableFuture<ThumbnailMetadata> createAndSaveThumbnail(Path filePath, String encodedFileName, long fileId, UserDTO userDTO) throws IOException;
+
     CompletableFuture<ThumbnailMetadata> createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException;
 
     DeletionResults nuclearDeleteAllThumbnails() throws IOException;

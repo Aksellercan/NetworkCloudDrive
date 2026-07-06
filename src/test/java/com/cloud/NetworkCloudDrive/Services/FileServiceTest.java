@@ -4,10 +4,10 @@ import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
-import com.cloud.NetworkCloudDrive.Queues.JobQueue;
 import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+import com.cloud.NetworkCloudDrive.Tasks.Executor.Executor;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ class FileServiceTest {
     @Mock
     private ThumbnailRepository thumbnailRepository;
     @Mock
-    private JobQueue jobQueue;
+    private Executor executor;
 
     private FileService fileService;
 
@@ -60,8 +60,8 @@ class FileServiceTest {
 
     @BeforeEach
     void setUp() {
-        fileService = new FileService(sqLiteDAO, userSession, fileUtility,
-                encodingUtility, pathUtility, thumbnailProperties, jobQueue);
+        fileService = new FileService(sqLiteDAO, executor, userSession, fileUtility,
+                encodingUtility, pathUtility, thumbnailProperties);
     }
 
     @Test

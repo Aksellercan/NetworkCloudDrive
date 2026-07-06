@@ -13,7 +13,15 @@ public class ThumbnailJob extends Job {
         setJobName("Thumbnail Job");
         setJobDescription("Generates thumbnail");
         setJobType(JobType.THUMBNAIL_FUNCTION);
-        setRetry(false);
+        this.originalFolderPath = originalFolderPath;
+        this.originalFilename = originalFilename;
+        this.fileId = fileId;
+    }
+
+    public ThumbnailJob(String jobName, String jobDescription, Path originalFolderPath, String originalFilename, long fileId) {
+        setJobName(jobName);
+        setJobDescription(jobDescription);
+        setJobType(JobType.THUMBNAIL_FUNCTION);
         this.originalFolderPath = originalFolderPath;
         this.originalFilename = originalFilename;
         this.fileId = fileId;
@@ -42,4 +50,5 @@ public class ThumbnailJob extends Job {
     public void setFileId(long fileId) {
         this.fileId = fileId;
     }
+
 }

@@ -12,7 +12,6 @@ public class JobDTO {
     public JobDTO() {
     }
 
-
     public JobDTO(Job job) {
         this.UUID = job.getId();
         this.jobStatus = job.getJobStatus();

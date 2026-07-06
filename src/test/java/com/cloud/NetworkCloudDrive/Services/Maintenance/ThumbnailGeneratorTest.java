@@ -20,8 +20,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.transaction.annotation.Transactional;
-
 import org.springframework.scheduling.annotation.Async;
 
 import javax.imageio.ImageIO;
@@ -93,7 +91,6 @@ class ThumbnailGeneratorTest {
     }
 
     @Test
-    @Transactional
     void nasaApodImage_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         Optional<BufferedImage> nasaImage = TestUtility.fetchNasaApodImage();
         if (nasaImage.isEmpty()) {
@@ -103,14 +100,12 @@ class ThumbnailGeneratorTest {
     }
 
     @Test
-    @Transactional
     void portraitGradient_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         BufferedImage img = TestUtility.gradient(100, 200, Color.RED, Color.BLUE);
         assertThumbnailGenerated(img);
     }
 
     @Test
-    @Transactional
     void landscapeGradient_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         BufferedImage img = TestUtility.gradient(200, 100, Color.BLUE, Color.GREEN);
         assertThumbnailGenerated(img);
@@ -131,7 +126,6 @@ class ThumbnailGeneratorTest {
     }
 
     @Test
-    @Transactional
     void squareGradient_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         BufferedImage img = TestUtility.gradient(100, 100, Color.GREEN, Color.RED);
         assertThumbnailGenerated(img);

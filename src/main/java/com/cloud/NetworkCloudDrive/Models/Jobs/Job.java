@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Models.Jobs;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.System.JobStatus;
 import com.cloud.NetworkCloudDrive.Models.Enum.System.JobType;
 
@@ -8,13 +9,14 @@ import java.util.UUID;
 
 public class Job {
     private final UUID id = UUID.randomUUID();
+    private UserDTO userDTO;
     private String jobName;
     private String jobDescription;
     private JobStatus jobStatus = JobStatus.WAITING;
     private JobType jobType;
     private final Instant addedOn = Instant.now();
     private Instant finishedOn;
-    private boolean retry;
+    private boolean retry = false;
     private int retryCount = 0;
 
     public Job() {
@@ -88,16 +90,26 @@ public class Job {
         this.retry = retry;
     }
 
+    public UserDTO getUserDTO() {
+        return userDTO;
+    }
+
+    public void setUserDTO(UserDTO userDTO) {
+        this.userDTO = userDTO;
+    }
+
     @Override
     public String toString() {
         return "Job{" +
                 "id=" + id +
+                ", userDTO=" + userDTO +
                 ", jobName='" + jobName + '\'' +
                 ", jobDescription='" + jobDescription + '\'' +
                 ", jobStatus=" + jobStatus +
                 ", jobType=" + jobType +
                 ", addedOn=" + addedOn +
                 ", finishedOn=" + finishedOn +
+                ", retry=" + retry +
                 ", retryCount=" + retryCount +
                 '}';
     }

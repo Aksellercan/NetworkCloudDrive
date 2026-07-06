@@ -43,7 +43,8 @@ public class SQLiteDAO {
             SQLiteUserEntityRepository sqLiteUserEntityRepository,
             SQLiteThumbnailRepository sqLiteThumbnailRepository,
             EntityManager entityManager,
-            UserSession userSession, ThumbnailProperties thumbnailProperties) {
+            UserSession userSession,
+            ThumbnailProperties thumbnailProperties) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
@@ -335,7 +336,7 @@ public class SQLiteDAO {
         dummyFolderMetadata.setPath(idPath);
         dummyFolderMetadata.setId(null);
         dummyFolderMetadata.setCreatedAt(null);
-        dummyFolderMetadata.setUserid(userId); //current logged in user id
+        dummyFolderMetadata.setUserid(userId); //current logged-in user id
         Example<FolderMetadata> folderMetadataExample = Example.of(dummyFolderMetadata);
         Optional<FolderMetadata> optionalFolderMetadata = sqLiteFolderRepository.findOne(folderMetadataExample);
         logger.info("Example folder: {}", dummyFolderMetadata);

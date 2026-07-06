@@ -1,28 +1,54 @@
 package com.cloud.NetworkCloudDrive.Models.DTO;
 
+import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+
 public class UserDTO {
-    private String name;
-    private String mail;
-    private String password;
+    private long userId;
+    private String userName;
+    private String userEmail;
 
-    public UserDTO() {}
+    public UserDTO(long userId, String userName, String userEmail) {
+        this.userId = userId;
+        this.userName = userName;
+        this.userEmail = userEmail;
+    }
 
-    public String getName() {
-        return name;
+    public UserDTO(UserSession userSession) {
+        this.userId = userSession.getId();
+        this.userName = userSession.getName();
+        this.userEmail = userSession.getMail();
     }
-    public void setName(String name) {
-        this.name = name;
+
+    public long getUserId() {
+        return userId;
     }
-    public String getMail() {
-        return mail;
+
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
-    public void setMail(String mail) {
-        this.mail = mail;
+
+    public String getUserName() {
+        return userName;
     }
-    public String getPassword() {
-        return password;
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
-    public void setPassword(String password) {
-        this.password = password;
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    @Override
+    public String toString() {
+        return "UserBackgroundTaskDTO{" +
+                "userId=" + userId +
+                ", userName='" + userName + '\'' +
+                ", userEmail='" + userEmail + '\'' +
+                '}';
     }
 }
