@@ -58,13 +58,13 @@ public class InformationController {
     public @ResponseBody ResponseEntity<?> getFolder(@RequestParam long folderid) {
         try {
             FolderMetadata folderMetadata;
-            if (folderid != 0) {
+            if (folderid > 0) {
                 folderMetadata = informationRepository.getFolderMetadata(folderid);
                 folderMetadata.setPath(pathUtility.resolvePathFromIdString(folderMetadata.getPath()));
             } else {
                 File folderRootMetadata = userUtility.returnUserFolder();
                 folderMetadata = new FolderMetadata(folderRootMetadata.getName(), folderRootMetadata.getPath());
-                folderMetadata.setId(folderid);
+                folderMetadata.setId(0L);
                 folderMetadata.setUserid(userSession.getId());
             }
             String decodeName = encodingUtility.decodeBase32StringNoPadding(folderMetadata.getName());

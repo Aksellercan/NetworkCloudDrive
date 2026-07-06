@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
@@ -55,8 +56,8 @@ public class ImageUtility {
         return getSizeFolder(userUtility.returnUserFolderasPath().toString(), isPortrait);
     }
 
-    public Path getThumbnailPathBackgroundTask(boolean isPortrait, long userId, String name, String mail) throws IOException {
-        return getSizeFolder(userUtility.returnUserFolderAsPathBackgroundTask(userId, name, mail).toString(), isPortrait);
+    public Path getThumbnailPathBackgroundTask(boolean isPortrait, UserDTO userDTO) throws IOException {
+        return getSizeFolder(userUtility.returnUserFolderAsPathBackgroundTask(userDTO).toString(), isPortrait);
     }
 
     public Path getThumbnailPath() throws IOException {
@@ -81,7 +82,6 @@ public class ImageUtility {
         if (!Files.exists(horizontalThumbnailsFolder))
             Files.createDirectory(horizontalThumbnailsFolder);
     }
-
 
     public void setPortraitWidth(int portraitWidth) {
         this.portraitWidth = portraitWidth;

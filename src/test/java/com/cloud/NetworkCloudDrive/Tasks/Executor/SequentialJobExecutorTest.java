@@ -10,6 +10,7 @@ import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
+import com.cloud.NetworkCloudDrive.Tasks.SequentialJobExecutor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class ExecutorTest {
+class SequentialJobExecutorTest {
 
     @Mock
     private SQLiteDAO sQLiteDAO;
@@ -35,11 +36,11 @@ class ExecutorTest {
     @Mock
     private ThumbnailRepository thumbnailRepository;
 
-    private Executor executor;
+    private SequentialJobExecutor sequentialJobExecutor;
 
     @BeforeEach
     void setUp() {
-        executor = new Executor(sQLiteDAO, userSession, thumbnailRepository);
+        sequentialJobExecutor = new SequentialJobExecutor(sQLiteDAO, userSession, thumbnailRepository);
     }
 
     @Test
@@ -54,7 +55,7 @@ class ExecutorTest {
                 .thenReturn(CompletableFuture.completedFuture(thumbnailMetadata));
         when(sQLiteDAO.queryFileMetadata(42L, 1L)).thenReturn(fileMetadata);
 
-        executor.handle(job);
+        sequentialJobExecutor.handleJob(job);
 
         assertEquals(JobStatus.COMPLETED, job.getJobStatus());
         assertNotNull(job.getFinishedOn());
@@ -73,7 +74,7 @@ class ExecutorTest {
         when(thumbnailRepository.createAndSaveThumbnail(Path.of("/test"), "image.jpg", 42L, userDTO))
                 .thenThrow(new IOException("disk error"));
 
-        executor.handle(job);
+        sequentialJobExecutor.handleJob(job);
 
         assertEquals(JobStatus.FAILED, job.getJobStatus());
         assertNull(job.getFinishedOn());
@@ -86,7 +87,7 @@ class ExecutorTest {
         job.setUserDTO(new UserDTO(1L, "user", "user@test.com"));
         job.setJobType(JobType.THUMBNAIL_FUNCTION);
 
-        executor.handle(job);
+        sequentialJobExecutor.handleJob(job);
 
         assertEquals(JobStatus.WAITING, job.getJobStatus());
         assertNull(job.getFinishedOn());
@@ -98,7 +99,7 @@ class ExecutorTest {
         Job job = new Job();
         job.setJobType(JobType.IO_FUNCTION);
 
-        executor.handle(job);
+        sequentialJobExecutor.handleJob(job);
 
         assertEquals(JobStatus.COMPLETED, job.getJobStatus());
         assertNotNull(job.getFinishedOn());
@@ -110,7 +111,7 @@ class ExecutorTest {
         Job job = new Job();
         job.setJobType(JobType.RECURRENT_FUNCTION);
 
-        executor.handle(job);
+        sequentialJobExecutor.handleJob(job);
 
         assertEquals(JobStatus.COMPLETED, job.getJobStatus());
         assertNotNull(job.getFinishedOn());
@@ -124,7 +125,7 @@ class ExecutorTest {
 
         ThumbnailJob job = new ThumbnailJob(Path.of("/test"), "image.jpg", 42L);
 
-        executor.queueJobs(job);
+        sequentialJobExecutor.queueJobs(job);
 
         UserDTO dto = job.getUserDTO();
         assertNotNull(dto);

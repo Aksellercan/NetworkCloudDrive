@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Tasks.Executor;
+package com.cloud.NetworkCloudDrive.Tasks;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.System.JobStatus;
@@ -21,16 +21,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Component
-public class Executor {
+public class SequentialJobExecutor {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private final Logger logger = LoggerFactory.getLogger(Executor.class);
+    private final Logger logger = LoggerFactory.getLogger(SequentialJobExecutor.class);
     private final SQLiteDAO sQLiteDAO;
     private final UserSession userSession;
     private final ThumbnailRepository thumbnailRepository;
 
-    public Executor(SQLiteDAO sQLiteDAO,
-                    UserSession userSession,
-                    ThumbnailRepository thumbnailRepository) {
+    public SequentialJobExecutor(
+            SQLiteDAO sQLiteDAO,
+            UserSession userSession,
+            ThumbnailRepository thumbnailRepository) {
         this.sQLiteDAO = sQLiteDAO;
         this.userSession = userSession;
         this.thumbnailRepository = thumbnailRepository;
@@ -39,7 +40,7 @@ public class Executor {
     public void queueJobs(Job job) {
         job.setUserDTO(userSession.returnUserDTO());
         executorService.submit(() -> {
-            handle(job);
+            handleJob(job);
         });
     }
 
@@ -58,7 +59,7 @@ public class Executor {
         sQLiteDAO.saveFile(fileMetadata);
     }
 
-    public void handle(Job job) {
+    public void handleJob(Job job) {
         switch (job.getJobType()) {
             case IO_FUNCTION, RECURRENT_FUNCTION -> {
                 job.setJobStatus(JobStatus.COMPLETED);
@@ -68,9 +69,10 @@ public class Executor {
             case THUMBNAIL_FUNCTION -> {
                 if (job instanceof ThumbnailJob) {
                     try {
+                        ThumbnailJob thumbnailJob = (ThumbnailJob) job;
                         logger.info("offered job = {}", job.toString());
                         job.setJobStatus(JobStatus.RUNNING);
-                        ThumbnailMetadata thumbnailMetadata = handleThumbnailCreation(((ThumbnailJob) job).getOriginalFolderPath(), ((ThumbnailJob) job).getOriginalFilename(), ((ThumbnailJob) job).getFileId(), job.getUserDTO());
+                        ThumbnailMetadata thumbnailMetadata = handleThumbnailCreation(thumbnailJob.getOriginalFolderPath(), thumbnailJob.getOriginalFilename(), thumbnailJob.getFileId(), thumbnailJob.getUserDTO());
                         logger.info(thumbnailMetadata.toString());
                         job.setJobStatus(JobStatus.COMPLETED);
                         job.setFinishedOn();

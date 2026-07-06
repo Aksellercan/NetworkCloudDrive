@@ -7,7 +7,7 @@ import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Tasks.Executor.Executor;
+import com.cloud.NetworkCloudDrive.Tasks.SequentialJobExecutor;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ class FileServiceTest {
     @Mock
     private ThumbnailRepository thumbnailRepository;
     @Mock
-    private Executor executor;
+    private SequentialJobExecutor sequentialJobExecutor;
 
     private FileService fileService;
 
@@ -60,7 +60,7 @@ class FileServiceTest {
 
     @BeforeEach
     void setUp() {
-        fileService = new FileService(sqLiteDAO, executor, userSession, fileUtility,
+        fileService = new FileService(sqLiteDAO, sequentialJobExecutor, userSession, fileUtility,
                 encodingUtility, pathUtility, thumbnailProperties);
     }
 

@@ -150,7 +150,7 @@ public class MaintenanceService implements MaintenanceRepository {
         logger.info("size {}", folderMetadataContainingPath.size());
         folderMetadataContainingPath.forEach(l -> logger.info("item {}", l));
         //temp
-        if (folderId == 0) {
+        if (folderId <= 0) {
             folderMetadataContainingPath.add(0L);
         }
         scanAndCreateThumbnailsRecursive(folderMetadataContainingPath, 0, thumbnailScanResults);

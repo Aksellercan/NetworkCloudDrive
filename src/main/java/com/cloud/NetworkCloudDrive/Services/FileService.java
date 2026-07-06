@@ -1,16 +1,16 @@
 package com.cloud.NetworkCloudDrive.Services;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.JobDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UploadFileMetadataDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Models.Jobs.Job;
 import com.cloud.NetworkCloudDrive.Models.Jobs.ThumbnailJob;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.FileRepository;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-import com.cloud.NetworkCloudDrive.Tasks.Executor.Executor;
+import com.cloud.NetworkCloudDrive.Tasks.SequentialJobExecutor;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
@@ -38,18 +38,18 @@ public class FileService implements FileRepository {
     private final EncodingUtility encodingUtility;
     private final PathUtility pathUtility;
     private final ThumbnailProperties thumbnailProperties;
-    private final Executor executor;
+    private final SequentialJobExecutor sequentialJobExecutor;
 
     public FileService(
             SQLiteDAO sqLiteDAO,
-            Executor executor,
+            SequentialJobExecutor sequentialJobExecutor,
             UserSession userSession,
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             PathUtility pathUtility,
             ThumbnailProperties thumbnailProperties) {
         this.sqLiteDAO = sqLiteDAO;
-        this.executor = executor;
+        this.sequentialJobExecutor = sequentialJobExecutor;
         this.userSession = userSession;
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
@@ -60,7 +60,7 @@ public class FileService implements FileRepository {
     @Override
     public Map<String, ?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException, ExecutionException, InterruptedException {
         List<UploadFileMetadataDTO> uploadedFiles = new ArrayList<>();
-        List<Job> createdJobs = new ArrayList<>();
+        List<JobDTO> createdJobs = new ArrayList<>();
         int savedFileCount = 0;
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
@@ -89,8 +89,8 @@ public class FileService implements FileRepository {
             metadata.setName(encodedFileName);
             if (thumbnailProperties.isAllowedImageFormat(file.getContentType())) {
                 ThumbnailJob thumbnailJob = new ThumbnailJob(storagePath, encodedFileName, metadata.getId());
-                executor.queueJobs(thumbnailJob);
-                createdJobs.add(thumbnailJob);
+                sequentialJobExecutor.queueJobs(thumbnailJob);
+                createdJobs.add(new JobDTO(thumbnailJob));
             }
             uploadedFiles.add(new UploadFileMetadataDTO(metadata));
             sqLiteDAO.saveFile(metadata);

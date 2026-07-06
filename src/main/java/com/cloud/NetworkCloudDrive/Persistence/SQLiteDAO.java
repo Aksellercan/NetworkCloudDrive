@@ -392,7 +392,7 @@ public class SQLiteDAO {
      */
     @Transactional
     public String getIdPath(long folderId) throws SQLException {
-        return folderId != 0 ? queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
+        return folderId > 0 ? queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
     }
 
     @Transactional

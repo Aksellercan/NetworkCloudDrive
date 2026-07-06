@@ -141,7 +141,7 @@ public class PathUtility {
      * @throws FileSystemException if path can't be resolved
      */
     public String getFolderPath(long folderId) throws SQLException, FileSystemException {
-        return folderId != 0
+        return folderId > 0
                 ?
                 resolvePathFromIdString(sqLiteDAO.queryFolderMetadata(folderId, userSession.getId()).getPath())
                 :
