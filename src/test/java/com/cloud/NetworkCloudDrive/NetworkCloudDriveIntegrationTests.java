@@ -201,6 +201,9 @@ class NetworkCloudDriveIntegrationTests {
         sqLiteDAO.saveFile(f2);
 
         List<FileMetadata> files = sqLiteDAO.getAllFilesBelongingToUser(99L);
+        files.forEach(file -> {
+            logger.debug(file.toString());
+        });
         assertEquals(2, files.size());
     }
 

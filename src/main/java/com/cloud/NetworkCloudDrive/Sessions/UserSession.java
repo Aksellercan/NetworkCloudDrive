@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Sessions;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import jakarta.annotation.PostConstruct;
@@ -82,5 +83,9 @@ public class UserSession {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public UserDTO returnUserDTO() {
+        return new UserDTO(this.id, this.name, this.mail);
     }
 }

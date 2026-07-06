@@ -119,9 +119,8 @@ class ExecutorTest {
 
     @Test
     void queueJobs_SetsUserDTOOnJob() {
-        when(userSession.getId()).thenReturn(5L);
-        when(userSession.getName()).thenReturn("testUser");
-        when(userSession.getMail()).thenReturn("test@example.com");
+        UserDTO proposed = new UserDTO(5L, "testUser", "test@example.com");
+        when(userSession.returnUserDTO()).thenReturn(proposed);
 
         ThumbnailJob job = new ThumbnailJob(Path.of("/test"), "image.jpg", 42L);
 

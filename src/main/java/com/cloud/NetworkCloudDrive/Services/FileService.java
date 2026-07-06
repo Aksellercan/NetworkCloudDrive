@@ -3,6 +3,7 @@ package com.cloud.NetworkCloudDrive.Services;
 import com.cloud.NetworkCloudDrive.Models.DTO.UploadFileMetadataDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.Jobs.Job;
 import com.cloud.NetworkCloudDrive.Models.Jobs.ThumbnailJob;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
@@ -59,6 +60,7 @@ public class FileService implements FileRepository {
     @Override
     public Map<String, ?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws IOException, ExecutionException, InterruptedException {
         List<UploadFileMetadataDTO> uploadedFiles = new ArrayList<>();
+        List<Job> createdJobs = new ArrayList<>();
         int savedFileCount = 0;
         List<Path> filesInside = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(folderPath));
         // sort by size lowest to highest
@@ -86,7 +88,9 @@ public class FileService implements FileRepository {
             savedFileCount++;
             metadata.setName(encodedFileName);
             if (thumbnailProperties.isAllowedImageFormat(file.getContentType())) {
-                executor.queueJobs(new ThumbnailJob(storagePath, encodedFileName, metadata.getId()));
+                ThumbnailJob thumbnailJob = new ThumbnailJob(storagePath, encodedFileName, metadata.getId());
+                executor.queueJobs(thumbnailJob);
+                createdJobs.add(thumbnailJob);
             }
             uploadedFiles.add(new UploadFileMetadataDTO(metadata));
             sqLiteDAO.saveFile(metadata);
@@ -94,6 +98,15 @@ public class FileService implements FileRepository {
         if (savedFileCount == 0)
             throw new FileAlreadyExistsException(
                     String.format("File%s already exists at destination", (files.length > 1 ? "s" : "")));
+
+        if (!createdJobs.isEmpty()) {
+            return Map
+                    .of(
+                            "uploaded_file_count", savedFileCount,
+                            "files", uploadedFiles,
+                            "created_jobs", createdJobs);
+        }
+
         return Map
                 .of(
                         "uploaded_file_count", savedFileCount,

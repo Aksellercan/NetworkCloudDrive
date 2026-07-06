@@ -1,7 +1,5 @@
 package com.cloud.NetworkCloudDrive.Models.DTO;
 
-import com.cloud.NetworkCloudDrive.Sessions.UserSession;
-
 public class UserDTO {
     private long userId;
     private String userName;
@@ -11,12 +9,6 @@ public class UserDTO {
         this.userId = userId;
         this.userName = userName;
         this.userEmail = userEmail;
-    }
-
-    public UserDTO(UserSession userSession) {
-        this.userId = userSession.getId();
-        this.userName = userSession.getName();
-        this.userEmail = userSession.getMail();
     }
 
     public long getUserId() {

@@ -74,9 +74,8 @@ public class ThumbnailService implements ThumbnailRepository {
     }
 
     @Override
-    @Async
     public CompletableFuture<ThumbnailMetadata> createAndSaveThumbnailDefaultSettings(Path filePath, String encodedFileName, long fileId) throws IOException {
-        return createAndSaveThumbnail(filePath, encodedFileName, fileId, new UserDTO(userSession));
+        return createAndSaveThumbnail(filePath, encodedFileName, fileId, userSession.returnUserDTO());
     }
 
     private boolean alreadyExists(long fileId, long userId) {

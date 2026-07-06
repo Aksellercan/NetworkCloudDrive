@@ -37,7 +37,7 @@ public class Executor {
     }
 
     public void queueJobs(Job job) {
-        job.setUserDTO(new UserDTO(userSession));
+        job.setUserDTO(userSession.returnUserDTO());
         executorService.submit(() -> {
             handle(job);
         });

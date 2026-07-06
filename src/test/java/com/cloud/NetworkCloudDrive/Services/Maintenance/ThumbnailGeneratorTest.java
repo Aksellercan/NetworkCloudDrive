@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.scheduling.annotation.Async;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -112,13 +111,6 @@ class ThumbnailGeneratorTest {
     void landscapeGradient_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         BufferedImage img = TestUtility.gradient(200, 100, Color.BLUE, Color.GREEN);
         assertThumbnailGenerated(img);
-    }
-
-    @Test
-    void createAndSaveThumbnailDefaultSettings_IsAnnotatedWithAsync() throws Exception {
-        Method method = ThumbnailService.class.getMethod(
-                "createAndSaveThumbnailDefaultSettings", Path.class, String.class, long.class);
-        assertNotNull(method.getAnnotation(Async.class));
     }
 
     @Test
