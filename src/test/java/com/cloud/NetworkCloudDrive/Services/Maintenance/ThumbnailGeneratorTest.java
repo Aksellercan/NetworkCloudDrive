@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Services.Maintenance;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
@@ -67,6 +68,7 @@ class ThumbnailGeneratorTest {
     private Path userFolder;
     private String originalBasePath;
     private long userId;
+    private UserDTO userDTO;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -82,6 +84,7 @@ class ThumbnailGeneratorTest {
         userSession.setMail(user.getMail());
         userSession.setRole(user.getRole());
 
+        userDTO = new UserDTO(user.getId(), user.getName(), user.getMail());
         userFolder = userUtility.returnUserFolderasPath();
     }
 
@@ -155,7 +158,7 @@ class ThumbnailGeneratorTest {
         Path relativePath = Path.of(userFolder.getFileName().toString(), encodedFileName);
 
         logger.info("Testing for {}", fileMetadata.getId());
-        ThumbnailMetadata result = thumbnailService.createAndSaveThumbnailDefaultSettings(relativePath, encodedFileName, fileMetadata.getId()).get();
+        ThumbnailMetadata result = thumbnailService.createAndSaveThumbnail(relativePath, encodedFileName, fileMetadata.getId(), userDTO).get();
 
         assertNotNull(result);
         assertTrue(result.getId() > 0);
