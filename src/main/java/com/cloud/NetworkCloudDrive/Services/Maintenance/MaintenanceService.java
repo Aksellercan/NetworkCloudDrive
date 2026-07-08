@@ -1,25 +1,32 @@
 package com.cloud.NetworkCloudDrive.Services.Maintenance;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Domain.ScanResults;
 import com.cloud.NetworkCloudDrive.Models.Domain.ThumbnailScanResults;
 import com.cloud.NetworkCloudDrive.Models.Enum.ScanOptions;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.Jobs.Job;
+import com.cloud.NetworkCloudDrive.Models.Jobs.MaintenanceJob;
+import com.cloud.NetworkCloudDrive.Models.Response.ScanTaskResponse;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.ThumbnailProperties;
 import com.cloud.NetworkCloudDrive.Repositories.Maintenance.MaintenanceRepository;
 import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
+import com.cloud.NetworkCloudDrive.Repositories.Tasks.JobExecutorInterface;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -37,6 +44,7 @@ public class MaintenanceService implements MaintenanceRepository {
     private final PathUtility pathUtility;
     private final ThumbnailRepository thumbnailRepository;
     private final ThumbnailProperties thumbnailProperties;
+    private final JobExecutorInterface jobExecutor;
     private ScanResults scanResults;
 
     public MaintenanceService(
@@ -46,7 +54,9 @@ public class MaintenanceService implements MaintenanceRepository {
             UserSession userSession,
             PathUtility pathUtility,
             ThumbnailRepository thumbnailRepository,
-            ThumbnailProperties thumbnailProperties) {
+            ThumbnailProperties thumbnailProperties,
+            @Lazy
+            JobExecutorInterface jobExecutorInterface) {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
@@ -54,32 +64,42 @@ public class MaintenanceService implements MaintenanceRepository {
         this.pathUtility = pathUtility;
         this.thumbnailRepository = thumbnailRepository;
         this.thumbnailProperties = thumbnailProperties;
+        this.jobExecutor = jobExecutorInterface;
+    }
+
+    private Path startingDirectory(long folderId) throws FileSystemException, SQLException {
+        return pathUtility.getFullPath(pathUtility.getFolderPath(folderId));
+    }
+
+    @Override
+    public Object scanOptionsControllerConverter(Job job) throws SQLException {
+        MaintenanceJob maintenanceJob = (MaintenanceJob) job;
+        return scanOptionsController(maintenanceJob.getUserDTO(), maintenanceJob.getStartingDirectory(), maintenanceJob.getStartingFolderId(), maintenanceJob.getScanOptions());
     }
 
     //controller for scan options
     @Override
-    public Object scanOptionsController(long folderId, ScanOptions scanOptions) throws IOException, SQLException {
-        Path startingDirectory = pathUtility.getFullPath(pathUtility.getFolderPath(folderId));
+    public Object scanOptionsController(UserDTO userDTO, Path startingDirectory, long folderId, ScanOptions scanOptions) throws SQLException {
         ScanResults scanResults = new ScanResults();
         setScanResultsSession(scanResults);
         logger.info("Scan options {}", scanOptions);
         switch (scanOptions) {
             case NORMAL, GO_INTO_FOLDERS, CREATE_THUMBNAILS:
-                scanDirectory(startingDirectory, Files::exists, true);
+                scanDirectory(userDTO, startingDirectory, Files::exists, true, true);
                 break;
             case ONLY_FILES:
-                scanDirectory(startingDirectory, Files::isRegularFile, false);
+                scanDirectory(userDTO, startingDirectory, Files::isRegularFile, false, true);
                 break;
             case ONLY_FOLDERS:
-                scanDirectory(startingDirectory, Files::isDirectory, true);
+                scanDirectory(userDTO, startingDirectory, Files::isDirectory, true, true);
                 break;
             case DONT_GO_INTO_FOLDERS:
-                scanDirectory(startingDirectory, Files::exists, false);
+                scanDirectory(userDTO, startingDirectory, Files::exists, false, true);
                 break;
             case ONLY_THUMBNAILS:
                 return recursiveThumbnailScanInvoker(folderId);
             case DONT_CREATE_THUMBNAILS:
-                scanDirectory(startingDirectory, Files::exists, true, false);
+                scanDirectory(userSession.returnUserDTO(), startingDirectory, Files::exists, true, false);
                 break;
         }
         scanResults.stopTimerAndGetTimeTaken();
@@ -88,8 +108,15 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     @Override
+    public ScanTaskResponse queueScan(long folderId, ScanOptions scanOptions) throws FileSystemException, SQLException {
+        MaintenanceJob maintenanceJob = new MaintenanceJob(startingDirectory(folderId), folderId, scanOptions);
+        jobExecutor.queueJobs(maintenanceJob);
+        return new ScanTaskResponse(maintenanceJob.getJobName(), maintenanceJob.getId(), maintenanceJob.getAddedOn(), maintenanceJob.getJobStatus());
+    }
+
+    @Override
     public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion) {
-        return scanDirectory(startingPath, filter, useRecursion, true);
+        return scanDirectory(userSession.returnUserDTO(), startingPath, filter, useRecursion, true);
     }
 
     private long getFolderId(File parentFolder) throws SQLException {
@@ -101,7 +128,7 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     @Override
-    public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion, boolean createThumbnails) {
+    public boolean scanDirectory(UserDTO userDTO, Path startingPath, Predicate<Path> filter, boolean useRecursion, boolean createThumbnails) {
         try {
             logger.info("Start better scan function at {}", startingPath);
             List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().filter(filter).toList();
@@ -113,7 +140,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 }
                 if (Files.isRegularFile(files)) {
                     scanResults.incrementDiscoveredFileCount();
-                    handleFileCheck(files.toFile(), getFolderId(files.getParent().toFile()), createThumbnails);
+                    handleFileCheck(files.toFile(), userDTO, getFolderId(files.getParent().toFile()), createThumbnails);
                     continue;
                 }
                 if (encodingUtility.isBase32Decodable(files.getFileName().toString())) {
@@ -130,7 +157,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 long folderId = getFolderId(files.getParent().toFile());
                 logger.info("Enter folder handling FolderID {}", folderId);
                 scanResults.incrementDiscoveredFolderCount();
-                File createdFolder = handleFolderCheck(files.toFile(), folderId);
+                File createdFolder = handleFolderCheck(files.toFile(), folderId, userDTO);
                 if (useRecursion) {
                     if (!scanDirectory(createdFolder.toPath(), filter, true))
                         throw new RuntimeException("Failed to enter created folder");
@@ -181,7 +208,7 @@ public class MaintenanceService implements MaintenanceRepository {
                     Path.of(pathUtility.resolvePathFromIdString(sqLiteDAO.getIdPath(fileMetadata.getFolderId())), fileMetadata.getName()),
                     fileMetadata.getName(),
                     fileMetadata.getId(),
-                    fileMetadata.getMimiType());
+                    fileMetadata.getMimiType(), userSession.returnUserDTO());
         } catch (Exception e) {
             logger.error("Exception occurred {}", e.getMessage());
             return false;
@@ -210,7 +237,7 @@ public class MaintenanceService implements MaintenanceRepository {
         this.scanResults = scanResults;
     }
 
-    private void handleFileCheck(File currentFile, long folderId, boolean createThumbnails) throws IOException {
+    private void handleFileCheck(File currentFile, UserDTO userDTO, long folderId, boolean createThumbnails) throws IOException {
         logger.debug("Enter file handling. Current Folder ID {}", folderId);
         if (encodingUtility.isBase32Decodable(currentFile.getName())) {
             //if its base32 decodable check if its in db
@@ -222,12 +249,12 @@ public class MaintenanceService implements MaintenanceRepository {
             }
             logger.info("File does not exist {}", currentFile.getName());
         }
-        long newFileEntry = createNewFileEntry(currentFile, folderId, createThumbnails);
+        long newFileEntry = createNewFileEntry(currentFile, userDTO, folderId, createThumbnails);
         logger.info("New file entry ID {}", newFileEntry);
         getScanResultsSession().incrementCreatedFileCount();
     }
 
-    private long createNewFileEntry(File currentFile, long folderId, boolean createThumbnails) throws IOException {
+    private long createNewFileEntry(File currentFile, UserDTO userDTO, long folderId, boolean createThumbnails) throws IOException {
         logger.info("-> FILE {}", currentFile.getPath());
         FileMetadata metadata =
                 new FileMetadata(
@@ -245,7 +272,7 @@ public class MaintenanceService implements MaintenanceRepository {
                         pathUtility.getBasePath().relativize(Path.of(currentFile.getPath())),
                         encodedFileName,
                         metadata.getId(),
-                        metadata.getMimiType())
+                        metadata.getMimiType(), userDTO)
         );
         logger.info("setup {}", metadata);
         Files.move(currentFile.toPath(), Path.of(currentFile.getParentFile().getPath() + File.separator + metadata.getName()));
@@ -253,12 +280,12 @@ public class MaintenanceService implements MaintenanceRepository {
         return metadata.getId();
     }
 
-    private File handleFolderCheck(File currentFolder, long currentFolderId) throws SQLException, IOException {
+    private File handleFolderCheck(File currentFolder, long currentFolderId, UserDTO userDTO) throws SQLException, IOException {
         FolderMetadata createdFolder = new FolderMetadata();
         sqLiteDAO.persistObjects(createdFolder);
         createdFolder.setPath(sqLiteDAO.getIdPath(currentFolderId) + "/" + createdFolder.getId());
-        createdFolder.setUserid(userSession.getId());
-        createdFolder.setName(encodingUtility.encodeBase32FolderName(createdFolder.getId(), currentFolder.getName(), userSession.getId()));
+        createdFolder.setUserid(userDTO.getUserId());
+        createdFolder.setName(encodingUtility.encodeBase32FolderName(createdFolder.getId(), currentFolder.getName(), userDTO.getUserId()));
         sqLiteDAO.saveFolder(createdFolder);
         // changing in loop causes it to fail but rerunning scan makes it work
         //NO LONGER THE CASE
@@ -270,13 +297,13 @@ public class MaintenanceService implements MaintenanceRepository {
         return result.toFile();
     }
 
-    private boolean handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId, String mimeType) {
+    private boolean handleThumbnailCreation(Path originalFolderPath, String originalFilename, long fileId, String mimeType, UserDTO userDTO) {
         if (!thumbnailProperties.isAllowedImageFormat(mimeType)) {
             return false;
         }
         ThumbnailMetadata thumbnail;
         try {
-            thumbnail = thumbnailRepository.createAndSaveThumbnailDefaultSettings(originalFolderPath, originalFilename, fileId).get();
+            thumbnail = thumbnailRepository.createAndSaveThumbnail(originalFolderPath, originalFilename, fileId, userDTO).get();
             return thumbnail != null;
         } catch (IOException | NullPointerException | ExecutionException | InterruptedException e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());

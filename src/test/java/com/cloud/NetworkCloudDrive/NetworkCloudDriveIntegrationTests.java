@@ -195,6 +195,10 @@ class NetworkCloudDriveIntegrationTests {
     @Test
     @Transactional
     void getAllFilesBelongingToUser_ReturnsCorrectFiles() {
+        // clean up any pre-existing data from previous runs (persistent DB)
+        List<FileMetadata> existing = sqLiteDAO.getAllFilesBelongingToUser(99L);
+        existing.forEach(sqLiteDAO::deleteFile);
+
         FileMetadata f1 = new FileMetadata("user_file_1.txt", 0L, 99L, "text/plain", 10L);
         FileMetadata f2 = new FileMetadata("user_file_2.txt", 0L, 99L, "text/plain", 20L);
         sqLiteDAO.saveFile(f1);

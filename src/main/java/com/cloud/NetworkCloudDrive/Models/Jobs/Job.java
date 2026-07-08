@@ -12,7 +12,7 @@ public class Job {
     private UserDTO userDTO;
     private String jobName;
     private String jobDescription;
-    private JobStatus jobStatus = JobStatus.WAITING;
+    private JobStatus jobStatus = JobStatus.QUEUED;
     private JobType jobType;
     private final Instant addedOn = Instant.now();
     private Instant finishedOn;

@@ -1,7 +1,7 @@
 package com.cloud.NetworkCloudDrive.Models.Enum.System;
 
 public enum JobStatus {
-    WAITING,
+    QUEUED,
     RUNNING,
     COMPLETED,
     FAILED,
