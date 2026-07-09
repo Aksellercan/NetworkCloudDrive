@@ -51,6 +51,7 @@ public class ThumbnailBackgroundTask implements TaskInterface {
         this.currentJob = job;
     }
 
+    @Override
     public boolean runTask(Job job) {
         try {
             ThumbnailJob thumbnailJob = (ThumbnailJob) job;

@@ -99,7 +99,7 @@ public class MaintenanceService implements MaintenanceRepository {
             case ONLY_THUMBNAILS:
                 return recursiveThumbnailScanInvoker(folderId);
             case DONT_CREATE_THUMBNAILS:
-                scanDirectory(userSession.returnUserDTO(), startingDirectory, Files::exists, true, false);
+                scanDirectory(userDTO, startingDirectory, Files::exists, true, false);
                 break;
         }
         scanResults.stopTimerAndGetTimeTaken();
@@ -260,12 +260,13 @@ public class MaintenanceService implements MaintenanceRepository {
                 new FileMetadata(
                         currentFile.getName(),
                         folderId,
-                        userSession.getId(),
+//                        userSession.getId(),
+                        userDTO.getUserId(),
                         fileUtility.getMimeTypeFromExtensionUsingTikaCore(currentFile),
                         currentFile.getTotalSpace());
         sqLiteDAO.persistObjects(metadata);
         // Encode in BASE32
-        String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userSession.getId());
+        String encodedFileName = encodingUtility.encodeBase32FileName(metadata.getId(), currentFile.getName(), userDTO.getUserId());
         metadata.setName(encodedFileName);
         metadata.setHasThumbnail(
                 createThumbnails && handleThumbnailCreation(

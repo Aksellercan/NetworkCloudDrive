@@ -37,10 +37,6 @@ public class UserDTO {
 
     @Override
     public String toString() {
-        return "UserBackgroundTaskDTO{" +
-                "userId=" + userId +
-                ", userName='" + userName + '\'' +
-                ", userEmail='" + userEmail + '\'' +
-                '}';
+        return "userId=" + userId;
     }
 }

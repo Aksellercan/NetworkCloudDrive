@@ -102,7 +102,7 @@ public class Job {
     public String toString() {
         return "Job{" +
                 "id=" + id +
-                ", userDTO=" + userDTO +
+                ", " + userDTO +
                 ", jobName='" + jobName + '\'' +
                 ", jobDescription='" + jobDescription + '\'' +
                 ", jobStatus=" + jobStatus +
