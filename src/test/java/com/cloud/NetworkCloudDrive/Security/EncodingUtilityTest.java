@@ -3,7 +3,6 @@ package com.cloud.NetworkCloudDrive.Security;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,15 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class EncodingUtilityTest {
 
     @Mock
-    private UserSession userSession;
-    @Mock
     private SQLiteDAO sqLiteDAO;
 
     private EncodingUtility encodingUtility;
 
     @BeforeEach
     void setUp() {
-        encodingUtility = new EncodingUtility(userSession, sqLiteDAO);
+        encodingUtility = new EncodingUtility(sqLiteDAO);
     }
 
     @Test
@@ -157,6 +154,6 @@ class EncodingUtilityTest {
         expected.setName("folder_encoded");
         expected.setUserid(1L);
 
-        encodingUtility.getFolderMetadataFromEncoding(encoded);
+        encodingUtility.getFolderMetadataFromEncoding(encoded, 1L);
     }
 }

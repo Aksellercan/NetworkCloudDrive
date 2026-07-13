@@ -302,7 +302,7 @@ class FileServiceTest {
 
         Path parentDir = Files.createDirectories(tempDir.resolve("user/folder_5"));
 
-        when(sqLiteDAO.getIdPath(folderId)).thenReturn("0/5");
+        when(sqLiteDAO.getIdPath(folderId, 1L)).thenReturn("0/5");
         when(pathUtility.getFolderPath(folderId)).thenReturn("user/folder_5");
         when(pathUtility.getFullPathToString("user/folder_5")).thenReturn(parentDir.toString());
         when(pathUtility.isFilenameAllowed(folderName)).thenReturn(true);
@@ -335,7 +335,7 @@ class FileServiceTest {
     void createFolder_WhenDuplicate_ThrowsException() throws Exception {
         String folderName = "existing";
 
-        when(sqLiteDAO.getIdPath(5L)).thenReturn("0/5");
+        when(sqLiteDAO.getIdPath(5L, 1L)).thenReturn("0/5");
         when(pathUtility.getFolderPath(5L)).thenReturn("user/folder");
         when(pathUtility.getFullPathToString("user/folder")).thenReturn(tempDir.resolve("user/folder").toString());
         when(pathUtility.isFilenameAllowed(folderName)).thenReturn(true);

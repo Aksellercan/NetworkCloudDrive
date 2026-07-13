@@ -95,7 +95,7 @@ class InformationServiceTest {
         FolderMetadata folder2 = new FolderMetadata("target", "0/1/4");
         folder2.setId(4L);
 
-        when(sqLiteDAO.getIdPath(1L)).thenReturn("0/1");
+        when(sqLiteDAO.getIdPath(1L, 0L)).thenReturn("0/1");
         when(userSession.getId()).thenReturn(0L);
         when(sqLiteDAO.findAllContainingSectionOfIdPathIgnoreCase("0/1", 0L))
                 .thenReturn(List.of(folder1, folder2));
@@ -107,7 +107,7 @@ class InformationServiceTest {
 
     @Test
     void getFolderMetadataByFolderIdAndName_NoFoldersFound_ThrowsException() throws Exception {
-        when(sqLiteDAO.getIdPath(1L)).thenReturn("0/1");
+        when(sqLiteDAO.getIdPath(1L, 0L)).thenReturn("0/1");
         when(userSession.getId()).thenReturn(0L);
         when(sqLiteDAO.findAllContainingSectionOfIdPathIgnoreCase("0/1", 0L))
                 .thenReturn(List.of());
@@ -126,7 +126,7 @@ class InformationServiceTest {
         FolderMetadata folder2 = new FolderMetadata("folder2", "0/1/4");
         folder2.setId(4L);
 
-        when(sqLiteDAO.getIdPath(1L)).thenReturn("0/1");
+        when(sqLiteDAO.getIdPath(1L, 0L)).thenReturn("0/1");
         when(userSession.getId()).thenReturn(0L);
         when(sqLiteDAO.findAllContainingSectionOfIdPathIgnoreCase("0/1", 0L))
                 .thenReturn(List.of(folder1, folder2));

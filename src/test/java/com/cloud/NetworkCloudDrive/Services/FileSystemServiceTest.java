@@ -264,8 +264,8 @@ class FileSystemServiceTest {
         when(fileUtility.returnPathIfItExists("source/path/enc_folder")).thenReturn(sourceDir);
         when(pathUtility.getFolderPath(10L)).thenReturn("dest/path");
         when(fileUtility.returnPathIfItExists("dest/path")).thenReturn(destDir);
-        when(sqLiteDAO.findAllStartsWithIdPath("0/5/3/")).thenReturn(List.of());
-        when(sqLiteDAO.getIdPath(10L)).thenReturn("0/10");
+        when(sqLiteDAO.findAllStartsWithIdPath("0/5/3/", 0L)).thenReturn(List.of());
+        when(sqLiteDAO.getIdPath(10L, 0L)).thenReturn("0/10");
 
         String result = fileSystemService.moveFolder(folder, 10L);
 
