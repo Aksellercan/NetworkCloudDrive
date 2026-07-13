@@ -205,7 +205,7 @@ public class MaintenanceService implements MaintenanceRepository {
     private boolean thumbnailCreationWrapper(FileMetadata fileMetadata, UserDTO userDTO) {
         try {
             return handleThumbnailCreation(
-                    Path.of(pathUtility.resolvePathFromIdString(sqLiteDAO.getIdPath(fileMetadata.getFolderId(), userDTO.getUserId())), fileMetadata.getName()),
+                    Path.of(pathUtility.resolvePathFromIdString(userDTO, sqLiteDAO.getIdPath(fileMetadata.getFolderId(), userDTO.getUserId())), fileMetadata.getName()),
                     fileMetadata.getName(),
                     fileMetadata.getId(),
                     fileMetadata.getMimiType(), userDTO);
