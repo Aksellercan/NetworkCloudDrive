@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -57,6 +58,11 @@ class FileServiceTest {
 
     @TempDir
     Path tempDir;
+
+    private static String encode(long id, String name, long userId) {
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString((id + ":" + name + ":" + userId).getBytes());
+    }
 
     @BeforeEach
     void setUp() {
@@ -149,7 +155,9 @@ class FileServiceTest {
 
         assertNotNull(resource);
         assertTrue(resource.exists());
-        assertEquals(content, new String(resource.getInputStream().readAllBytes()));
+        try (var is = resource.getInputStream()) {
+            assertEquals(content, new String(is.readAllBytes()));
+        }
     }
 
     @Test
@@ -217,8 +225,8 @@ class FileServiceTest {
         when(pathUtility.getFullPath("user/folder")).thenReturn(tempDir.resolve("user/folder"));
         when(fileUtility.getFileAndFolderPathsFromFolder(any(Path.class))).thenReturn(List.of());
         when(pathUtility.isFilenameAllowed("test.txt")).thenReturn(true);
-        when(pathUtility.isFilenameAllowed("1:test.txt:1")).thenReturn(true);
-        when(encodingUtility.encodeBase32FileName(anyLong(), eq("test.txt"), anyLong())).thenReturn("1:test.txt:1");
+        when(pathUtility.isFilenameAllowed(encode(1, "test.txt", 1))).thenReturn(true);
+        when(encodingUtility.encodeBase32FileName(anyLong(), eq("test.txt"), anyLong())).thenReturn(encode(1, "test.txt", 1));
         when(userSession.getId()).thenReturn(1L);
         when(pathUtility.getBasePath()).thenReturn(tempDir);
         when(pathUtility.isPathAllowed(any(Path.class))).thenReturn(true);
@@ -241,7 +249,7 @@ class FileServiceTest {
     void uploadFiles_WhenDuplicate_ThrowsException() throws Exception {
         MockMultipartFile file = new MockMultipartFile("files", "test.txt", "text/plain", "data".getBytes());
         MockMultipartFile[] files = new MockMultipartFile[]{file};
-        Path existingFile = Path.of("existing:already.txt:1");
+        Path existingFile = tempDir.resolve("existing_encoded_file");
 
         when(pathUtility.getFullPath("user/folder")).thenReturn(tempDir.resolve("user/folder"));
         when(fileUtility.getFileAndFolderPathsFromFolder(any(Path.class))).thenReturn(List.of(existingFile));
@@ -262,8 +270,8 @@ class FileServiceTest {
         when(fileUtility.getFileAndFolderPathsFromFolder(any(Path.class))).thenReturn(List.of());
         when(pathUtility.isFilenameAllowed("valid.txt")).thenReturn(true);
         when(pathUtility.isFilenameAllowed("../bad.txt")).thenReturn(false);
-        when(pathUtility.isFilenameAllowed("1:valid.txt:1")).thenReturn(true);
-        when(encodingUtility.encodeBase32FileName(anyLong(), eq("valid.txt"), anyLong())).thenReturn("1:valid.txt:1");
+        when(pathUtility.isFilenameAllowed(encode(1, "valid.txt", 1))).thenReturn(true);
+        when(encodingUtility.encodeBase32FileName(anyLong(), eq("valid.txt"), anyLong())).thenReturn(encode(1, "valid.txt", 1));
         when(userSession.getId()).thenReturn(1L);
         when(pathUtility.getBasePath()).thenReturn(tempDir);
         when(pathUtility.isPathAllowed(any(Path.class))).thenReturn(true);
@@ -313,12 +321,12 @@ class FileServiceTest {
             return null;
         }).when(sqLiteDAO).persistObjects(any(FolderMetadata.class));
 
-        when(encodingUtility.encodeBase32FolderName(anyLong(), eq(folderName), anyLong())).thenReturn("10:myfolder:1");
+        when(encodingUtility.encodeBase32FolderName(anyLong(), eq(folderName), anyLong())).thenReturn(encode(10, "myfolder", 1));
         when(userSession.getId()).thenReturn(1L);
         when(fileUtility.checkIfFileExistsDecodeNames("user/folder_5", folderName)).thenReturn(false);
         when(pathUtility.isPathAllowed(any(Path.class))).thenReturn(true);
 
-        FolderMetadata saved = new FolderMetadata("10:myfolder:1", "0/5/10");
+        FolderMetadata saved = new FolderMetadata(encode(10, "myfolder", 1), "0/5/10");
         saved.setId(10L);
         saved.setUserid(1L);
         when(sqLiteDAO.saveFolder(any(FolderMetadata.class))).thenReturn(saved);
@@ -326,7 +334,7 @@ class FileServiceTest {
         FolderMetadata result = fileService.createFolder(folderName, folderId);
 
         assertNotNull(result);
-        assertEquals("10:myfolder:1", result.getName());
+        assertEquals(encode(10, "myfolder", 1), result.getName());
         assertEquals(1L, result.getUserid());
         verify(sqLiteDAO).saveFolder(any(FolderMetadata.class));
     }
@@ -346,7 +354,7 @@ class FileServiceTest {
             return null;
         }).when(sqLiteDAO).persistObjects(any(FolderMetadata.class));
 
-        when(encodingUtility.encodeBase32FolderName(anyLong(), eq(folderName), anyLong())).thenReturn("enc:existing:1");
+        when(encodingUtility.encodeBase32FolderName(anyLong(), eq(folderName), anyLong())).thenReturn(encode(10, "existing", 1));
         when(userSession.getId()).thenReturn(1L);
         when(fileUtility.checkIfFileExistsDecodeNames("user/folder", folderName)).thenReturn(true);
 

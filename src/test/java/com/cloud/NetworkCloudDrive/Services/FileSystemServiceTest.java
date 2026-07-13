@@ -21,6 +21,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +54,11 @@ class FileSystemServiceTest {
 
     @TempDir
     Path tempDir;
+
+    private static String encode(long id, String name, long userId) {
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString((id + ":" + name + ":" + userId).getBytes());
+    }
 
     @BeforeEach
     void setUp() {
@@ -133,7 +140,7 @@ class FileSystemServiceTest {
         Path realFile = Files.writeString(userPath.resolve("encoded_name.bin"), "data");
 
         when(pathUtility.getFolderPath(5L)).thenReturn("user/path");
-        when(fileUtility.returnPathIfItExists("user/path/encoded_name.bin")).thenReturn(realFile);
+        when(fileUtility.returnPathIfItExists(Paths.get("user", "path", "encoded_name.bin").toString())).thenReturn(realFile);
 
         String result = fileSystemService.removeFile(file);
 
@@ -151,25 +158,27 @@ class FileSystemServiceTest {
         Path realFile = userPath.resolve("enc.txt");
 
         when(pathUtility.getFolderPath(1L)).thenReturn("user/path");
-        when(fileUtility.returnPathIfItExists("user/path/enc.txt")).thenReturn(realFile);
+        when(fileUtility.returnPathIfItExists(Paths.get("user", "path", "enc.txt").toString())).thenReturn(realFile);
 
         assertThrows(java.nio.file.FileSystemException.class, () -> fileSystemService.removeFile(file));
     }
 
     @Test
     void updateFileName_Success_ReturnsNewPath() throws Exception {
-        FileMetadata file = new FileMetadata("1:oldname.txt:1", 1L, 1L, "text/plain", 100L);
+        String encodedOldName = encode(1, "oldname.txt", 1);
+        String encodedNewName = encode(1, "newname.txt", 1);
+        FileMetadata file = new FileMetadata(encodedOldName, 1L, 1L, "text/plain", 100L);
         file.setId(1L);
 
         Path folderPath = Files.createDirectories(tempDir.resolve("user/folder"));
-        Files.writeString(folderPath.resolve("1:oldname.txt:1"), "content");
+        Files.writeString(folderPath.resolve(encodedOldName), "content");
 
         when(pathUtility.getFolderPath(1L)).thenReturn("user/folder");
         when(pathUtility.getFullPathToString("user/folder")).thenReturn(folderPath.toString());
         when(fileUtility.hasFileExtension("newname")).thenReturn(false);
-        when(encodingUtility.decodedBase32SplitArray("1:oldname.txt:1")).thenReturn(new String[]{"1", "oldname.txt", "1"});
+        when(encodingUtility.decodedBase32SplitArray(encodedOldName)).thenReturn(new String[]{"1", "oldname.txt", "1"});
         when(fileUtility.getFileExtension("oldname.txt")).thenReturn(".txt");
-        when(encodingUtility.encodeBase32FolderName(1L, "newname.txt", 1L)).thenReturn("1:newname.txt:1");
+        when(encodingUtility.encodeBase32FolderName(1L, "newname.txt", 1L)).thenReturn(encodedNewName);
         when(fileUtility.checkIfFileExistsDecodeNames("user/folder", "newname.txt")).thenReturn(false);
         when(fileUtility.getMimeTypeFromExtensionUsingTikaCore(any())).thenReturn("text/plain");
         when(fileUtility.getFileExtension("oldname.txt")).thenReturn(".txt");
@@ -182,19 +191,22 @@ class FileSystemServiceTest {
 
     @Test
     void updateFolderName_Success_ReturnsNewPath() throws Exception {
-        FolderMetadata folder = new FolderMetadata("2:oldfolder:1", "0/5");
+        String encodedOldFolder = encode(2, "oldfolder", 1);
+        String encodedNewFolder = encode(2, "newname", 1);
+        FolderMetadata folder = new FolderMetadata(encodedOldFolder, "0/5");
         folder.setId(5L);
         folder.setUserid(1L);
 
         Path userDir = Files.createDirectories(tempDir.resolve("user"));
-        Path oldDir = Files.createDirectory(userDir.resolve("2:oldfolder:1"));
+        Path oldDir = Files.createDirectory(userDir.resolve(encodedOldFolder));
 
-        when(pathUtility.resolvePathFromIdString("0/5")).thenReturn("user/2:oldfolder:1");
-        when(fileUtility.returnPathIfItExists("user/2:oldfolder:1")).thenReturn(oldDir);
+        String userFolderPath = Paths.get("user", encodedOldFolder).toString();
+        when(pathUtility.resolvePathFromIdString("0/5")).thenReturn(userFolderPath);
+        when(fileUtility.returnPathIfItExists(userFolderPath)).thenReturn(oldDir);
         when(pathUtility.returnParentFolderPathFromFolderID(5L)).thenReturn("user");
         when(fileUtility.checkIfFileExistsDecodeNames("user", "newname")).thenReturn(false);
-        when(encodingUtility.encodeBase32FolderName(5L, "newname", 1L)).thenReturn("2:newname:1");
-        when(fileUtility.returnPathIfItsNotADuplicate(anyString())).thenReturn(userDir.resolve("2:newname:1"));
+        when(encodingUtility.encodeBase32FolderName(5L, "newname", 1L)).thenReturn(encodedNewFolder);
+        when(fileUtility.returnPathIfItsNotADuplicate(anyString())).thenReturn(userDir.resolve(encodedNewFolder));
 
         String result = fileSystemService.updateFolderName("newname", folder);
 
@@ -207,8 +219,8 @@ class FileSystemServiceTest {
         FolderMetadata folder = new FolderMetadata("enc", "0/5");
         folder.setId(5L);
 
-        when(pathUtility.resolvePathFromIdString("0/5")).thenReturn("user/folder");
-        when(fileUtility.returnPathIfItExists("user/folder")).thenReturn(Path.of("/root/user/folder"));
+        when(pathUtility.resolvePathFromIdString("0/5")).thenReturn(Paths.get("user", "folder").toString());
+        when(fileUtility.returnPathIfItExists(Paths.get("user", "folder").toString())).thenReturn(Path.of("/root/user/folder"));
         when(pathUtility.returnParentFolderPathFromFolderID(5L)).thenReturn("user");
         when(fileUtility.checkIfFileExistsDecodeNames("user", "existing")).thenReturn(true);
 
@@ -260,10 +272,10 @@ class FileSystemServiceTest {
         Path sourceDir = Files.createDirectories(tempDir.resolve("source/path/enc_folder"));
         Path destDir = Files.createDirectories(tempDir.resolve("dest/path"));
 
-        when(pathUtility.getFolderPath(3L)).thenReturn("source/path/enc_folder");
-        when(fileUtility.returnPathIfItExists("source/path/enc_folder")).thenReturn(sourceDir);
-        when(pathUtility.getFolderPath(10L)).thenReturn("dest/path");
-        when(fileUtility.returnPathIfItExists("dest/path")).thenReturn(destDir);
+        when(pathUtility.getFolderPath(3L)).thenReturn(Paths.get("source", "path", "enc_folder").toString());
+        when(fileUtility.returnPathIfItExists(Paths.get("source", "path", "enc_folder").toString())).thenReturn(sourceDir);
+        when(pathUtility.getFolderPath(10L)).thenReturn(Paths.get("dest", "path").toString());
+        when(fileUtility.returnPathIfItExists(Paths.get("dest", "path").toString())).thenReturn(destDir);
         when(sqLiteDAO.findAllStartsWithIdPath("0/5/3/", 0L)).thenReturn(List.of());
         when(sqLiteDAO.getIdPath(10L, 0L)).thenReturn("0/10");
 
