@@ -2,7 +2,6 @@ package com.cloud.NetworkCloudDrive.Security;
 
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
-import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,11 +15,9 @@ import java.util.Base64;
 @Component
 public class EncodingUtility {
     private final Logger logger = LoggerFactory.getLogger(EncodingUtility.class);
-    private final UserSession userSession;
     private final SQLiteDAO sQLiteDAO;
 
-    public EncodingUtility(UserSession userSession, SQLiteDAO sQLiteDAO) {
-        this.userSession = userSession;
+    public EncodingUtility(SQLiteDAO sQLiteDAO) {
         this.sQLiteDAO = sQLiteDAO;
     }
 
@@ -60,8 +57,8 @@ public class EncodingUtility {
         return Long.parseLong(decodedBase32SplitArray(base32String)[0]);
     }
 
-    public FolderMetadata getFolderMetadataFromEncoding(String encodedFolderName) throws SQLException {
-        return sQLiteDAO.queryFolderMetadata(getMetadataIDFromEncodedBase32(encodedFolderName), userSession.getId());
+    public FolderMetadata getFolderMetadataFromEncoding(String encodedFolderName, long userId) throws SQLException {
+        return sQLiteDAO.queryFolderMetadata(getMetadataIDFromEncodedBase32(encodedFolderName), userId);
     }
 
 

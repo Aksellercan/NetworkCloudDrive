@@ -22,11 +22,11 @@ public interface MaintenanceRepository {
 
     ScanTaskResponse queueScan(long folderId, ScanOptions scanOptions) throws FileSystemException, SQLException;
 
-    boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion);
+//    boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion);
 
     boolean scanDirectory(UserDTO userDTO, Path startingPath, Predicate<Path> filter, boolean useRecursion, boolean createThumbnails);
 
-    void scanAndCreateThumbnails(long startingFolderId) throws IOException, SQLException;
+    void scanAndCreateThumbnails(long startingFolderId, UserDTO userDTO) throws IOException, SQLException;
 
-    ThumbnailScanResults recursiveThumbnailScanInvoker(long folderId) throws SQLException;
+    ThumbnailScanResults recursiveThumbnailScanInvoker(UserDTO userDTO, long folderId) throws SQLException;
 }

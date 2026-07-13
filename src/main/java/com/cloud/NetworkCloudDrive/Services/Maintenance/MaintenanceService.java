@@ -97,7 +97,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 scanDirectory(userDTO, startingDirectory, Files::exists, false, true);
                 break;
             case ONLY_THUMBNAILS:
-                return recursiveThumbnailScanInvoker(folderId);
+                return recursiveThumbnailScanInvoker(userDTO, folderId);
             case DONT_CREATE_THUMBNAILS:
                 scanDirectory(userDTO, startingDirectory, Files::exists, true, false);
                 break;
@@ -114,17 +114,17 @@ public class MaintenanceService implements MaintenanceRepository {
         return new ScanTaskResponse(maintenanceJob.getJobName(), maintenanceJob.getId(), maintenanceJob.getAddedOn(), maintenanceJob.getJobStatus());
     }
 
-    @Override
-    public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion) {
-        return scanDirectory(userSession.returnUserDTO(), startingPath, filter, useRecursion, true);
-    }
-
-    private long getFolderId(File parentFolder) throws SQLException {
+    //    @Override
+//    public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion) {
+//        return scanDirectory(userSession.returnUserDTO(), startingPath, filter, useRecursion, true);
+//    }
+//
+    private long getFolderId(File parentFolder, long userId) throws SQLException {
         return encodingUtility.isEncodedStringUserDirectory(parentFolder.getName())
                 ?
                 0L //root folder
                 :
-                encodingUtility.getFolderMetadataFromEncoding(parentFolder.getName()).getId();
+                encodingUtility.getFolderMetadataFromEncoding(parentFolder.getName(), userId).getId();
     }
 
     @Override
@@ -140,7 +140,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 }
                 if (Files.isRegularFile(files)) {
                     scanResults.incrementDiscoveredFileCount();
-                    handleFileCheck(files.toFile(), userDTO, getFolderId(files.getParent().toFile()), createThumbnails);
+                    handleFileCheck(files.toFile(), userDTO, getFolderId(files.getParent().toFile(), userDTO.getUserId()), createThumbnails);
                     continue;
                 }
                 if (encodingUtility.isBase32Decodable(files.getFileName().toString())) {
@@ -148,18 +148,18 @@ public class MaintenanceService implements MaintenanceRepository {
                     if (Files.isDirectory(files)) {
                         scanResults.incrementDiscoveredFolderCount();
                         if (useRecursion) {
-                            if (!scanDirectory(files, filter, true))
+                            if (!scanDirectory(userDTO, files, filter, true, createThumbnails))
                                 throw new RuntimeException("Failed to enter folder");
                         }
                     }
                     continue;
                 }
-                long folderId = getFolderId(files.getParent().toFile());
+                long folderId = getFolderId(files.getParent().toFile(), userDTO.getUserId());
                 logger.info("Enter folder handling FolderID {}", folderId);
                 scanResults.incrementDiscoveredFolderCount();
                 File createdFolder = handleFolderCheck(files.toFile(), folderId, userDTO);
                 if (useRecursion) {
-                    if (!scanDirectory(createdFolder.toPath(), filter, true))
+                    if (!scanDirectory(userDTO, createdFolder.toPath(), filter, true, createThumbnails))
                         throw new RuntimeException("Failed to enter created folder");
                 }
             }
@@ -171,44 +171,44 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     @Override
-    public ThumbnailScanResults recursiveThumbnailScanInvoker(long folderId) throws SQLException {
+    public ThumbnailScanResults recursiveThumbnailScanInvoker(UserDTO userDTO, long folderId) throws SQLException {
         ThumbnailScanResults thumbnailScanResults = new ThumbnailScanResults();
-        List<Long> folderMetadataContainingPath = sqLiteDAO.findAllStartsWithIdPathReturnsLongList(sqLiteDAO.getIdPath(folderId));
+        List<Long> folderMetadataContainingPath = sqLiteDAO.findAllStartsWithIdPathReturnsLongList(sqLiteDAO.getIdPath(folderId, userDTO.getUserId()), userDTO.getUserId());
         logger.info("size {}", folderMetadataContainingPath.size());
         folderMetadataContainingPath.forEach(l -> logger.info("item {}", l));
         //temp
         if (folderId <= 0) {
             folderMetadataContainingPath.add(0L);
         }
-        scanAndCreateThumbnailsRecursive(folderMetadataContainingPath, 0, thumbnailScanResults);
+        scanAndCreateThumbnailsRecursive(userDTO, folderMetadataContainingPath, 0, thumbnailScanResults);
         thumbnailScanResults.stopTimerAndGetTimeTaken();
         return thumbnailScanResults;
     }
 
-    public boolean scanAndCreateThumbnailsRecursive(List<Long> files, int index, ThumbnailScanResults thumbnailScanResults) {
+    public boolean scanAndCreateThumbnailsRecursive(UserDTO userDTO, List<Long> files, int index, ThumbnailScanResults thumbnailScanResults) {
         if (index == files.size())
             return true;
 
-        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(files.get(index), userSession.getId());
+        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(files.get(index), userDTO.getUserId());
 
         for (FileMetadata fileMetadata : fileMetadataList) {
             thumbnailScanResults.incrementDiscoveredFileCount();
-            boolean result = thumbnailCreationWrapper(fileMetadata);
+            boolean result = thumbnailCreationWrapper(fileMetadata, userDTO);
             fileMetadata.setHasThumbnail(result);
             sqLiteDAO.saveFile(fileMetadata);
             thumbnailScanResults.incrementCreatedOrFailedThumbnailCount(result);
             logger.info("Thumbnail creation attempt: {}", result ? "success" : "failure");
         }
-        return scanAndCreateThumbnailsRecursive(files, index + 1, thumbnailScanResults);
+        return scanAndCreateThumbnailsRecursive(userDTO, files, index + 1, thumbnailScanResults);
     }
 
-    private boolean thumbnailCreationWrapper(FileMetadata fileMetadata) {
+    private boolean thumbnailCreationWrapper(FileMetadata fileMetadata, UserDTO userDTO) {
         try {
             return handleThumbnailCreation(
-                    Path.of(pathUtility.resolvePathFromIdString(sqLiteDAO.getIdPath(fileMetadata.getFolderId())), fileMetadata.getName()),
+                    Path.of(pathUtility.resolvePathFromIdString(sqLiteDAO.getIdPath(fileMetadata.getFolderId(), userDTO.getUserId())), fileMetadata.getName()),
                     fileMetadata.getName(),
                     fileMetadata.getId(),
-                    fileMetadata.getMimiType(), userSession.returnUserDTO());
+                    fileMetadata.getMimiType(), userDTO);
         } catch (Exception e) {
             logger.error("Exception occurred {}", e.getMessage());
             return false;
@@ -216,11 +216,11 @@ public class MaintenanceService implements MaintenanceRepository {
     }
 
     @Override
-    public void scanAndCreateThumbnails(long startingFolderId) {
-        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(startingFolderId, userSession.getId());
+    public void scanAndCreateThumbnails(long startingFolderId, UserDTO userDTO) {
+        List<FileMetadata> fileMetadataList = sqLiteDAO.findAllFilesWithoutThumbnailsInFolder(startingFolderId, userDTO.getUserId());
         for (int i = 0; i < fileMetadataList.size(); i++) {
             FileMetadata fileMetadata = fileMetadataList.get(i);
-            boolean result = thumbnailCreationWrapper(fileMetadata);
+            boolean result = thumbnailCreationWrapper(fileMetadata, userDTO);
             fileMetadata.setHasThumbnail(result);
             fileMetadataList.set(i, fileMetadata);
             logger.info("Thumbnail creation result {}", result ? "success" : "failure");
@@ -284,7 +284,7 @@ public class MaintenanceService implements MaintenanceRepository {
     private File handleFolderCheck(File currentFolder, long currentFolderId, UserDTO userDTO) throws SQLException, IOException {
         FolderMetadata createdFolder = new FolderMetadata();
         sqLiteDAO.persistObjects(createdFolder);
-        createdFolder.setPath(sqLiteDAO.getIdPath(currentFolderId) + "/" + createdFolder.getId());
+        createdFolder.setPath(sqLiteDAO.getIdPath(currentFolderId, userDTO.getUserId()) + "/" + createdFolder.getId());
         createdFolder.setUserid(userDTO.getUserId());
         createdFolder.setName(encodingUtility.encodeBase32FolderName(createdFolder.getId(), currentFolder.getName(), userDTO.getUserId()));
         sqLiteDAO.saveFolder(createdFolder);

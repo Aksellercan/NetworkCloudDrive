@@ -141,7 +141,7 @@ public class FileService implements FileRepository {
     @Override
     public FolderMetadata createFolder(String folderName, long folderId) throws Exception {
         // Paths
-        String idPath = sqLiteDAO.getIdPath(folderId);
+        String idPath = sqLiteDAO.getIdPath(folderId, userSession.getId());
         String userFolder = pathUtility.getFolderPath(folderId);
         String fullPath = pathUtility.getFullPathToString(userFolder);
         if (!pathUtility.isFilenameAllowed(folderName))
