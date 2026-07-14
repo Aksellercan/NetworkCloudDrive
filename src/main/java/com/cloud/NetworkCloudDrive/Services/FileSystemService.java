@@ -376,13 +376,13 @@ public class FileSystemService implements FileSystemRepository {
         logger.warn("destinationfolder path {}", destinationFolder);
         // Get folders inside source folder
         logger.warn("prefix {}", folder.getPath() + "/");
-        List<FolderMetadata> folderMetadataList = sqLiteDAO.findAllStartsWithIdPath(folder.getPath() + "/");
+        List<FolderMetadata> folderMetadataList = sqLiteDAO.findAllStartsWithIdPath(folder.getPath() + "/", userSession.getId());
         // Update ID paths of folders affected
         folderMetadataList = updateFolderIdPaths(folderMetadataList, folder.getPath(),
-                sqLiteDAO.getIdPath(destinationFolderId) + "/" + folder.getId());
+                sqLiteDAO.getIdPath(destinationFolderId, userSession.getId()) + "/" + folder.getId());
         // Update ID path of source folder individually
         folder.setPath(
-                folder.getPath().replaceAll(folder.getPath(), sqLiteDAO.getIdPath(destinationFolderId) + "/" + folder.getId()));
+                folder.getPath().replaceAll(folder.getPath(), sqLiteDAO.getIdPath(destinationFolderId, userSession.getId()) + "/" + folder.getId()));
         // Move folder in system
         Path updatedPath = Files.move(sourceFolder, Paths.get(destinationFolder.toString(), folder.getName()));
         if (Files.notExists(updatedPath))

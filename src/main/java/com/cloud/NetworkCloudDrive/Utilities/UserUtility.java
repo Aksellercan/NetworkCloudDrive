@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import com.cloud.NetworkCloudDrive.Sessions.UserSession;
@@ -68,6 +69,10 @@ public class UserUtility {
      */
     public Path returnUserFolderasPath() throws IOException {
         return createUserDirectory(userSession.getId(), userSession.getName(), userSession.getMail());
+    }
+
+    public Path returnUserFolderAsPathBackgroundTask(UserDTO userDTO) throws IOException {
+        return createUserDirectory(userDTO.getUserId(), userDTO.getUserName(), userDTO.getUserEmail());
     }
 
     /**

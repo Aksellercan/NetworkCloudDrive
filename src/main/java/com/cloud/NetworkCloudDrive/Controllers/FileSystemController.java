@@ -109,7 +109,7 @@ public class FileSystemController {
     public @ResponseBody ResponseEntity<JSONResponse> moveFile(@RequestBody UpdateFilePathDTO updateFilePathDTO) {
         try {
             FileMetadata fileToMove = informationRepository.getFileMetadata(updateFilePathDTO.getFile_id());
-            String oldPath = (updateFilePathDTO.getFolder_id() != 0 ?
+            String oldPath = (updateFilePathDTO.getFolder_id() > 0 ?
                     pathUtility.resolvePathFromIdString(informationRepository.getFolderMetadata(updateFilePathDTO.getFolder_id()).getPath())
                     :
                     userSession.getName());

@@ -1,28 +1,42 @@
 package com.cloud.NetworkCloudDrive.Models.DTO;
 
 public class UserDTO {
-    private String name;
-    private String mail;
-    private String password;
+    private long userId;
+    private String userName;
+    private String userEmail;
 
-    public UserDTO() {}
+    public UserDTO(long userId, String userName, String userEmail) {
+        this.userId = userId;
+        this.userName = userName;
+        this.userEmail = userEmail;
+    }
 
-    public String getName() {
-        return name;
+    public long getUserId() {
+        return userId;
     }
-    public void setName(String name) {
-        this.name = name;
+
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
-    public String getMail() {
-        return mail;
+
+    public String getUserName() {
+        return userName;
     }
-    public void setMail(String mail) {
-        this.mail = mail;
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
-    public String getPassword() {
-        return password;
+
+    public String getUserEmail() {
+        return userEmail;
     }
-    public void setPassword(String password) {
-        this.password = password;
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    @Override
+    public String toString() {
+        return "userId=" + userId;
     }
 }

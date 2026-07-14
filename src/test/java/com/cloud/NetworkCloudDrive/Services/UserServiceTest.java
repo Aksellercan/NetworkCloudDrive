@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 
@@ -178,6 +179,26 @@ class UserServiceTest {
         verify(fileUtility).deleteFolders(any(Path.class));
         verify(sqLiteDAO).deleteAllUserRelatedEntries(1L);
         verify(sqLiteDAO).deleteUser(user);
+    }
+
+    @Test
+    void loginUser_WhenUserNotFound_ThrowsException() {
+        when(sqLiteDAO.findUserByMail("missing@test.com")).thenReturn(null);
+
+        assertThrows(NullPointerException.class,
+                () -> userService.loginUser("missing", "missing@test.com", "password"));
+    }
+
+    @Test
+    void deleteUser_WhenFolderDeletionFails_PropagatesException() throws Exception {
+        UserEntity user = createUser(1L, "testuser", "test@example.com", "hash", UserRole.GUEST);
+        when(userUtility.returnUserFolderasPath()).thenReturn(Path.of("/root/userdir"));
+        when(fileUtility.deleteFolders(any(Path.class))).thenThrow(new IOException("Permission denied"));
+
+        assertThrows(IOException.class,
+                () -> userService.deleteUser(user));
+        verify(sqLiteDAO, never()).deleteAllUserRelatedEntries(anyLong());
+        verify(sqLiteDAO, never()).deleteUser(any());
     }
 
     @Test

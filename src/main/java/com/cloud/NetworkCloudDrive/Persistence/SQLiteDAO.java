@@ -10,7 +10,6 @@ import com.cloud.NetworkCloudDrive.Repositories.JdbcImpl.SQLiteFileRepository;
 import com.cloud.NetworkCloudDrive.Repositories.JdbcImpl.SQLiteFolderRepository;
 import com.cloud.NetworkCloudDrive.Repositories.JdbcImpl.SQLiteThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Repositories.JdbcImpl.SQLiteUserEntityRepository;
-import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +32,6 @@ public class SQLiteDAO {
     private final SQLiteFileRepository sqLiteFileRepository;
     private final SQLiteUserEntityRepository sqLiteUserEntityRepository;
     private final SQLiteThumbnailRepository sqLiteThumbnailRepository;
-    private final UserSession userSession;
     private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
     private final ThumbnailProperties thumbnailProperties;
 
@@ -43,13 +41,12 @@ public class SQLiteDAO {
             SQLiteUserEntityRepository sqLiteUserEntityRepository,
             SQLiteThumbnailRepository sqLiteThumbnailRepository,
             EntityManager entityManager,
-            UserSession userSession, ThumbnailProperties thumbnailProperties) {
+            ThumbnailProperties thumbnailProperties) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
         this.sqLiteThumbnailRepository = sqLiteThumbnailRepository;
         this.entityManager = entityManager;
-        this.userSession = userSession;
         this.thumbnailProperties = thumbnailProperties;
     }
 
@@ -258,13 +255,11 @@ public class SQLiteDAO {
     }
 
     @Transactional
-    public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) throws SQLException {
+    public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) {
         Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
                 .findByFileId(fileId)
                 .filter(tm -> tm.getUserId() == userId);
-        if (thumbnailMetadata.isEmpty())
-            throw new SQLException("No Thumbnail found for file Id " + fileId);
-        return thumbnailMetadata.get();
+        return thumbnailMetadata.orElse(null);
     }
 
     @Transactional
@@ -337,7 +332,7 @@ public class SQLiteDAO {
         dummyFolderMetadata.setPath(idPath);
         dummyFolderMetadata.setId(null);
         dummyFolderMetadata.setCreatedAt(null);
-        dummyFolderMetadata.setUserid(userId); //current logged in user id
+        dummyFolderMetadata.setUserid(userId); //current logged-in user id
         Example<FolderMetadata> folderMetadataExample = Example.of(dummyFolderMetadata);
         Optional<FolderMetadata> optionalFolderMetadata = sqLiteFolderRepository.findOne(folderMetadataExample);
         logger.info("Example folder: {}", dummyFolderMetadata);
@@ -347,23 +342,23 @@ public class SQLiteDAO {
     }
 
     @Transactional
-    public List<FolderMetadata> findAllStartsWithIdPath(String prefixIdPath) {
+    public List<FolderMetadata> findAllStartsWithIdPath(String prefixIdPath, long userId) {
         return sqLiteFolderRepository.findAll()
                 .stream().filter(fl -> {
                     //handle null values if they exist
                     if (fl.getPath() == null || fl.getUserid() == null) return false;
-                    return fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId();
+                    return fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userId;
                 })
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public List<Long> findAllStartsWithIdPathReturnsLongList(String prefixIdPath) {
+    public List<Long> findAllStartsWithIdPathReturnsLongList(String prefixIdPath, long userId) {
         return sqLiteFolderRepository.findAll()
                 .stream().filter(fl -> {
                     //handle null values if they exist
                     if (fl.getPath() == null || fl.getUserid() == null) return false;
-                    return fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userSession.getId();
+                    return fl.getPath().startsWith(prefixIdPath) && fl.getUserid() == userId;
                 }).map(FolderMetadata::getId)
                 .collect(Collectors.toList());
     }
@@ -392,8 +387,8 @@ public class SQLiteDAO {
      * @throws SQLException if folder with folderId is not found
      */
     @Transactional
-    public String getIdPath(long folderId) throws SQLException {
-        return folderId != 0 ? queryFolderMetadata(folderId, userSession.getId()).getPath() : "0";
+    public String getIdPath(long folderId, long userId) throws SQLException {
+        return folderId > 0 ? queryFolderMetadata(folderId, userId).getPath() : "0";
     }
 
     @Transactional

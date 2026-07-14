@@ -1,6 +1,7 @@
 package com.cloud.NetworkCloudDrive.Sessions;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import jakarta.annotation.PostConstruct;
@@ -14,8 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.annotation.SessionScope;
 
-//TODO temporarily use RequestScope instead of SessionScope (Reason: Session won't update on Postman/Yaak/Bruno. Should work for browser)
-//@RequestScope
+// Temporarily use RequestScope instead of SessionScope (Reason: Session won't update on Postman/Yaak/Bruno. Should work for browser)
 @SessionScope
 @Component
 public class UserSession {
@@ -83,5 +83,9 @@ public class UserSession {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public UserDTO returnUserDTO() {
+        return new UserDTO(this.id, this.name, this.mail);
     }
 }

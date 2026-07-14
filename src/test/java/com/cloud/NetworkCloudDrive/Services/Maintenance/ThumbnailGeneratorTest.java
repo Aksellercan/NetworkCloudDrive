@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Services.Maintenance;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
@@ -15,24 +16,29 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.imageio.ImageIO;
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @TestPropertySource(locations = "classpath:/application-test.properties")
 class ThumbnailGeneratorTest {
+    Logger logger = LoggerFactory.getLogger(ThumbnailGeneratorTest.class);
 
     @TempDir
     Path tempRoot;
@@ -61,6 +67,7 @@ class ThumbnailGeneratorTest {
     private Path userFolder;
     private String originalBasePath;
     private long userId;
+    private UserDTO userDTO;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -76,6 +83,7 @@ class ThumbnailGeneratorTest {
         userSession.setMail(user.getMail());
         userSession.setRole(user.getRole());
 
+        userDTO = new UserDTO(user.getId(), user.getName(), user.getMail());
         userFolder = userUtility.returnUserFolderasPath();
     }
 
@@ -85,8 +93,7 @@ class ThumbnailGeneratorTest {
     }
 
     @Test
-    @Transactional
-    void nasaApodImage_thumbnailGenerated() throws IOException {
+    void nasaApodImage_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         Optional<BufferedImage> nasaImage = TestUtility.fetchNasaApodImage();
         if (nasaImage.isEmpty()) {
             return;
@@ -95,27 +102,31 @@ class ThumbnailGeneratorTest {
     }
 
     @Test
-    @Transactional
-    void portraitGradient_thumbnailGenerated() throws IOException {
+    void portraitGradient_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         BufferedImage img = TestUtility.gradient(100, 200, Color.RED, Color.BLUE);
         assertThumbnailGenerated(img);
     }
 
     @Test
-    @Transactional
-    void landscapeGradient_thumbnailGenerated() throws IOException {
+    void landscapeGradient_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         BufferedImage img = TestUtility.gradient(200, 100, Color.BLUE, Color.GREEN);
         assertThumbnailGenerated(img);
     }
 
     @Test
-    @Transactional
-    void squareGradient_thumbnailGenerated() throws IOException {
+    void createAndSaveThumbnailDefaultSettings_ReturnsCompletableFuture() throws Exception {
+        Method method = ThumbnailService.class.getMethod(
+                "createAndSaveThumbnailDefaultSettings", Path.class, String.class, long.class);
+        assertEquals(CompletableFuture.class, method.getReturnType());
+    }
+
+    @Test
+    void squareGradient_thumbnailGenerated() throws IOException, ExecutionException, InterruptedException {
         BufferedImage img = TestUtility.gradient(100, 100, Color.GREEN, Color.RED);
         assertThumbnailGenerated(img);
     }
 
-    private void assertThumbnailGenerated(BufferedImage source) throws IOException {
+    private void assertThumbnailGenerated(BufferedImage source) throws IOException, ExecutionException, InterruptedException {
         int width = source.getWidth();
         int height = source.getHeight();
         boolean expectedPortrait = height > width;
@@ -138,8 +149,8 @@ class ThumbnailGeneratorTest {
 
         Path relativePath = Path.of(userFolder.getFileName().toString(), encodedFileName);
 
-        ThumbnailMetadata result = thumbnailService.createAndSaveThumbnailDefaultSettings(
-                relativePath, encodedFileName, fileMetadata.getId());
+        logger.info("Testing for {}", fileMetadata.getId());
+        ThumbnailMetadata result = thumbnailService.createAndSaveThumbnail(relativePath, encodedFileName, fileMetadata.getId(), userDTO).get();
 
         assertNotNull(result);
         assertTrue(result.getId() > 0);

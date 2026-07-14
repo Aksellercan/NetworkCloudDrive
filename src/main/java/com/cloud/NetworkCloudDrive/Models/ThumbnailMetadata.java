@@ -16,7 +16,7 @@ public class ThumbnailMetadata {
 
     private long size;
 
-    @Column(name = "fileid")
+    @Column(name = "fileid", unique = true)
     private long fileId;
 
     @Column(name = "userid")
@@ -34,50 +34,65 @@ public class ThumbnailMetadata {
         this.isPortrait = isPortrait;
     }
 
-    public ThumbnailMetadata() {}
+    public ThumbnailMetadata() {
+    }
 
     public long getId() {
         return id;
     }
+
     public void setId(long id) {
         this.id = id;
     }
+
     public long getSize() {
         return size;
     }
+
     public long getUserId() {
         return userId;
     }
+
     public void setUserId(long userId) {
         this.userId = userId;
     }
+
     public long getFileId() {
         return fileId;
     }
+
     public void setFileId(long fileId) {
         this.fileId = fileId;
     }
+
     public String getFileName() {
         return fileName;
     }
+
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
+
     public String getMimeType() {
         return mimeType;
     }
+
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
     }
+
     public boolean isPortrait() {
         return isPortrait;
     }
+
     public void setPortrait(boolean portrait) {
         isPortrait = portrait;
     }
+
     public void setSize(long size) {
         this.size = size;
     }
+
     @Override
     public String toString() {
         return String.format("ID: %d Name: %s MimeType: %s Size: %d, FileID: %d", this.id, this.fileName, this.mimeType, this.size, this.fileId);

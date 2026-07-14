@@ -10,14 +10,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Repository
 public interface FileRepository {
     Map<String, ?> uploadFiles(MultipartFile[] files, String folderPath, long folderId) throws Exception;
 
-    Path storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException;
+    CompletableFuture<Path> storeFile(InputStream inputStream, String fileName, String parentPath) throws IOException;
 
-    Resource getFile(FileMetadata file, String path) throws Exception;
+    CompletableFuture<Resource> getFile(FileMetadata file, String path) throws Exception;
 
     FolderMetadata createFolder(String folderName, long folderId) throws Exception;
 }

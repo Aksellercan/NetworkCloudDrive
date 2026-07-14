@@ -371,7 +371,7 @@ class NetworkCloudDriveApplicationTests {
         decodedUserDetails.setMail(mapProps[2]);
         // Assert
         logger.info("ID: Expected {} what it is {}", savedUserEntity.getId(), decodedUserDetails.getId());
-        Assertions.assertSame(savedUserEntity.getId(), decodedUserDetails.getId());
+        Assertions.assertEquals(savedUserEntity.getId(), decodedUserDetails.getId());
         logger.info("NAME: Expected {} what it is {}", savedUserEntity.getName(), decodedUserDetails.getName());
         Assertions.assertEquals(savedUserEntity.getName(), decodedUserDetails.getName());
         logger.info("MAIL: Expected {} what it is {}", savedUserEntity.getMail(), decodedUserDetails.getMail());

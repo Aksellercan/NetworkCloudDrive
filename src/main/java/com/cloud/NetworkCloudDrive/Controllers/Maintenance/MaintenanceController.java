@@ -21,7 +21,7 @@ public class MaintenanceController {
     public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam ScanOptions scanOptions) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONObjectResponse(maintenanceRepository.scanOptionsController(0L, scanOptions), "Scan completed"));
+                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(0L, scanOptions), "Scan completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "Error scanning"));
@@ -32,7 +32,7 @@ public class MaintenanceController {
     public @ResponseBody ResponseEntity<?> scanDirectoryNestedFolders(@RequestParam long folderid) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONObjectResponse(maintenanceRepository.scanOptionsController(folderid, ScanOptions.NORMAL), "Scan completed"));
+                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(folderid, ScanOptions.NORMAL), "Scan completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "Error scanning"));
@@ -43,7 +43,7 @@ public class MaintenanceController {
     public @ResponseBody ResponseEntity<?> scanDirectoryOptions(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONObjectResponse(maintenanceRepository.scanOptionsController(folderid, scanOptions), "Scan completed"));
+                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(folderid, scanOptions), "Scan completed"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "Error scanning"));

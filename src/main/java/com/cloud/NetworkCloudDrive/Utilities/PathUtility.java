@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Utilities;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import com.cloud.NetworkCloudDrive.Properties.FileStorageProperties;
@@ -141,7 +142,7 @@ public class PathUtility {
      * @throws FileSystemException if path can't be resolved
      */
     public String getFolderPath(long folderId) throws SQLException, FileSystemException {
-        return folderId != 0
+        return folderId > 0
                 ?
                 resolvePathFromIdString(sqLiteDAO.queryFolderMetadata(folderId, userSession.getId()).getPath())
                 :
@@ -202,6 +203,34 @@ public class PathUtility {
         return fullPath.toString();
     }
 
+    public String resolvePathFromIdString(UserDTO userDTO, String idString) throws FileSystemException {
+        String[] splitLine = idString.split("/");
+        List<Long> idList = new ArrayList<>();
+        for (String idAsString : splitLine) {
+            idList.add(Long.parseLong(idAsString));
+        }
+        return appendFolderNames(userDTO, idList);
+    }
+
+    protected String appendFolderNames(UserDTO userDTO, List<Long> folderIdList) throws FileSystemException {
+        StringBuilder fullPath = new StringBuilder();
+        List<FolderMetadata> folderMetadataListById = sqLiteDAO.findAllByIdInSQLFolderMetadata(folderIdList, userDTO.getUserId());
+        logger.debug("size {}", folderMetadataListById.size());
+        for (int i = 0; i < folderIdList.size(); i++) {
+            if (i == 0) {
+                fullPath.append(encodingUtility.encodeBase32UserFolderName(userDTO.getUserId(), userDTO.getUserName(), userDTO.getUserEmail()))
+                        .append(File.separator);
+                continue;
+            }
+            FolderMetadata getMetadataFromList = getFolderMetadataByIdFromList(folderMetadataListById, folderIdList.get(i));
+            if (getMetadataFromList == null)
+                throw new FileSystemException("No match found for ID " + folderIdList.get(i));
+            fullPath.append(getMetadataFromList.getName()).append(File.separator);
+        }
+        fullPath.setLength(fullPath.length() - 1);
+        logger.debug("output {}", fullPath);
+        return fullPath.toString();
+    }
 
     /**
      * Return correct file separator (regex compliant)

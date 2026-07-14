@@ -1,8 +1,8 @@
 package com.cloud.NetworkCloudDrive.Controllers;
 
-import com.cloud.NetworkCloudDrive.Models.DTO.UpdateUserDTO;
-import com.cloud.NetworkCloudDrive.Models.DTO.UserDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.UpdateUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.UserLoginRegisterDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.UserEntity;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
@@ -15,13 +15,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -48,7 +49,7 @@ class UserControllerTest {
 
     @Test
     void register_NewUser_ReturnsOk() throws Exception {
-        UserDTO dto = new UserDTO();
+        UserLoginRegisterDTO dto = new UserLoginRegisterDTO();
         dto.setName("newuser");
         dto.setMail("new@example.com");
         dto.setPassword("password");
@@ -69,7 +70,7 @@ class UserControllerTest {
 
     @Test
     void register_DuplicateUser_ReturnsBadRequest() throws Exception {
-        UserDTO dto = new UserDTO();
+        UserLoginRegisterDTO dto = new UserLoginRegisterDTO();
         dto.setName("existing");
         dto.setMail("existing@test.com");
         dto.setPassword("password");
@@ -84,7 +85,7 @@ class UserControllerTest {
 
     @Test
     void register_DirectoryCreationFails_ReturnsBadRequest() throws Exception {
-        UserDTO dto = new UserDTO();
+        UserLoginRegisterDTO dto = new UserLoginRegisterDTO();
         dto.setName("user");
         dto.setMail("user@test.com");
         dto.setPassword("pass");
@@ -170,6 +171,29 @@ class UserControllerTest {
         ResponseEntity<?> response = controller.deleteUser();
 
         assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    void deleteUser_WhenFindUserFails_ReturnsBadRequest() throws Exception {
+        when(userSession.getMail()).thenReturn("test@test.com");
+        when(sqLiteDAO.findUserByMail("test@test.com")).thenThrow(new RuntimeException("DB error"));
+
+        ResponseEntity<?> response = controller.deleteUser();
+
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    void deleteUser_WhenDeleteFails_ReturnsBadRequest() throws Exception {
+        when(userSession.getMail()).thenReturn("test@test.com");
+        UserEntity user = new UserEntity("testuser", "test@test.com", "hash", UserRole.GUEST);
+        user.setId(1L);
+        when(sqLiteDAO.findUserByMail("test@test.com")).thenReturn(user);
+        when(userRepository.deleteUser(user)).thenThrow(new IOException("Disk full"));
+
+        ResponseEntity<?> response = controller.deleteUser();
+
+        assertEquals(400, response.getStatusCode().value());
     }
 
     @Test
