@@ -96,6 +96,7 @@ public class ThumbnailService implements ThumbnailRepository {
         return Thumbnailator.createThumbnail(Path.of(pathUtility.getBasePathToString(), source.toString()).toFile(), width, height);
     }
 
+    @Deprecated
     @SuppressWarnings("SameParameterValue") //Suppress useless warning in IntelliJ
     private Path saveThumbnails(BufferedImage thumbnail, String filename, String format, boolean isPortrait) throws IOException {
         if (thumbnail == null)
@@ -110,6 +111,7 @@ public class ThumbnailService implements ThumbnailRepository {
         return thumbnailPath;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private Path saveThumbnails(BufferedImage thumbnail, String filename, String format, boolean isPortrait, UserDTO userDTO) throws IOException {
         if (thumbnail == null)
             throw new NullPointerException("Buffered Image is null");

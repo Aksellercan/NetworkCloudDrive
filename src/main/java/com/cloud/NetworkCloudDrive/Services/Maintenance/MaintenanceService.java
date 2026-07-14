@@ -16,7 +16,6 @@ import com.cloud.NetworkCloudDrive.Repositories.Maintenance.MaintenanceRepositor
 import com.cloud.NetworkCloudDrive.Repositories.Maintenance.ThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Repositories.Tasks.JobExecutorInterface;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
-import com.cloud.NetworkCloudDrive.Sessions.UserSession;
 import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
@@ -40,7 +39,6 @@ public class MaintenanceService implements MaintenanceRepository {
     private final FileUtility fileUtility;
     private final EncodingUtility encodingUtility;
     private final SQLiteDAO sqLiteDAO;
-    private final UserSession userSession;
     private final PathUtility pathUtility;
     private final ThumbnailRepository thumbnailRepository;
     private final ThumbnailProperties thumbnailProperties;
@@ -51,7 +49,6 @@ public class MaintenanceService implements MaintenanceRepository {
             FileUtility fileUtility,
             EncodingUtility encodingUtility,
             SQLiteDAO sqLiteDAO,
-            UserSession userSession,
             PathUtility pathUtility,
             ThumbnailRepository thumbnailRepository,
             ThumbnailProperties thumbnailProperties,
@@ -60,7 +57,6 @@ public class MaintenanceService implements MaintenanceRepository {
         this.fileUtility = fileUtility;
         this.encodingUtility = encodingUtility;
         this.sqLiteDAO = sqLiteDAO;
-        this.userSession = userSession;
         this.pathUtility = pathUtility;
         this.thumbnailRepository = thumbnailRepository;
         this.thumbnailProperties = thumbnailProperties;
@@ -114,11 +110,6 @@ public class MaintenanceService implements MaintenanceRepository {
         return new ScanTaskResponse(maintenanceJob.getJobName(), maintenanceJob.getId(), maintenanceJob.getAddedOn(), maintenanceJob.getJobStatus());
     }
 
-    //    @Override
-//    public boolean scanDirectory(Path startingPath, Predicate<Path> filter, boolean useRecursion) {
-//        return scanDirectory(userSession.returnUserDTO(), startingPath, filter, useRecursion, true);
-//    }
-//
     private long getFolderId(File parentFolder, long userId) throws SQLException {
         return encodingUtility.isEncodedStringUserDirectory(parentFolder.getName())
                 ?
