@@ -255,6 +255,11 @@ public class SQLiteDAO {
     }
 
     @Transactional
+    public List<FolderMetadata> getAllFoldersBelongingToUser(long userId) {
+        return sqLiteFolderRepository.findAllByUserid(userId);
+    }
+
+    @Transactional
     public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) {
         Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
                 .findByFileId(fileId)

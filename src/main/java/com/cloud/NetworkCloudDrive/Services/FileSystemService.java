@@ -23,10 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
@@ -86,6 +83,36 @@ public class FileSystemService implements FileSystemRepository {
             folderList.add(folderListItemDTO);
         }
         return List.of(fileList, folderList);
+    }
+
+    private List<?> getRecentFiles() {
+        List<FileMetadata> allFilesUnsorted = sqLiteDAO.getAllFilesBelongingToUser(userSession.getId());
+        return allFilesUnsorted.stream().sorted((f1, f2) -> {
+            if (f1.getLastUpdated() == null || f2.getLastUpdated() == null) {
+                if (f1.getCreatedAt() != null || f2.getCreatedAt() != null) {
+                    return f1.getCreatedAt().compareTo(f2.getCreatedAt()) * -1;
+                }
+                return 0;
+            }
+            return f1.getLastUpdated().compareTo(f2.getLastUpdated()) * -1;
+        }).toList();
+    }
+
+    private List<?> getRecentFolders() {
+        List<FolderMetadata> allFoldersUnsorted = sqLiteDAO.getAllFoldersBelongingToUser(userSession.getId());
+        return allFoldersUnsorted.stream().sorted((fl1, fl2) -> {
+            if (fl1.getLastUpdated() == null || fl2.getLastUpdated() == null) {
+                if (fl1.getCreatedAt() != null || fl2.getCreatedAt() != null) {
+                    return fl1.getCreatedAt().compareTo(fl2.getCreatedAt()) * -1;
+                }
+                return 0;
+            }
+            return fl1.getLastUpdated().compareTo(fl2.getLastUpdated()) * -1;
+        }).toList();
+    }
+    @Override
+    public List<List<?>> collectAllRecents() {
+        return List.of(getRecentFiles(), getRecentFolders());
     }
 
     @Override

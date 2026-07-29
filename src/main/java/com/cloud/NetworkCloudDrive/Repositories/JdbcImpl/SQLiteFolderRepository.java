@@ -10,7 +10,7 @@ public interface SQLiteFolderRepository extends JpaRepository<FolderMetadata, Lo
 
     boolean existsFolderMetadataByName(String name);
 
-    List<?> findAllByUserid(Long userid);
+    List<FolderMetadata> findAllByUserid(Long userid);
 
     void deleteAllByUserid(Long userid);
 }

@@ -229,4 +229,16 @@ public class FileSystemController {
                     new JSONErrorResponse(e, "Failed to list items inside folder with Id %d", folderid));
         }
     }
+
+    @GetMapping(value = "recents", produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody ResponseEntity<?> listRecents() {
+        try {
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(fileSystemRepository.collectAllRecents());
+        } catch (Exception e) {
+            logger.error("General Error!");
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "General Error!")
+            );
+        }
+    }
 }

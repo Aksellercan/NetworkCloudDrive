@@ -46,5 +46,7 @@ public interface FileSystemRepository {
 
     Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FilterListEnum filterListEnum, String filterCase) throws SQLException;
 
+    List<List<?>> collectAllRecents();
+
     Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws FileSystemException, SQLException;
 }
