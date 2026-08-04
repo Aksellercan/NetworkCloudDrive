@@ -10,9 +10,11 @@ public class FileListItemDTO {
     private String mimeType;
     private long size;
     private Instant createdAt;
+    private Instant lastAccessedAt;
     private boolean hasThumbnail;
 
-    public FileListItemDTO() {}
+    public FileListItemDTO() {
+    }
 
     public FileListItemDTO(FileMetadata fileMetadata) {
         this.id = fileMetadata.getId();
@@ -21,42 +23,62 @@ public class FileListItemDTO {
         this.size = fileMetadata.getSize();
         this.createdAt = fileMetadata.getCreatedAt();
         this.hasThumbnail = fileMetadata.isHasThumbnail();
+        this.lastAccessedAt = fileMetadata.getLastUpdated();
     }
 
 
     public long getId() {
         return id;
     }
+
+    public Instant getLastAccessedAt() {
+        return lastAccessedAt;
+    }
+
+    public void setLastAccessedAt(Instant lastAccessedAt) {
+        this.lastAccessedAt = lastAccessedAt;
+    }
+
     public void setId(long id) {
         this.id = id;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getMimeType() {
         return mimeType;
     }
+
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
     }
+
     public long getSize() {
         return size;
     }
+
     public void setSize(long size) {
         this.size = size;
     }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
+
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
+
     public boolean isHasThumbnail() {
         return hasThumbnail;
     }
+
     public void setHasThumbnail(boolean hasThumbnail) {
         this.hasThumbnail = hasThumbnail;
     }

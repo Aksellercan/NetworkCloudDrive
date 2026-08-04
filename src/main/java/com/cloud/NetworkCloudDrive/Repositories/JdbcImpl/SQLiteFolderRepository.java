@@ -1,6 +1,8 @@
 package com.cloud.NetworkCloudDrive.Repositories.JdbcImpl;
 
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,4 +15,8 @@ public interface SQLiteFolderRepository extends JpaRepository<FolderMetadata, Lo
     List<FolderMetadata> findAllByUserid(Long userid);
 
     void deleteAllByUserid(Long userid);
+
+    Page<FolderMetadata> findAllByUserid(Long userid, Pageable pageable);
+
+    Page<FolderMetadata> findAllByUseridAndLastUpdatedNotNull(Long userid, Pageable pageable);
 }

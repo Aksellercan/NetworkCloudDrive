@@ -1,5 +1,7 @@
 package com.cloud.NetworkCloudDrive.Services;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.FilterListEnum;
 import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
@@ -18,10 +20,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -307,5 +312,74 @@ class FileSystemServiceTest {
 
         assertNotNull(result);
         verify(sortAndFilterUtility).filterFileList(any(), any(), any(), anyString());
+    }
+
+    @Test
+    void collectAllRecents_ReturnsFilesAndFoldersSortedByLastAccessedDesc() {
+        Instant newer = Instant.parse("2026-02-01T00:00:00Z");
+        Instant older = Instant.parse("2026-01-01T00:00:00Z");
+
+        FileMetadata olderFile = new FileMetadata("enc_older", 1L, 1L, "text/plain", 100L);
+        olderFile.setId(1L);
+        olderFile.setLastUpdated(older);
+        FileMetadata newerFile = new FileMetadata("enc_newer", 1L, 1L, "text/plain", 100L);
+        newerFile.setId(2L);
+        newerFile.setLastUpdated(newer);
+        FileMetadata neverAccessedFile = new FileMetadata("enc_never", 1L, 1L, "text/plain", 100L);
+        neverAccessedFile.setId(3L);
+
+        FolderMetadata folder = new FolderMetadata("enc_folder", "0/5");
+        folder.setId(5L);
+        folder.setLastUpdated(newer);
+        FolderMetadata neverAccessedFolder = new FolderMetadata("enc_folder2", "0/6");
+        neverAccessedFolder.setId(6L);
+
+        when(userSession.getId()).thenReturn(1L);
+        when(sqLiteDAO.getAllFilesBelongingToUserAsDTO(1L))
+                .thenReturn(List.of(new FileListItemDTO(olderFile), new FileListItemDTO(newerFile), new FileListItemDTO(neverAccessedFile)));
+        when(sqLiteDAO.getAllFoldersBelongingToUserAsDTO(1L))
+                .thenReturn(List.of(new FolderListItemDTO(folder), new FolderListItemDTO(neverAccessedFolder)));
+
+        Map<String, List<?>> result = fileSystemService.collectAllRecents();
+
+        List<FileListItemDTO> files = (List<FileListItemDTO>) result.get("files");
+        List<FolderListItemDTO> folders = (List<FolderListItemDTO>) result.get("folders");
+        assertEquals(2, files.size());
+        assertEquals(2L, files.get(0).getId());
+        assertEquals(1L, files.get(1).getId());
+        assertEquals(1, folders.size());
+        assertEquals(5L, folders.get(0).getId());
+    }
+
+    @Test
+    void collectAllRecentsPageable_DelegatesToPageableDaoMethods() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Instant lastAccessed = Instant.parse("2026-02-01T00:00:00Z");
+
+        FileMetadata file = new FileMetadata("enc_file", 1L, 1L, "text/plain", 100L);
+        file.setId(1L);
+        file.setLastUpdated(lastAccessed);
+        FileMetadata neverAccessedFile = new FileMetadata("enc_never", 1L, 1L, "text/plain", 100L);
+        neverAccessedFile.setId(3L);
+
+        FolderMetadata folder = new FolderMetadata("enc_folder", "0/5");
+        folder.setId(5L);
+        folder.setLastUpdated(lastAccessed);
+
+        when(userSession.getId()).thenReturn(1L);
+        when(sqLiteDAO.getAllFilesBelongingToUserAsDTOPageable(1L, pageable))
+                .thenReturn(List.of(new FileListItemDTO(file), new FileListItemDTO(neverAccessedFile)));
+        when(sqLiteDAO.getAllFoldersBelongingToUserAsDTOPageable(1L, pageable))
+                .thenReturn(List.of(new FolderListItemDTO(folder)));
+
+        Map<String, List<?>> result = fileSystemService.collectAllRecentsPageable(pageable);
+
+        List<FileListItemDTO> files = (List<FileListItemDTO>) result.get("files");
+        List<FolderListItemDTO> folders = (List<FolderListItemDTO>) result.get("folders");
+        assertEquals(1, files.size());
+        assertEquals(1L, files.get(0).getId());
+        assertEquals(1, folders.size());
+        verify(sqLiteDAO).getAllFilesBelongingToUserAsDTOPageable(1L, pageable);
+        verify(sqLiteDAO).getAllFoldersBelongingToUserAsDTOPageable(1L, pageable);
     }
 }

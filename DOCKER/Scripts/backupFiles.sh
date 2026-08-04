@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 if [[ $# = 0 ]]; then
   echo "Provide Docker Container name"
   exit 0;

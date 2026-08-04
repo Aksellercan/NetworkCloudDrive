@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -61,6 +62,7 @@ public class InformationService implements InformationRepository {
     @Override
     public FileMetadata getFileMetadata(long id) throws FileNotFoundException, SQLException, FileSystemException {
         FileMetadata retrievedFile = sqLiteDAO.queryFileMetadata(id, userSession.getId());
+        retrievedFile.setLastUpdated(Instant.now());
         File fileCheck = fileUtility.returnFileIfItExists(
                 pathUtility.getFolderPath(retrievedFile.getFolderId()) + File.separator + retrievedFile.getName());
         retrievedFile.setSize(fileCheck.length()); //bytes
@@ -70,6 +72,7 @@ public class InformationService implements InformationRepository {
     @Override
     public FolderMetadata getFolderMetadata(long folderId) throws IOException, SQLException {
         FolderMetadata folder = sqLiteDAO.queryFolderMetadata(folderId, userSession.getId());
+        folder.setLastUpdated(Instant.now());
         File getFolder = fileUtility.returnFileIfItExists(pathUtility.resolvePathFromIdString(folder.getPath()));
         logger.debug("Folder: Id: {} Path: {}", folderId, getFolder);
         return folder;

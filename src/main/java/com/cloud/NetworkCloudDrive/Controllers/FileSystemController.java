@@ -10,6 +10,7 @@ import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONMapResponse;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONObjectArrayResponse;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONResponse;
 import com.cloud.NetworkCloudDrive.Repositories.FileSystemRepository;
 import com.cloud.NetworkCloudDrive.Repositories.InformationRepository;
@@ -19,6 +20,8 @@ import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(path = "/api/filesystem")
+@RequestMapping(path = "/api/v{version}/filesystem")
 public class FileSystemController {
     private final FileSystemRepository fileSystemRepository;
     private final FileUtility fileUtility;
@@ -204,7 +207,7 @@ public class FileSystemController {
         }
     }
 
-    //TODO filter and sort
+    //DONE filter and sort
     //TODO filter and sort with keyword/type
     //TODO get type automatically by asking for extension then detect it by tika core
     //TODO I feel like parameters are getting too long, might be a good idea to switch to json to get filter requests
@@ -230,7 +233,7 @@ public class FileSystemController {
         }
     }
 
-    @GetMapping(value = "recents", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "recents", produces = MediaType.APPLICATION_JSON_VALUE, version = "1.0")
     public @ResponseBody ResponseEntity<?> listRecents() {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(fileSystemRepository.collectAllRecents());
@@ -238,6 +241,24 @@ public class FileSystemController {
             logger.error("General Error!");
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
                     new JSONErrorResponse(e, "General Error!")
+            );
+        }
+    }
+
+    @GetMapping(value = "recents", produces = MediaType.APPLICATION_JSON_VALUE, version = "2.0")
+    public @ResponseBody ResponseEntity<?> listRecents(int page, int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONObjectArrayResponse(new Object[]{
+                            fileSystemRepository.collectAllRecentsPageable(pageable),
+                            pageable}, "Paged Files and Folders list"
+                    ));
+        } catch (Exception e) {
+            logger.error("General Paging Error!");
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "General Paging Error!")
             );
         }
     }

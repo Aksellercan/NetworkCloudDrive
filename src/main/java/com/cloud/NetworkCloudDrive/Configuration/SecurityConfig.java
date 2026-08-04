@@ -41,7 +41,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((requests) -> requests
                         // give everyone access to register endpoint
-                        .requestMatchers("/api/user/register").permitAll()
+                        .requestMatchers("/api/user/register", "/api/health/")
+                        .permitAll()
                         // but require authentication for any other endpoint
                         .anyRequest()
                         .authenticated()

@@ -45,7 +45,8 @@ public class FileMetadata {
         this.size = size;
     }
 
-    public FileMetadata() {}
+    public FileMetadata() {
+    }
 
     public Long getUserid() {
         return userid;

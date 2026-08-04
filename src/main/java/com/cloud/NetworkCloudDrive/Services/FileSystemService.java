@@ -17,6 +17,7 @@ import com.cloud.NetworkCloudDrive.Utilities.SortAndFilterUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.FileNotFoundException;
@@ -85,34 +86,46 @@ public class FileSystemService implements FileSystemRepository {
         return List.of(fileList, folderList);
     }
 
-    private List<?> getRecentFiles() {
-        List<FileMetadata> allFilesUnsorted = sqLiteDAO.getAllFilesBelongingToUser(userSession.getId());
-        return allFilesUnsorted.stream().sorted((f1, f2) -> {
-            if (f1.getLastUpdated() == null || f2.getLastUpdated() == null) {
-                if (f1.getCreatedAt() != null || f2.getCreatedAt() != null) {
-                    return f1.getCreatedAt().compareTo(f2.getCreatedAt()) * -1;
-                }
-                return 0;
-            }
-            return f1.getLastUpdated().compareTo(f2.getLastUpdated()) * -1;
-        }).toList();
+    private List<FileListItemDTO> getRecentFiles() {
+        List<FileListItemDTO> allFilesUnsorted = sqLiteDAO.getAllFilesBelongingToUserAsDTO(userSession.getId());
+        return allFilesUnsorted.stream()
+                .filter(f1 -> f1.getLastAccessedAt() != null)
+                .sorted((f1, f2) -> f1.getLastAccessedAt().compareTo(f2.getLastAccessedAt()) * -1)
+                .toList();
     }
 
     private List<?> getRecentFolders() {
-        List<FolderMetadata> allFoldersUnsorted = sqLiteDAO.getAllFoldersBelongingToUser(userSession.getId());
-        return allFoldersUnsorted.stream().sorted((fl1, fl2) -> {
-            if (fl1.getLastUpdated() == null || fl2.getLastUpdated() == null) {
-                if (fl1.getCreatedAt() != null || fl2.getCreatedAt() != null) {
-                    return fl1.getCreatedAt().compareTo(fl2.getCreatedAt()) * -1;
-                }
-                return 0;
-            }
-            return fl1.getLastUpdated().compareTo(fl2.getLastUpdated()) * -1;
-        }).toList();
+        List<FolderListItemDTO> allFoldersUnsorted = sqLiteDAO.getAllFoldersBelongingToUserAsDTO(userSession.getId());
+        return allFoldersUnsorted.stream()
+                .filter(f1 -> f1.getLastAccessedAt() != null)
+                .sorted(Comparator.comparing(FolderListItemDTO::getLastAccessedAt).reversed())
+                .toList();
     }
+
     @Override
-    public List<List<?>> collectAllRecents() {
-        return List.of(getRecentFiles(), getRecentFolders());
+    public Map<String, List<?>> collectAllRecents() {
+        return Map.of("files", getRecentFiles(), "folders", getRecentFolders());
+    }
+
+    @Override
+    public Map<String, List<?>> collectAllRecentsPageable(Pageable pageable) {
+        return Map.of("files", getRecentFilesPageable(pageable), "folders", getRecentFoldersPageable(pageable));
+    }
+
+    private List<FileListItemDTO> getRecentFilesPageable(Pageable pageable) {
+        List<FileListItemDTO> allFilesUnsorted = sqLiteDAO.getAllFilesBelongingToUserAsDTOPageable(userSession.getId(), pageable);
+        return allFilesUnsorted.stream()
+                .filter(f1 -> f1.getLastAccessedAt() != null)
+                .sorted(Comparator.comparing(FileListItemDTO::getLastAccessedAt).reversed())
+                .toList();
+    }
+
+    private List<?> getRecentFoldersPageable(Pageable pageable) {
+        List<FolderListItemDTO> allFoldersUnsorted = sqLiteDAO.getAllFoldersBelongingToUserAsDTOPageable(userSession.getId(), pageable);
+        return allFoldersUnsorted.stream()
+                .filter(f1 -> f1.getLastAccessedAt() != null)
+                .sorted(Comparator.comparing(FolderListItemDTO::getLastAccessedAt).reversed())
+                .toList();
     }
 
     @Override

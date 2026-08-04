@@ -16,7 +16,8 @@ import java.util.stream.Stream;
 @Component
 public class SortAndFilterUtility {
 
-    public SortAndFilterUtility() {}
+    public SortAndFilterUtility() {
+    }
 
     public Map<String, List<?>> sortFileList(SortListEnum sortListEnum, Stream<FileListItemDTO> fileList, Stream<FolderListItemDTO> folderList) {
         Comparator<FileListItemDTO> fileListItemDTOComparator = null;
@@ -37,6 +38,14 @@ public class SortAndFilterUtility {
             case OLDEST:
                 fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getCreatedAt);
                 folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getCreatedAt);
+                break;
+            case ACCESSED_AFTER:
+                fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getLastAccessedAt, Comparator.reverseOrder());
+                folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getLastAccessedAt, Comparator.reverseOrder());
+                break;
+            case ACCESSED_BEFORE:
+                fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getLastAccessedAt);
+                folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getLastAccessedAt);
                 break;
             case FOLDERS_FIRST:
                 LinkedHashMap<String, List<?>> linkedHashMap = new LinkedHashMap<>();

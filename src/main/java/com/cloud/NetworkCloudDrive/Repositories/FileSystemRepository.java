@@ -4,6 +4,7 @@ import com.cloud.NetworkCloudDrive.Models.Enum.FilterListEnum;
 import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -46,7 +47,9 @@ public interface FileSystemRepository {
 
     Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FilterListEnum filterListEnum, String filterCase) throws SQLException;
 
-    List<List<?>> collectAllRecents();
+    Map<String, List<?>> collectAllRecents();
+
+    Map<String, List<?>> collectAllRecentsPageable(Pageable pageable);
 
     Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws FileSystemException, SQLException;
 }

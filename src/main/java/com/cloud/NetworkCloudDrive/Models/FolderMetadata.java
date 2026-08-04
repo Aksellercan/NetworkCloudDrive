@@ -35,7 +35,8 @@ public class FolderMetadata {
         this.path = path;
     }
 
-    public FolderMetadata() {}
+    public FolderMetadata() {
+    }
 
     public Long getUserid() {
         return userid;
