@@ -376,7 +376,7 @@ class FileSystemServiceTest {
 
         List<FileListItemDTO> files = (List<FileListItemDTO>) result.get("files");
         List<FolderListItemDTO> folders = (List<FolderListItemDTO>) result.get("folders");
-        assertEquals(1, files.size());
+        assertEquals(2, files.size());
         assertEquals(1L, files.get(0).getId());
         assertEquals(1, folders.size());
         verify(sqLiteDAO).getAllFilesBelongingToUserAsDTOPageable(1L, pageable);

@@ -283,7 +283,8 @@ public class SQLiteDAO {
 
     @Transactional
     public List<FileListItemDTO> getAllFilesBelongingToUserAsDTOPageable(long userId, Pageable pageable) {
-        Page<FileMetadata> list = sqLiteFileRepository.findAllByUseridAndLastUpdatedNotNull(userId, pageable);
+        // queries all folders where user id = x then orders by lastupdated descending
+        Page<FileMetadata> list = sqLiteFileRepository.findAllByUseridAndLastUpdatedNotNullOrderByLastUpdatedDesc(userId, pageable);
         List<FileListItemDTO> returnList = new ArrayList<>(); //could be LinkedList as well as it won't be modified
         for (FileMetadata fileMetadata : list) {
             FileListItemDTO fileListItemDTO = new FileListItemDTO(fileMetadata);
@@ -316,7 +317,7 @@ public class SQLiteDAO {
 
     @Transactional
     public List<FolderListItemDTO> getAllFoldersBelongingToUserAsDTOPageable(long userId, Pageable pageable) {
-        Page<FolderMetadata> list = sqLiteFolderRepository.findAllByUseridAndLastUpdatedNotNull(userId, pageable);
+        Page<FolderMetadata> list = sqLiteFolderRepository.findAllByUseridAndLastUpdatedNotNullOrderByLastUpdatedDesc(userId, pageable);
         List<FolderListItemDTO> returnList = new ArrayList<>(); //could be LinkedList as well as it won't be modified
         for (FolderMetadata folderMetadata : list) {
             FolderListItemDTO folderListItemDTO = new FolderListItemDTO(folderMetadata);

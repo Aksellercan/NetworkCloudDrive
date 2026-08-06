@@ -113,19 +113,11 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     private List<FileListItemDTO> getRecentFilesPageable(Pageable pageable) {
-        List<FileListItemDTO> allFilesUnsorted = sqLiteDAO.getAllFilesBelongingToUserAsDTOPageable(userSession.getId(), pageable);
-        return allFilesUnsorted.stream()
-                .filter(f1 -> f1.getLastAccessedAt() != null)
-                .sorted(Comparator.comparing(FileListItemDTO::getLastAccessedAt).reversed())
-                .toList();
+        return sqLiteDAO.getAllFilesBelongingToUserAsDTOPageable(userSession.getId(), pageable);
     }
 
     private List<?> getRecentFoldersPageable(Pageable pageable) {
-        List<FolderListItemDTO> allFoldersUnsorted = sqLiteDAO.getAllFoldersBelongingToUserAsDTOPageable(userSession.getId(), pageable);
-        return allFoldersUnsorted.stream()
-                .filter(f1 -> f1.getLastAccessedAt() != null)
-                .sorted(Comparator.comparing(FolderListItemDTO::getLastAccessedAt).reversed())
-                .toList();
+        return sqLiteDAO.getAllFoldersBelongingToUserAsDTOPageable(userSession.getId(), pageable);
     }
 
     @Override

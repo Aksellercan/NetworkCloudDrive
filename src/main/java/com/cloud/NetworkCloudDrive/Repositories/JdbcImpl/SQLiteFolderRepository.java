@@ -16,7 +16,5 @@ public interface SQLiteFolderRepository extends JpaRepository<FolderMetadata, Lo
 
     void deleteAllByUserid(Long userid);
 
-    Page<FolderMetadata> findAllByUserid(Long userid, Pageable pageable);
-
-    Page<FolderMetadata> findAllByUseridAndLastUpdatedNotNull(Long userid, Pageable pageable);
+    Page<FolderMetadata> findAllByUseridAndLastUpdatedNotNullOrderByLastUpdatedDesc(long userId, Pageable pageable);
 }

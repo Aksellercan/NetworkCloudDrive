@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -252,7 +253,7 @@ class NetworkCloudDriveIntegrationTests {
 
     @Test
     @Transactional
-    void getAllFilesBelongingToUserAsDTOPageable_ReturnsOnlyLastUpdatedFiles() {
+    void getAllFilesBelongingToUserAsDTOPageable_ReturnsOnlyLastUpdatedFilesOrderedByLastUpdatedDescending() {
         List<FileMetadata> existing = sqLiteDAO.getAllFilesBelongingToUser(777L);
         existing.forEach(sqLiteDAO::deleteFile);
 
@@ -268,12 +269,15 @@ class NetworkCloudDriveIntegrationTests {
         List<FileListItemDTO> files = sqLiteDAO.getAllFilesBelongingToUserAsDTOPageable(777L, PageRequest.of(0, 10));
 
         assertEquals(2, files.size());
-        files.forEach(file -> assertNotNull(file.getLastAccessedAt()));
+        assertEquals(Arrays.asList(
+                Instant.parse("2026-07-01T00:00:00Z"),
+                Instant.parse("2026-06-01T00:00:00Z")
+        ), files.stream().map(FileListItemDTO::getLastAccessedAt).toList());
     }
 
     @Test
     @Transactional
-    void getAllFoldersBelongingToUserAsDTOPageable_ReturnsOnlyLastUpdatedFolders() {
+    void getAllFoldersBelongingToUserAsDTOPageable_ReturnsOnlyLastUpdatedFoldersOrderedByLastUpdatedDescending() {
         List<FolderMetadata> existing = sqLiteDAO.getAllFoldersBelongingToUser(777L);
         existing.forEach(sqLiteDAO::deleteFolder);
 
@@ -295,6 +299,8 @@ class NetworkCloudDriveIntegrationTests {
         List<FolderListItemDTO> folders = sqLiteDAO.getAllFoldersBelongingToUserAsDTOPageable(777L, PageRequest.of(0, 10));
 
         assertEquals(1, folders.size());
-        folders.forEach(folder -> assertNotNull(folder.getLastAccessedAt()));
+        assertEquals(List.of(
+                Instant.parse("2026-06-01T00:00:00Z")
+        ), folders.stream().map(FolderListItemDTO::getLastAccessedAt).toList());
     }
 }
