@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(path = "/api/health")
+@RequestMapping(path = "health")
 public class APIHealthController {
     private final BuildProperties buildProperties;
 
@@ -17,7 +17,9 @@ public class APIHealthController {
         this.buildProperties = buildProperties;
     }
 
-    @GetMapping(path = "version")
+    @GetMapping(
+            path = "version",
+            version = "1.0")
     public ResponseEntity<JSONResponse> getAPIVersion() {
         return new ResponseEntity<>(new JSONResponse(buildProperties.getVersion()), HttpStatus.OK);
     }

@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.Map;
 
 @RestController
-@RequestMapping(path = "/api/user")
+@RequestMapping(path = "user")
 public class UserController {
     private final Logger logger = LoggerFactory.getLogger(UserController.class);
     private final UserRepository userRepository;
@@ -44,7 +44,7 @@ public class UserController {
         this.imageUtility = imageUtility;
     }
 
-    @PostMapping("register")
+    @PostMapping(value = "register", version = "1.0")
     public @ResponseBody ResponseEntity<?> register(@RequestBody UserLoginRegisterDTO userLoginRegisterDTO) {
         try {
             UserEntity registeredUserEntity = userRepository.registerUser(userLoginRegisterDTO.getName(), userLoginRegisterDTO.getMail(), userLoginRegisterDTO.getPassword());
@@ -69,7 +69,7 @@ public class UserController {
         }
     }
 
-    @PatchMapping("update/mail")
+    @PatchMapping(value = "update/mail", version = "1.0")
     public @ResponseBody ResponseEntity<?> updateMail(@RequestBody UpdateUserDTO updateUserDTO) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
@@ -83,7 +83,7 @@ public class UserController {
         }
     }
 
-    @PatchMapping("update/name")
+    @PatchMapping(value = "update/name", version = "1.0")
     public @ResponseBody ResponseEntity<?> updateName(@RequestBody UpdateUserDTO updateUserDTO) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
@@ -96,7 +96,7 @@ public class UserController {
         }
     }
 
-    @PatchMapping("update/password")
+    @PatchMapping(value = "update/password", version = "1.0")
     public @ResponseBody ResponseEntity<?> updatePassword(@RequestBody UpdateUserDTO updateUserDTO) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
@@ -109,7 +109,7 @@ public class UserController {
         }
     }
 
-    @DeleteMapping("delete")
+    @DeleteMapping(value = "delete", version = "1.0")
     public @ResponseBody ResponseEntity<?> deleteUser() {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
@@ -123,7 +123,7 @@ public class UserController {
         }
     }
 
-    @GetMapping("info")
+    @GetMapping(value = "info", version = "1.0")
     public @ResponseBody ResponseEntity<?> info() {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).

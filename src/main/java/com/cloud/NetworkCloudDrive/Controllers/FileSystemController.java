@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(path = "/api/v{version}/filesystem")
+@RequestMapping(path = "filesystem")
 public class FileSystemController {
     private final FileSystemRepository fileSystemRepository;
     private final FileUtility fileUtility;
@@ -156,7 +156,10 @@ public class FileSystemController {
     }
 
     //TODO add pagination max like = 6 items per type (files/folders)
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(
+            value = "list",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -173,7 +176,11 @@ public class FileSystemController {
         }
     }
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "sortby"})
+    @GetMapping(
+            value = "list",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            params = {"folderid", "sortby"},
+            version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam SortListEnum sortby) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -190,7 +197,11 @@ public class FileSystemController {
         }
     }
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "filterby"})
+    @GetMapping(
+            value = "list",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            params = {"folderid", "filterby"},
+            version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FilterListEnum filterby) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -212,7 +223,11 @@ public class FileSystemController {
     //TODO get type automatically by asking for extension then detect it by tika core
     //TODO I feel like parameters are getting too long, might be a good idea to switch to json to get filter requests
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "filterby", "filter"})
+    @GetMapping(
+            value = "list",
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            params = {"folderid", "filterby", "filter"},
+            version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FilterListEnum filterby, @RequestParam String filter) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));

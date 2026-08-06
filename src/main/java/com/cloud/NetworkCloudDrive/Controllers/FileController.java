@@ -23,7 +23,7 @@ import java.nio.file.FileSystemException;
 import java.sql.SQLException;
 
 @RestController
-@RequestMapping(path = "/api/file")
+@RequestMapping(path = "file")
 public class FileController {
     private final FileRepository fileRepository;
     private final InformationRepository informationRepository;

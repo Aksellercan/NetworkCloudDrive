@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.File;
 
 @RestController
-@RequestMapping(path = "/api/info")
+@RequestMapping(path = "info")
 public class InformationController {
     private final UserSession userSession;
     private final InformationRepository informationRepository;
@@ -39,7 +39,10 @@ public class InformationController {
         this.pathUtility = pathUtility;
     }
 
-    @GetMapping(value = "get/filemetadata", produces = MediaType.ALL_VALUE)
+    @GetMapping(
+            value = "get/filemetadata",
+            produces = MediaType.ALL_VALUE,
+            version = "1.0")
     public @ResponseBody ResponseEntity<?> getFile(@RequestParam long fileid) {
         try {
             FileMetadata fileMetadata = informationRepository.getFileMetadata(fileid);
@@ -54,7 +57,10 @@ public class InformationController {
         }
     }
 
-    @GetMapping(value = "get/foldermetadata", produces = MediaType.ALL_VALUE)
+    @GetMapping(
+            value = "get/foldermetadata",
+            produces = MediaType.ALL_VALUE,
+            version = "1.0")
     public @ResponseBody ResponseEntity<?> getFolder(@RequestParam long folderid) {
         try {
             FolderMetadata folderMetadata;

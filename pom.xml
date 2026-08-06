@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.cloud</groupId>
     <artifactId>NetworkCloudDrive</artifactId>
-    <version>0.7.10</version>
+    <version>0.7.11</version>
     <name>NetworkCloudDrive</name>
     <description>NetworkCloudDrive project built with Spring Boot</description>
     <url/>
