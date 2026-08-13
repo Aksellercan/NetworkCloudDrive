@@ -40,12 +40,18 @@ public class SortAndFilterUtility {
                 folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getCreatedAt);
                 break;
             case ACCESSED_AFTER:
-                fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getLastAccessedAt, Comparator.reverseOrder());
-                folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getLastAccessedAt, Comparator.reverseOrder());
+                fileListItemDTOComparator = Comparator.comparing(f ->
+                                (f.getLastAccessedAt() != null) ? f.getLastAccessedAt() : f.getCreatedAt()
+                        , Comparator.reverseOrder()
+                );
+                folderListItemDTOComparator = Comparator.comparing(fl ->
+                                (fl.getLastAccessedAt() != null) ? fl.getLastAccessedAt() : fl.getCreatedAt()
+                        , Comparator.reverseOrder()
+                );
                 break;
             case ACCESSED_BEFORE:
-                fileListItemDTOComparator = Comparator.comparing(FileListItemDTO::getLastAccessedAt);
-                folderListItemDTOComparator = Comparator.comparing(FolderListItemDTO::getLastAccessedAt);
+                fileListItemDTOComparator = Comparator.comparing(f -> (f.getLastAccessedAt() != null) ? f.getLastAccessedAt() : f.getCreatedAt());
+                folderListItemDTOComparator = Comparator.comparing(fl -> (fl.getLastAccessedAt() != null) ? fl.getLastAccessedAt() : fl.getCreatedAt());
                 break;
             case FOLDERS_FIRST:
                 LinkedHashMap<String, List<?>> linkedHashMap = new LinkedHashMap<>();
