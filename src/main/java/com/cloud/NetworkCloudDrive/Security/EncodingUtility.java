@@ -92,7 +92,7 @@ public class EncodingUtility {
         try {
             String tryDecoding = decodeBase32StringNoPadding(name);
             long tryIdParse = Long.parseLong(tryDecoding.split(":")[0]);
-            logger.info("trial of id parsing {} from {}", tryIdParse, tryDecoding);
+            logger.debug("trial of id parsing {} from {}", tryIdParse, tryDecoding);
             return !tryDecoding.isEmpty();
         } catch (Exception e) {
             logger.warn("Failed to parse concluding as not BASE32 for string {} Ex. {}", name, e.getMessage());

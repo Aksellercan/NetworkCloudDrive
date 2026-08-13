@@ -17,10 +17,7 @@ public class MaintenanceController {
         this.maintenanceRepository = maintenanceRepository;
     }
 
-    @PostMapping(
-            value = "scan",
-            params = "scanOptions",
-            version = "2.0")
+    @PostMapping(value = "scan", params = "scanOptions", version = "2.0")
     public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam ScanOptions scanOptions) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
@@ -31,10 +28,7 @@ public class MaintenanceController {
         }
     }
 
-    @PostMapping(
-            value = "scan",
-            params = "folderid",
-            version = "2.0")
+    @PostMapping(value = "scan", params = "folderid", version = "2.0")
     public @ResponseBody ResponseEntity<?> scanDirectoryNestedFolders(@RequestParam long folderid) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
@@ -45,10 +39,7 @@ public class MaintenanceController {
         }
     }
 
-    @PostMapping(
-            value = "scan",
-            params = {"folderid", "scanOptions"},
-            version = "2.0")
+    @PostMapping(value = "scan", params = {"folderid", "scanOptions"}, version = "2.0")
     public @ResponseBody ResponseEntity<?> scanDirectoryOptions(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)

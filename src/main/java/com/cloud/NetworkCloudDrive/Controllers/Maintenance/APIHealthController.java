@@ -17,9 +17,7 @@ public class APIHealthController {
         this.buildProperties = buildProperties;
     }
 
-    @GetMapping(
-            path = "version",
-            version = "1.0")
+    @GetMapping(path = "version", version = "1.0")
     public ResponseEntity<JSONResponse> getAPIVersion() {
         return new ResponseEntity<>(new JSONResponse(buildProperties.getVersion()), HttpStatus.OK);
     }

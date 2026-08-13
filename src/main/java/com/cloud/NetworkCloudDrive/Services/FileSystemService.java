@@ -112,11 +112,13 @@ public class FileSystemService implements FileSystemRepository {
         return Map.of("files", getRecentFilesPageable(pageable), "folders", getRecentFoldersPageable(pageable));
     }
 
-    private List<FileListItemDTO> getRecentFilesPageable(Pageable pageable) {
+    @Override
+    public List<FileListItemDTO> getRecentFilesPageable(Pageable pageable) {
         return sqLiteDAO.getAllFilesBelongingToUserAsDTOPageable(userSession.getId(), pageable);
     }
 
-    private List<?> getRecentFoldersPageable(Pageable pageable) {
+    @Override
+    public List<?> getRecentFoldersPageable(Pageable pageable) {
         return sqLiteDAO.getAllFoldersBelongingToUserAsDTOPageable(userSession.getId(), pageable);
     }
 
@@ -130,7 +132,7 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     @Override
-    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws FileSystemException, SQLException {
+    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws SQLException {
         logger.debug("Sorted by: {}", sortListEnum.name());
         List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
         return sortAndFilterUtility.sortFileList(

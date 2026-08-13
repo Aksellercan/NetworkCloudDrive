@@ -1,5 +1,6 @@
 package com.cloud.NetworkCloudDrive.Repositories;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.FilterListEnum;
 import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
@@ -41,7 +42,7 @@ public interface FileSystemRepository {
     String moveFile(FileMetadata targetFile, long folderId) throws Exception;
 
     // Filters and Sorting
-    Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws FileSystemException, SQLException;
+    Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws SQLException;
 
     Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, FilterListEnum filterListEnum) throws SQLException;
 
@@ -50,6 +51,10 @@ public interface FileSystemRepository {
     Map<String, List<?>> collectAllRecents();
 
     Map<String, List<?>> collectAllRecentsPageable(Pageable pageable);
+
+    List<FileListItemDTO> getRecentFilesPageable(Pageable pageable);
+
+    List<?> getRecentFoldersPageable(Pageable pageable);
 
     Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws FileSystemException, SQLException;
 }

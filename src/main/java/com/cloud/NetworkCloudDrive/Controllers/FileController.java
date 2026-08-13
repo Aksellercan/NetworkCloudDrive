@@ -104,7 +104,7 @@ public class FileController {
         }
     }
 
-    @PostMapping(value = "create/folder", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "create/folder")
     public ResponseEntity<?> createFolder(@RequestBody CreateFolderDTO folderDTO) {
         try {
             FolderMetadata folderMetadata = fileRepository.createFolder(folderDTO.getName(), folderDTO.getFolder_id());
