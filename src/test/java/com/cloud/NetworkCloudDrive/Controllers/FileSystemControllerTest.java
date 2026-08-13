@@ -202,7 +202,10 @@ class FileSystemControllerTest {
         ResponseEntity<?> result = controller.listRecents();
 
         assertEquals(200, result.getStatusCode().value());
-        assertEquals(expected, result.getBody());
+        assertInstanceOf(JSONObjectArrayResponse.class, result.getBody());
+        JSONObjectArrayResponse response = (JSONObjectArrayResponse) result.getBody();
+        Object[] objects = (Object[]) response.getObject();
+        assertEquals(expected, objects[0]);
     }
 
     @Test
