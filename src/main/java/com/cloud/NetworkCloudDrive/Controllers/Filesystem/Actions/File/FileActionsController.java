@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(value = "filesystem/file")
+@RequestMapping(value = "filesystem/actions/file")
 public class FileActionsController {
     private final Logger logger = LoggerFactory.getLogger(FileActionsController.class);
     private final InformationRepository informationRepository;
@@ -31,7 +31,7 @@ public class FileActionsController {
         this.userSession = userSession;
     }
 
-    @PatchMapping(value = "file/rename")
+    @PatchMapping(value = "rename")
     public @ResponseBody ResponseEntity<JSONResponse> updateFileName(@RequestBody UpdateFileNameDTO updateFileNameDTO) {
         try {
             FileMetadata oldFile = informationRepository.getFileMetadata(updateFileNameDTO.getFile_id());
@@ -47,7 +47,7 @@ public class FileActionsController {
         }
     }
 
-    @PostMapping(value = "file/move")
+    @PostMapping(value = "move")
     public @ResponseBody ResponseEntity<JSONResponse> moveFile(@RequestBody UpdateFilePathDTO updateFilePathDTO) {
         try {
             FileMetadata fileToMove = informationRepository.getFileMetadata(updateFilePathDTO.getFile_id());
@@ -66,7 +66,7 @@ public class FileActionsController {
         }
     }
 
-    @DeleteMapping(value = "file/remove", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "remove", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody ResponseEntity<JSONResponse> removeFile(@RequestParam long fileid) {
         try {
             FileMetadata fileToRemove = informationRepository.getFileMetadata(fileid);

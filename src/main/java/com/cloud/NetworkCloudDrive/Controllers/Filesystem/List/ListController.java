@@ -31,7 +31,7 @@ public class ListController {
     }
 
     //TODO add pagination max like = 6 items per type (files/folders)
-    @GetMapping(value = "list", version = "1.0")
+    @GetMapping(version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -48,7 +48,7 @@ public class ListController {
         }
     }
 
-    @GetMapping(value = "list", params = {"folderid", "sortby"}, version = "1.0")
+    @GetMapping(params = {"folderid", "sortby"}, version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam SortListEnum sortby) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -65,7 +65,7 @@ public class ListController {
         }
     }
 
-    @GetMapping(value = "list", params = {"folderid", "page", "size"}, version = "2.0")
+    @GetMapping(params = {"folderid", "page", "size"}, version = "2.0")
     public ResponseEntity<?> listFiles(long folderid, int page, int size) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -82,7 +82,7 @@ public class ListController {
         }
     }
 
-    @GetMapping(value = "list", params = {"folderid", "filterby"}, version = "1.0")
+    @GetMapping(params = {"folderid", "filterby"}, version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FilterListEnum filterby) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -104,7 +104,7 @@ public class ListController {
     //TODO get type automatically by asking for extension then detect it by tika core
     //TODO I feel like parameters are getting too long, might be a good idea to switch to json to get filter requests
 
-    @GetMapping(value = "list", params = {"folderid", "filterby", "filter"}, version = "1.0")
+    @GetMapping(params = {"folderid", "filterby", "filter"}, version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FilterListEnum filterby, @RequestParam String filter) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));

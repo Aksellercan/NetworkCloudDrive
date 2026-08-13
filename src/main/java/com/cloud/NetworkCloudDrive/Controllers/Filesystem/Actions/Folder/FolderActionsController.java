@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping(value = "filesystem/folder")
+@RequestMapping(value = "filesystem/actions/folder")
 public class FolderActionsController {
     private final Logger logger = LoggerFactory.getLogger(FolderActionsController.class);
     private final InformationRepository informationRepository;
@@ -34,7 +34,7 @@ public class FolderActionsController {
         this.pathUtility = pathUtility;
     }
 
-    @PatchMapping(value = "folder/rename")
+    @PatchMapping(value = "rename")
     public @ResponseBody ResponseEntity<JSONResponse> updateFolderName(@RequestBody UpdateFolderNameDTO updateFolderNameDTO) {
         try {
             FolderMetadata oldFolder = informationRepository.getFolderMetadata(updateFolderNameDTO.getFolder_id());
@@ -51,7 +51,7 @@ public class FolderActionsController {
         }
     }
 
-    @PostMapping(value = "folder/move")
+    @PostMapping(value = "move")
     public @ResponseBody ResponseEntity<JSONResponse> moveFile(@RequestBody UpdateFolderPathDTO updateFolderPathDTO) {
         try {
             FolderMetadata folderToMove = informationRepository.getFolderMetadata(updateFolderPathDTO.getFormer_folder_id());
@@ -69,7 +69,7 @@ public class FolderActionsController {
         }
     }
 
-    @DeleteMapping(value = "folder/remove")
+    @DeleteMapping(value = "remove")
     public @ResponseBody ResponseEntity<JSONResponse> removeFolder(@RequestParam long folderid) {
         try {
             FolderMetadata folderToRemove = informationRepository.getFolderMetadata(folderid);
