@@ -6,7 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.Instant;
 
 //TODO add folder permissions
-//TODO Last updated
+//DONE Last updated
 
 @Entity
 public class FolderMetadata {
@@ -27,12 +27,16 @@ public class FolderMetadata {
     @CreationTimestamp
     private Instant createdAt;
 
+    @Column(name = "lastUpdated")
+    private Instant lastUpdated;
+
     public FolderMetadata(String name, String path) {
         this.name = name;
         this.path = path;
     }
 
-    public FolderMetadata() {}
+    public FolderMetadata() {
+    }
 
     public Long getUserid() {
         return userid;
@@ -58,6 +62,18 @@ public class FolderMetadata {
         this.createdAt = createdAt;
     }
 
+    public Instant getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(Instant lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public void updateLastUpdated() {
+        this.lastUpdated = Instant.now();
+    }
+
     public String getPath() {
         return path;
     }
@@ -76,9 +92,13 @@ public class FolderMetadata {
 
     @Override
     public String toString() {
-        return String
-                .format(
-                        "Folder Metadata:\nid: %d\nname: %s\npath: %s\nbelongs to: %d",
-                        this.id, this.name, this.path, this.userid);
+        return "FolderMetadata{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", path='" + path + '\'' +
+                ", userid=" + userid +
+                ", createdAt=" + createdAt +
+                ", lastUpdated=" + lastUpdated +
+                '}';
     }
 }

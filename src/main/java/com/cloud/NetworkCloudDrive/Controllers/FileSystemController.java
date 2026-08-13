@@ -10,6 +10,7 @@ import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONErrorResponse;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONMapResponse;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONObjectArrayResponse;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONResponse;
 import com.cloud.NetworkCloudDrive.Repositories.FileSystemRepository;
 import com.cloud.NetworkCloudDrive.Repositories.InformationRepository;
@@ -19,6 +20,8 @@ import com.cloud.NetworkCloudDrive.Utilities.FileUtility;
 import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(path = "/api/filesystem")
+@RequestMapping(path = "filesystem")
 public class FileSystemController {
     private final FileSystemRepository fileSystemRepository;
     private final FileUtility fileUtility;
@@ -54,7 +57,7 @@ public class FileSystemController {
         this.fileSystemRepository = fileSystemRepository;
     }
 
-    @PatchMapping(value = "file/rename", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "file/rename")
     public @ResponseBody ResponseEntity<JSONResponse> updateFileName(@RequestBody UpdateFileNameDTO updateFileNameDTO) {
         try {
             FileMetadata oldFile = informationRepository.getFileMetadata(updateFileNameDTO.getFile_id());
@@ -70,7 +73,7 @@ public class FileSystemController {
         }
     }
 
-    @PatchMapping(value = "folder/rename", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "folder/rename")
     public @ResponseBody ResponseEntity<JSONResponse> updateFolderName(@RequestBody UpdateFolderNameDTO updateFolderNameDTO) {
         try {
             FolderMetadata oldFolder = informationRepository.getFolderMetadata(updateFolderNameDTO.getFolder_id());
@@ -87,7 +90,7 @@ public class FileSystemController {
         }
     }
 
-    @PostMapping(value = "folder/move", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "folder/move")
     public @ResponseBody ResponseEntity<JSONResponse> moveFile(@RequestBody UpdateFolderPathDTO updateFolderPathDTO) {
         try {
             FolderMetadata folderToMove = informationRepository.getFolderMetadata(updateFolderPathDTO.getFormer_folder_id());
@@ -105,7 +108,7 @@ public class FileSystemController {
         }
     }
 
-    @PostMapping(value = "file/move", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "file/move")
     public @ResponseBody ResponseEntity<JSONResponse> moveFile(@RequestBody UpdateFilePathDTO updateFilePathDTO) {
         try {
             FileMetadata fileToMove = informationRepository.getFileMetadata(updateFilePathDTO.getFile_id());
@@ -124,7 +127,7 @@ public class FileSystemController {
         }
     }
 
-    @DeleteMapping(value = "folder/remove", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "folder/remove")
     public @ResponseBody ResponseEntity<JSONResponse> removeFolder(@RequestParam long folderid) {
         try {
             FolderMetadata folderToRemove = informationRepository.getFolderMetadata(folderid);
@@ -153,7 +156,7 @@ public class FileSystemController {
     }
 
     //TODO add pagination max like = 6 items per type (files/folders)
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "list", version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -170,7 +173,7 @@ public class FileSystemController {
         }
     }
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "sortby"})
+    @GetMapping(value = "list", params = {"folderid", "sortby"}, version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam SortListEnum sortby) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -187,7 +190,24 @@ public class FileSystemController {
         }
     }
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "filterby"})
+    @GetMapping(value = "list", params = {"folderid", "page", "size"}, version = "2.0")
+    public ResponseEntity<?> listFiles(long folderid, int page, int size) {
+        try {
+            List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).
+                    body(fileSystemRepository.getListOfMetadataFromPath(fileList));
+        } catch (FileSystemException fileSystemException) {
+            logger.error("Some folders couldn't be found at folder with Id {}, reason: {}", folderid, fileSystemException.getMessage());
+            return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
+                    body(new JSONErrorResponse(fileSystemException, "Some folders couldn't be found at folder with Id %d", folderid));
+        } catch (Exception e) {
+            logger.error("Failed to list items in folder with Id {}, reason: {}", folderid, e.getMessage());
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "Failed to list items inside folder with Id %d", folderid));
+        }
+    }
+
+    @GetMapping(value = "list", params = {"folderid", "filterby"}, version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FilterListEnum filterby) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -204,12 +224,12 @@ public class FileSystemController {
         }
     }
 
-    //TODO filter and sort
+    //DONE filter and sort
     //TODO filter and sort with keyword/type
     //TODO get type automatically by asking for extension then detect it by tika core
     //TODO I feel like parameters are getting too long, might be a good idea to switch to json to get filter requests
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE, params = {"folderid", "filterby", "filter"})
+    @GetMapping(value = "list", params = {"folderid", "filterby", "filter"}, version = "1.0")
     public @ResponseBody ResponseEntity<?> listFiles(@RequestParam long folderid, @RequestParam FilterListEnum filterby, @RequestParam String filter) {
         try {
             List<Path> fileList = fileUtility.getFileAndFolderPathsFromFolder(pathUtility.getFullPath(pathUtility.getFolderPath(folderid)));
@@ -227,6 +247,77 @@ public class FileSystemController {
             logger.error("Failed to list items in folder with Id {}, reason: {}", folderid, e.getMessage());
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
                     new JSONErrorResponse(e, "Failed to list items inside folder with Id %d", folderid));
+        }
+    }
+
+    @GetMapping(value = "recents", version = "1.0")
+    public @ResponseBody ResponseEntity<?> listRecents() {
+        try {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONObjectArrayResponse(
+                            new Object[]{
+                                    fileSystemRepository.collectAllRecents()
+                            }, "Recent Files and Folders"));
+        } catch (Exception e) {
+            logger.error("Failed to list recents, reason: {}!", e.getMessage());
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "Failed to list recents, reason: %s!", e.getMessage())
+            );
+        }
+    }
+
+    @GetMapping(value = "recents", version = "2.0")
+    public @ResponseBody ResponseEntity<?> listRecents(int page, int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONObjectArrayResponse(new Object[]{
+                            fileSystemRepository.collectAllRecentsPageable(pageable),
+                            pageable}, "Paged files and folders list"
+                    ));
+        } catch (Exception e) {
+            logger.error("Failed to list recents, page: {}, size: {}, reason: {}!", page, size, e.getMessage());
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "Failed to list recents, page: %d, size: %d, reason: %s!", page, size, e.getMessage())
+            );
+        }
+    }
+
+    @GetMapping(value = "recents/folder", version = "2.0")
+    public @ResponseBody ResponseEntity<?> listRecentFolders(int page, int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONObjectArrayResponse(new Object[]{
+                            Map.of("folders", fileSystemRepository.getRecentFoldersPageable(pageable)),
+                            pageable}, "Paged folders list"
+                    ));
+        } catch (Exception e) {
+            logger.error("Failed to list recent folders, page: {}, size: {}, reason: {}!", page, size, e.getMessage());
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "Failed to list recent folders, page: %d, size: %d, reason: %s!", page, size, e.getMessage())
+            );
+        }
+    }
+
+    @GetMapping(value = "recents/file", version = "2.0")
+    public @ResponseBody ResponseEntity<?> listRecentFiles(int page, int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new JSONObjectArrayResponse(new Object[]{
+                            Map.of("files", fileSystemRepository.getRecentFilesPageable(pageable)),
+                            pageable}, "Paged files list"
+                    ));
+        } catch (Exception e) {
+            logger.error("Failed to list recent files, page: {}, size: {}, reason: {}!", page, size, e.getMessage());
+            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON).body(
+                    new JSONErrorResponse(e, "Failed to list recent files, page: %d, size: %d, reason: %s!", page, size, e.getMessage())
+            );
         }
     }
 }

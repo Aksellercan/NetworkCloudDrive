@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -135,6 +136,9 @@ public class FileService implements FileRepository {
             throw new SecurityException("Unauthorized access");
         if (!Files.exists(filePath))
             throw new IOException("File does not exist");
+        //update last accessed time
+        file.updateLastUpdated();
+        sqLiteDAO.saveFile(file);
         return CompletableFuture.completedFuture(new UrlResource(filePath.toAbsolutePath().toUri()));
     }
 

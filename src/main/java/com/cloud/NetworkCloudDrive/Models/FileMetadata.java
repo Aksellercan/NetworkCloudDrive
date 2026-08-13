@@ -5,7 +5,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 
-//TODO Last updated
+//DONE Last updated
 
 @Entity
 public class FileMetadata {
@@ -34,6 +34,9 @@ public class FileMetadata {
     @Column(name = "hasThumbnail")
     private boolean hasThumbnail = false;
 
+    @Column(name = "lastUpdated")
+    private Instant lastUpdated;
+
     public FileMetadata(String name, Long folderId, Long userid, String mimiType, Long size) {
         this.name = name;
         this.folderId = folderId;
@@ -42,7 +45,8 @@ public class FileMetadata {
         this.size = size;
     }
 
-    public FileMetadata() {}
+    public FileMetadata() {
+    }
 
     public Long getUserid() {
         return userid;
@@ -84,6 +88,18 @@ public class FileMetadata {
         this.size = size;
     }
 
+    public Instant getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void updateLastUpdated() {
+        this.lastUpdated = Instant.now();
+    }
+
+    public void setLastUpdated(Instant lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
     public String getMimiType() {
         return mimiType;
     }
@@ -110,9 +126,16 @@ public class FileMetadata {
 
     @Override
     public String toString() {
-        return String
-                .format(
-                        "File Metadata:\nid: %d\nname: %s\nsize: %d\nmimitype: %s\ndirectory: %d\nbelongs to: %d\nhas thumbnail: %b",
-                        this.id, this.name, this.size, this.mimiType,this.folderId, this.userid, this.hasThumbnail);
+        return "FileMetadata{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", folderId=" + folderId +
+                ", userid=" + userid +
+                ", mimiType='" + mimiType + '\'' +
+                ", size=" + size +
+                ", createdAt=" + createdAt +
+                ", hasThumbnail=" + hasThumbnail +
+                ", lastUpdated=" + lastUpdated +
+                '}';
     }
 }

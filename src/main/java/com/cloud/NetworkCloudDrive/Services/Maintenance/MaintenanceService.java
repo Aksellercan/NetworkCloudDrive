@@ -115,7 +115,7 @@ public class MaintenanceService implements MaintenanceRepository {
                 ?
                 0L //root folder
                 :
-                encodingUtility.getFolderMetadataFromEncoding(parentFolder.getName(), userId).getId();
+                sqLiteDAO.getFolderMetadataFromEncoding(parentFolder.getName(), userId).getId();
     }
 
     @Override

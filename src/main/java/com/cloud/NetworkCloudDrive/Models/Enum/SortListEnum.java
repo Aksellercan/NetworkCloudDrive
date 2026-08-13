@@ -6,6 +6,8 @@ public enum SortListEnum {
     REVERSE_ALPHABETICAL,
     NEWEST,
     OLDEST,
+    ACCESSED_BEFORE,
+    ACCESSED_AFTER,
     FOLDERS_FIRST,
     SIZE_LOWEST,
     SIZE

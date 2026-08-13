@@ -23,7 +23,7 @@ import java.nio.file.FileSystemException;
 import java.sql.SQLException;
 
 @RestController
-@RequestMapping(path = "/api/file")
+@RequestMapping(path = "file")
 public class FileController {
     private final FileRepository fileRepository;
     private final InformationRepository informationRepository;
@@ -104,7 +104,7 @@ public class FileController {
         }
     }
 
-    @PostMapping(value = "create/folder", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "create/folder")
     public ResponseEntity<?> createFolder(@RequestBody CreateFolderDTO folderDTO) {
         try {
             FolderMetadata folderMetadata = fileRepository.createFolder(folderDTO.getName(), folderDTO.getFolder_id());

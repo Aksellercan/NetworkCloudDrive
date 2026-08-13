@@ -1,6 +1,8 @@
 package com.cloud.NetworkCloudDrive.Persistence;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.CurrentUserDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.ThumbnailMetadata;
@@ -10,16 +12,20 @@ import com.cloud.NetworkCloudDrive.Repositories.JdbcImpl.SQLiteFileRepository;
 import com.cloud.NetworkCloudDrive.Repositories.JdbcImpl.SQLiteFolderRepository;
 import com.cloud.NetworkCloudDrive.Repositories.JdbcImpl.SQLiteThumbnailRepository;
 import com.cloud.NetworkCloudDrive.Repositories.JdbcImpl.SQLiteUserEntityRepository;
+import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.FileSystemException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,6 +40,7 @@ public class SQLiteDAO {
     private final SQLiteThumbnailRepository sqLiteThumbnailRepository;
     private final Logger logger = LoggerFactory.getLogger(SQLiteDAO.class);
     private final ThumbnailProperties thumbnailProperties;
+    private final EncodingUtility encodingUtility;
 
     public SQLiteDAO(
             SQLiteFolderRepository sqLiteFolderRepository,
@@ -41,13 +48,14 @@ public class SQLiteDAO {
             SQLiteUserEntityRepository sqLiteUserEntityRepository,
             SQLiteThumbnailRepository sqLiteThumbnailRepository,
             EntityManager entityManager,
-            ThumbnailProperties thumbnailProperties) {
+            ThumbnailProperties thumbnailProperties, EncodingUtility encodingUtility) {
         this.sqLiteFolderRepository = sqLiteFolderRepository;
         this.sqLiteFileRepository = sqLiteFileRepository;
         this.sqLiteUserEntityRepository = sqLiteUserEntityRepository;
         this.sqLiteThumbnailRepository = sqLiteThumbnailRepository;
         this.entityManager = entityManager;
         this.thumbnailProperties = thumbnailProperties;
+        this.encodingUtility = encodingUtility;
     }
 
     // DAO stuff
@@ -255,6 +263,72 @@ public class SQLiteDAO {
     }
 
     @Transactional
+    public List<FolderMetadata> getAllFoldersBelongingToUser(long userId) {
+        return sqLiteFolderRepository.findAllByUserid(userId);
+    }
+
+    @Transactional
+    public List<FileListItemDTO> getAllFilesBelongingToUserAsDTO(long userId) {
+        List<FileMetadata> list = sqLiteFileRepository.findAllByUserid(userId);
+        List<FileListItemDTO> returnList = new ArrayList<>(); //could be LinkedList as well as it won't be modified
+        for (FileMetadata fileMetadata : list) {
+            FileListItemDTO fileListItemDTO = new FileListItemDTO(fileMetadata);
+            if (encodingUtility.isBase32Decodable(fileMetadata.getName())) {
+                fileListItemDTO.setName(encodingUtility.decodedBase32SplitArray(fileMetadata.getName())[1]);
+            }
+            returnList.add(fileListItemDTO);
+        }
+        return returnList;
+    }
+
+    @Transactional
+    public List<FileListItemDTO> getAllFilesBelongingToUserAsDTOPageable(long userId, Pageable pageable) {
+        // queries all folders where user id = x then orders by lastupdated descending
+        Page<FileMetadata> list = sqLiteFileRepository.findAllByUseridAndLastUpdatedNotNullOrderByLastUpdatedDesc(userId, pageable);
+        List<FileListItemDTO> returnList = new ArrayList<>(); //could be LinkedList as well as it won't be modified
+        for (FileMetadata fileMetadata : list) {
+            FileListItemDTO fileListItemDTO = new FileListItemDTO(fileMetadata);
+            if (encodingUtility.isBase32Decodable(fileMetadata.getName())) {
+                fileListItemDTO.setName(encodingUtility.decodedBase32SplitArray(fileMetadata.getName())[1]);
+            }
+            returnList.add(fileListItemDTO);
+        }
+        return returnList;
+    }
+
+    @Transactional
+    public FolderMetadata getFolderMetadataFromEncoding(String encodedFolderName, long userId) throws SQLException {
+        return queryFolderMetadata(encodingUtility.getMetadataIDFromEncodedBase32(encodedFolderName), userId);
+    }
+
+    @Transactional
+    public List<FolderListItemDTO> getAllFoldersBelongingToUserAsDTO(long userId) {
+        List<FolderMetadata> list = sqLiteFolderRepository.findAllByUserid(userId);
+        List<FolderListItemDTO> returnList = new ArrayList<>(); //could be LinkedList as well as it won't be modified
+        for (FolderMetadata folderMetadata : list) {
+            FolderListItemDTO folderListItemDTO = new FolderListItemDTO(folderMetadata);
+            if (encodingUtility.isBase32Decodable(folderMetadata.getName())) {
+                folderListItemDTO.setName(encodingUtility.decodedBase32SplitArray(folderMetadata.getName())[1]);
+            }
+            returnList.add(folderListItemDTO);
+        }
+        return returnList;
+    }
+
+    @Transactional
+    public List<FolderListItemDTO> getAllFoldersBelongingToUserAsDTOPageable(long userId, Pageable pageable) {
+        Page<FolderMetadata> list = sqLiteFolderRepository.findAllByUseridAndLastUpdatedNotNullOrderByLastUpdatedDesc(userId, pageable);
+        List<FolderListItemDTO> returnList = new ArrayList<>(); //could be LinkedList as well as it won't be modified
+        for (FolderMetadata folderMetadata : list) {
+            FolderListItemDTO folderListItemDTO = new FolderListItemDTO(folderMetadata);
+            if (encodingUtility.isBase32Decodable(folderMetadata.getName())) {
+                folderListItemDTO.setName(encodingUtility.decodedBase32SplitArray(folderMetadata.getName())[1]);
+            }
+            returnList.add(folderListItemDTO);
+        }
+        return returnList;
+    }
+
     public ThumbnailMetadata queryThumbnailMetadataUsingFileId(long fileId, long userId) {
         Optional<ThumbnailMetadata> thumbnailMetadata = sqLiteThumbnailRepository
                 .findByFileId(fileId)

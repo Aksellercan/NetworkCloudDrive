@@ -1,5 +1,7 @@
 package com.cloud.NetworkCloudDrive;
 
+import com.cloud.NetworkCloudDrive.Models.DTO.FileListItemDTO;
+import com.cloud.NetworkCloudDrive.Models.DTO.FolderListItemDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
@@ -20,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -244,5 +249,58 @@ class NetworkCloudDriveIntegrationTests {
 
         FileMetadata retrieved = sqLiteDAO.findFileMetadataById(saved.getId());
         assertEquals("text/html", retrieved.getMimiType());
+    }
+
+    @Test
+    @Transactional
+    void getAllFilesBelongingToUserAsDTOPageable_ReturnsOnlyLastUpdatedFilesOrderedByLastUpdatedDescending() {
+        List<FileMetadata> existing = sqLiteDAO.getAllFilesBelongingToUser(777L);
+        existing.forEach(sqLiteDAO::deleteFile);
+
+        FileMetadata f1 = new FileMetadata("page_file_1.txt", 0L, 777L, "text/plain", 10L);
+        f1.setLastUpdated(Instant.parse("2026-06-01T00:00:00Z"));
+        sqLiteDAO.saveFile(f1);
+        FileMetadata f2 = new FileMetadata("page_file_2.txt", 0L, 777L, "text/plain", 20L);
+        f2.setLastUpdated(Instant.parse("2026-07-01T00:00:00Z"));
+        sqLiteDAO.saveFile(f2);
+        FileMetadata f3 = new FileMetadata("page_file_3.txt", 0L, 777L, "text/plain", 30L);
+        sqLiteDAO.saveFile(f3);
+
+        List<FileListItemDTO> files = sqLiteDAO.getAllFilesBelongingToUserAsDTOPageable(777L, PageRequest.of(0, 10));
+
+        assertEquals(2, files.size());
+        assertEquals(Arrays.asList(
+                Instant.parse("2026-07-01T00:00:00Z"),
+                Instant.parse("2026-06-01T00:00:00Z")
+        ), files.stream().map(FileListItemDTO::getLastAccessedAt).toList());
+    }
+
+    @Test
+    @Transactional
+    void getAllFoldersBelongingToUserAsDTOPageable_ReturnsOnlyLastUpdatedFoldersOrderedByLastUpdatedDescending() {
+        List<FolderMetadata> existing = sqLiteDAO.getAllFoldersBelongingToUser(777L);
+        existing.forEach(sqLiteDAO::deleteFolder);
+
+        FolderMetadata f1 = new FolderMetadata();
+        sqLiteDAO.persistObjects(f1);
+        f1.setUserid(777L);
+        f1.setName("page_folder_1");
+        f1.setPath("0/" + f1.getId());
+        f1.setLastUpdated(Instant.parse("2026-06-01T00:00:00Z"));
+        sqLiteDAO.saveFolder(f1);
+
+        FolderMetadata f2 = new FolderMetadata();
+        sqLiteDAO.persistObjects(f2);
+        f2.setUserid(777L);
+        f2.setName("page_folder_2");
+        f2.setPath("0/" + f2.getId());
+        sqLiteDAO.saveFolder(f2);
+
+        List<FolderListItemDTO> folders = sqLiteDAO.getAllFoldersBelongingToUserAsDTOPageable(777L, PageRequest.of(0, 10));
+
+        assertEquals(1, folders.size());
+        assertEquals(List.of(
+                Instant.parse("2026-06-01T00:00:00Z")
+        ), folders.stream().map(FolderListItemDTO::getLastAccessedAt).toList());
     }
 }

@@ -7,6 +7,7 @@ import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderPathDTO;
 import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
+import com.cloud.NetworkCloudDrive.Models.Response.JSONObjectArrayResponse;
 import com.cloud.NetworkCloudDrive.Repositories.FileSystemRepository;
 import com.cloud.NetworkCloudDrive.Repositories.InformationRepository;
 import com.cloud.NetworkCloudDrive.Security.EncodingUtility;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
 import java.nio.file.Path;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
@@ -187,6 +190,47 @@ class FileSystemControllerTest {
                 .thenThrow(new java.io.FileNotFoundException("Not found"));
 
         ResponseEntity<?> result = controller.removeFile(999L);
+
+        assertEquals(400, result.getStatusCode().value());
+    }
+
+    @Test
+    void listRecents_Success_ReturnsOk() {
+        Map<String, List<?>> expected = Map.of("files", List.of(), "folders", List.of());
+        when(fileSystemRepository.collectAllRecents()).thenReturn(expected);
+
+        ResponseEntity<?> result = controller.listRecents();
+
+        assertEquals(200, result.getStatusCode().value());
+        assertInstanceOf(JSONObjectArrayResponse.class, result.getBody());
+        JSONObjectArrayResponse response = (JSONObjectArrayResponse) result.getBody();
+        Object[] objects = (Object[]) response.getObject();
+        assertEquals(expected, objects[0]);
+    }
+
+    @Test
+    void listRecents_WithPaging_ReturnsOk() {
+        Map<String, List<?>> expected = Map.of("files", List.of(), "folders", List.of());
+        when(fileSystemRepository.collectAllRecentsPageable(any(Pageable.class))).thenReturn(expected);
+
+        ResponseEntity<?> result = controller.listRecents(0, 10);
+
+        assertEquals(200, result.getStatusCode().value());
+        assertInstanceOf(JSONObjectArrayResponse.class, result.getBody());
+        JSONObjectArrayResponse response = (JSONObjectArrayResponse) result.getBody();
+        Object[] objects = (Object[]) response.getObject();
+        assertEquals(expected, objects[0]);
+        assertInstanceOf(Pageable.class, objects[1]);
+        Pageable pageable = (Pageable) objects[1];
+        assertEquals(0, pageable.getPageNumber());
+        assertEquals(10, pageable.getPageSize());
+    }
+
+    @Test
+    void listRecents_RepositoryError_ReturnsBadRequest() {
+        when(fileSystemRepository.collectAllRecents()).thenThrow(new RuntimeException("boom"));
+
+        ResponseEntity<?> result = controller.listRecents();
 
         assertEquals(400, result.getStatusCode().value());
     }

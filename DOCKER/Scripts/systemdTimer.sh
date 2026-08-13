@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 if [[ $# = 0 ]]; then
   echo "Usage: [SCRIPTS-PATH] [DOCKER-CONTAINER-NAME]"
   exit 0;

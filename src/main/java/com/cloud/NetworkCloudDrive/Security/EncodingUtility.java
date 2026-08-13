@@ -1,7 +1,5 @@
 package com.cloud.NetworkCloudDrive.Security;
 
-import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
-import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -9,16 +7,13 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.util.Base64;
 
 @Component
 public class EncodingUtility {
     private final Logger logger = LoggerFactory.getLogger(EncodingUtility.class);
-    private final SQLiteDAO sQLiteDAO;
 
-    public EncodingUtility(SQLiteDAO sQLiteDAO) {
-        this.sQLiteDAO = sQLiteDAO;
+    public EncodingUtility() {
     }
 
     /**
@@ -56,11 +51,6 @@ public class EncodingUtility {
     public long getMetadataIDFromEncodedBase32(String base32String) {
         return Long.parseLong(decodedBase32SplitArray(base32String)[0]);
     }
-
-    public FolderMetadata getFolderMetadataFromEncoding(String encodedFolderName, long userId) throws SQLException {
-        return sQLiteDAO.queryFolderMetadata(getMetadataIDFromEncodedBase32(encodedFolderName), userId);
-    }
-
 
     public boolean isEncodedStringUserDirectory(String encodedString) {
         try {
@@ -102,7 +92,7 @@ public class EncodingUtility {
         try {
             String tryDecoding = decodeBase32StringNoPadding(name);
             long tryIdParse = Long.parseLong(tryDecoding.split(":")[0]);
-            logger.info("trial of id parsing {} from {}", tryIdParse, tryDecoding);
+            logger.debug("trial of id parsing {} from {}", tryIdParse, tryDecoding);
             return !tryDecoding.isEmpty();
         } catch (Exception e) {
             logger.warn("Failed to parse concluding as not BASE32 for string {} Ex. {}", name, e.getMessage());

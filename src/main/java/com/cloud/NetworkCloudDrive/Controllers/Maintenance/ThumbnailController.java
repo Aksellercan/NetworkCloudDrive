@@ -20,7 +20,7 @@ import java.nio.file.FileSystemException;
 import java.sql.SQLException;
 
 @RestController
-@RequestMapping(path = "/api/thumbnails")
+@RequestMapping(path = "thumbnails")
 public class ThumbnailController {
     public final Logger logger = LoggerFactory.getLogger(ThumbnailController.class);
     private final ThumbnailRepository thumbnailRepository;
@@ -29,7 +29,7 @@ public class ThumbnailController {
         this.thumbnailRepository = thumbnailRepository;
     }
 
-    @GetMapping("get")
+    @GetMapping(value = "get", version = "1.0")
     public @ResponseBody ResponseEntity<?> getThumbnailByID(@RequestParam long thumbId) {
         try {
             ThumbnailMetadata thumbnailMetadata = thumbnailRepository.getThumbnailByID(thumbId);
@@ -49,7 +49,7 @@ public class ThumbnailController {
         }
     }
 
-    @GetMapping("getbyfileid")
+    @GetMapping(value = "getbyfileid", version = "1.0")
     public @ResponseBody ResponseEntity<?> getThumbnailByFileID(@RequestParam long fileId) {
         try {
             ThumbnailMetadata thumbnailMetadata = thumbnailRepository.getThumbnailByFileID(fileId);
@@ -69,7 +69,7 @@ public class ThumbnailController {
         }
     }
 
-    @DeleteMapping("delete")
+    @DeleteMapping(value = "delete", version = "1.0")
     public @ResponseBody ResponseEntity<?> deleteThumbnailByID(@RequestParam long thumbId) {
         try {
             thumbnailRepository.deleteThumbnailByThumbnailID(thumbId);
@@ -88,7 +88,7 @@ public class ThumbnailController {
         }
     }
 
-    @DeleteMapping(value = "deleteall", params = "deletion_options")
+    @DeleteMapping(value = "deleteall", params = "deletion_options", version = "1.0")
     public @ResponseBody ResponseEntity<?> deleteAllThumbnails(DeletionOptions deletion_options) {
         try {
             DeletionResults deletionResults = switch (deletion_options) {
@@ -108,7 +108,7 @@ public class ThumbnailController {
         }
     }
 
-    @DeleteMapping("deleteall")
+    @DeleteMapping(value = "deleteall", version = "1.0")
     public @ResponseBody ResponseEntity<?> deleteAllThumbnails() {
         try {
             thumbnailRepository.deleteAllThumbnails();
@@ -124,7 +124,7 @@ public class ThumbnailController {
         }
     }
 
-    @DeleteMapping("deletebyfileid")
+    @DeleteMapping(value = "deletebyfileid", version = "1.0")
     public @ResponseBody ResponseEntity<?> deleteThumbnailByFileID(@RequestParam long fileId) {
         try {
             thumbnailRepository.deleteThumbnailByFileIDAndSetThumbnailStatus(fileId);

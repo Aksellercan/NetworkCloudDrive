@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(path = "/api/maintenance")
+@RequestMapping(path = "maintenance")
 public class MaintenanceController {
     private final MaintenanceRepository maintenanceRepository;
 
@@ -17,33 +17,33 @@ public class MaintenanceController {
         this.maintenanceRepository = maintenanceRepository;
     }
 
-    @PostMapping(value = "scan", params = "scanOptions")
+    @PostMapping(value = "scan", params = "scanOptions", version = "2.0")
     public @ResponseBody ResponseEntity<?> scanDirectory(@RequestParam ScanOptions scanOptions) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(0L, scanOptions), "Scan completed"));
+                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(0L, scanOptions), "Scan queued successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "Error scanning"));
         }
     }
 
-    @PostMapping(value = "scan", params = "folderid")
+    @PostMapping(value = "scan", params = "folderid", version = "2.0")
     public @ResponseBody ResponseEntity<?> scanDirectoryNestedFolders(@RequestParam long folderid) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(folderid, ScanOptions.NORMAL), "Scan completed"));
+                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(folderid, ScanOptions.NORMAL), "Scan queued successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "Error scanning"));
         }
     }
 
-    @PostMapping(value = "scan", params = {"folderid", "scanOptions"})
+    @PostMapping(value = "scan", params = {"folderid", "scanOptions"}, version = "2.0")
     public @ResponseBody ResponseEntity<?> scanDirectoryOptions(@RequestParam long folderid, @RequestParam ScanOptions scanOptions) {
         try {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(folderid, scanOptions), "Scan completed"));
+                    .body(new JSONObjectResponse(maintenanceRepository.queueScan(folderid, scanOptions), "Scan queued successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
                     .body(new JSONErrorResponse(e, "Error scanning"));

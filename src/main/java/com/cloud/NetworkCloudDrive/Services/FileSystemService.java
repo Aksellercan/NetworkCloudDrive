@@ -17,16 +17,14 @@ import com.cloud.NetworkCloudDrive.Utilities.SortAndFilterUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
@@ -88,6 +86,42 @@ public class FileSystemService implements FileSystemRepository {
         return List.of(fileList, folderList);
     }
 
+    private List<FileListItemDTO> getRecentFiles() {
+        List<FileListItemDTO> allFilesUnsorted = sqLiteDAO.getAllFilesBelongingToUserAsDTO(userSession.getId());
+        return allFilesUnsorted.stream()
+                .filter(f1 -> f1.getLastAccessedAt() != null)
+                .sorted((f1, f2) -> f1.getLastAccessedAt().compareTo(f2.getLastAccessedAt()) * -1)
+                .toList();
+    }
+
+    private List<?> getRecentFolders() {
+        List<FolderListItemDTO> allFoldersUnsorted = sqLiteDAO.getAllFoldersBelongingToUserAsDTO(userSession.getId());
+        return allFoldersUnsorted.stream()
+                .filter(f1 -> f1.getLastAccessedAt() != null)
+                .sorted(Comparator.comparing(FolderListItemDTO::getLastAccessedAt).reversed())
+                .toList();
+    }
+
+    @Override
+    public Map<String, List<?>> collectAllRecents() {
+        return Map.of("files", getRecentFiles(), "folders", getRecentFolders());
+    }
+
+    @Override
+    public Map<String, List<?>> collectAllRecentsPageable(Pageable pageable) {
+        return Map.of("files", getRecentFilesPageable(pageable), "folders", getRecentFoldersPageable(pageable));
+    }
+
+    @Override
+    public List<FileListItemDTO> getRecentFilesPageable(Pageable pageable) {
+        return sqLiteDAO.getAllFilesBelongingToUserAsDTOPageable(userSession.getId(), pageable);
+    }
+
+    @Override
+    public List<?> getRecentFoldersPageable(Pageable pageable) {
+        return sqLiteDAO.getAllFoldersBelongingToUserAsDTOPageable(userSession.getId(), pageable);
+    }
+
     @Override
     public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths) throws SQLException {
         List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
@@ -98,7 +132,7 @@ public class FileSystemService implements FileSystemRepository {
     }
 
     @Override
-    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws FileSystemException, SQLException {
+    public Map<String, List<?>> getListOfMetadataFromPath(List<Path> filePaths, SortListEnum sortListEnum) throws SQLException {
         logger.debug("Sorted by: {}", sortListEnum.name());
         List<List<?>> results = checkAndCollectFilesAndFolders(filePaths);
         return sortAndFilterUtility.sortFileList(

@@ -1,6 +1,5 @@
 package com.cloud.NetworkCloudDrive.Security;
 
-import com.cloud.NetworkCloudDrive.Models.Enum.UserRole;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Persistence.SQLiteDAO;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +22,7 @@ class EncodingUtilityTest {
 
     @BeforeEach
     void setUp() {
-        encodingUtility = new EncodingUtility(sqLiteDAO);
+        encodingUtility = new EncodingUtility();
     }
 
     @Test
@@ -154,6 +153,6 @@ class EncodingUtilityTest {
         expected.setName("folder_encoded");
         expected.setUserid(1L);
 
-        encodingUtility.getFolderMetadataFromEncoding(encoded, 1L);
+        sqLiteDAO.getFolderMetadataFromEncoding(encoded, 1L);
     }
 }
