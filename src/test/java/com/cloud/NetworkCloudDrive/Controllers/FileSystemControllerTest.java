@@ -4,7 +4,6 @@ import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFileNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFilePathDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderPathDTO;
-import com.cloud.NetworkCloudDrive.Models.Enum.SortListEnum;
 import com.cloud.NetworkCloudDrive.Models.FileMetadata;
 import com.cloud.NetworkCloudDrive.Models.FolderMetadata;
 import com.cloud.NetworkCloudDrive.Models.Response.JSONObjectArrayResponse;
@@ -52,7 +51,7 @@ class FileSystemControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new FileSystemController(informationRepository, userSession, fileUtility, encodingUtility, pathUtility, fileSystemRepository);
+        controller = new FileSystemController(informationRepository, userSession, encodingUtility, pathUtility, fileSystemRepository);
     }
 
     @Test

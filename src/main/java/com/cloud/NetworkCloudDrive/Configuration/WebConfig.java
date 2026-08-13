@@ -11,7 +11,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void configurePathMatch(PathMatchConfigurer configurer) {
-        configurer.addPathPrefix("/api/v{version}", HandlerTypePredicate.forBasePackage("com.cloud.NetworkCloudDrive"));
+        // api versioning
+        configurer.addPathPrefix("api/v{version}", HandlerTypePredicate.forBasePackage("com.cloud.NetworkCloudDrive"));
     }
 
     @Override
