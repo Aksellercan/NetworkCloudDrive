@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Controllers.Filesystem.Actions.Folder;
+package com.cloud.NetworkCloudDrive.Controllers.Filesystem.Actions;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFolderPathDTO;

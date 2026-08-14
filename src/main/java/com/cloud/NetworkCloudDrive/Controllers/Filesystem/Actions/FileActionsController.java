@@ -1,4 +1,4 @@
-package com.cloud.NetworkCloudDrive.Controllers.Filesystem.Actions.File;
+package com.cloud.NetworkCloudDrive.Controllers.Filesystem.Actions;
 
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFileNameDTO;
 import com.cloud.NetworkCloudDrive.Models.DTO.UpdateFilePathDTO;
