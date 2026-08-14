@@ -48,6 +48,18 @@ public class FileMetadata {
     public FileMetadata() {
     }
 
+    public FileMetadata(FileMetadata fileMetadata) {
+        this.id = fileMetadata.id;
+        this.name = fileMetadata.name;
+        this.folderId = fileMetadata.folderId;
+        this.userid = fileMetadata.userid;
+        this.mimiType = fileMetadata.mimiType;
+        this.size = fileMetadata.size;
+        this.createdAt = fileMetadata.createdAt;
+        this.hasThumbnail = fileMetadata.hasThumbnail;
+        this.lastUpdated = fileMetadata.lastUpdated;
+    }
+
     public Long getUserid() {
         return userid;
     }

@@ -38,6 +38,15 @@ public class FolderMetadata {
     public FolderMetadata() {
     }
 
+    public FolderMetadata(FolderMetadata folderMetadata) {
+        this.id = folderMetadata.id;
+        this.name = folderMetadata.name;
+        this.path = folderMetadata.path;
+        this.userid = folderMetadata.userid;
+        this.createdAt = folderMetadata.createdAt;
+        this.lastUpdated = folderMetadata.lastUpdated;
+    }
+
     public Long getUserid() {
         return userid;
     }

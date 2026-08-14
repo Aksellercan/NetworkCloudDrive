@@ -10,7 +10,6 @@ import com.cloud.NetworkCloudDrive.Utilities.PathUtility;
 import com.cloud.NetworkCloudDrive.Utilities.UserUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,33 +38,26 @@ public class InformationController {
         this.pathUtility = pathUtility;
     }
 
-    @GetMapping(
-            value = "get/filemetadata",
-            produces = MediaType.ALL_VALUE,
-            version = "1.0")
+    @GetMapping(value = "get/filemetadata", version = "1.0")
     public @ResponseBody ResponseEntity<?> getFile(@RequestParam long fileid) {
         try {
-            FileMetadata fileMetadata = informationRepository.getFileMetadata(fileid);
+            FileMetadata fileMetadata = new FileMetadata(informationRepository.getFileMetadata(fileid));
             String decodeName = encodingUtility.decodeBase32StringNoPadding(fileMetadata.getName());
             String[] splitColons = decodeName.split(":");
             fileMetadata.setName(splitColons[1]);
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(fileMetadata);
+            return ResponseEntity.ok().body(fileMetadata);
         } catch (Exception e) {
             logger.error("Failed to get file metadata for fileId: {}. {}", fileid, e.getMessage());
-            return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
-                    body(new JSONErrorResponse(e, "Failed to get file metadata for fileId: %d. %s", fileid, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new JSONErrorResponse(e, "Failed to get file metadata for fileId: %d. %s", fileid, e.getMessage()));
         }
     }
 
-    @GetMapping(
-            value = "get/foldermetadata",
-            produces = MediaType.ALL_VALUE,
-            version = "1.0")
+    @GetMapping(value = "get/foldermetadata", version = "1.0")
     public @ResponseBody ResponseEntity<?> getFolder(@RequestParam long folderid) {
         try {
             FolderMetadata folderMetadata;
             if (folderid > 0) {
-                folderMetadata = informationRepository.getFolderMetadata(folderid);
+                folderMetadata = new FolderMetadata(informationRepository.getFolderMetadata(folderid));
                 folderMetadata.setPath(pathUtility.resolvePathFromIdString(folderMetadata.getPath()));
             } else {
                 File folderRootMetadata = userUtility.returnUserFolder();
@@ -76,11 +68,10 @@ public class InformationController {
             String decodeName = encodingUtility.decodeBase32StringNoPadding(folderMetadata.getName());
             String[] splitColons = decodeName.split(":");
             folderMetadata.setName(splitColons[1]);
-            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(folderMetadata);
+            return ResponseEntity.ok().body(folderMetadata);
         } catch (Exception e) {
             logger.error("Failed to get folder metadata for fileId: {}. {}", folderid, e.getMessage());
-            return ResponseEntity.internalServerError().contentType(MediaType.APPLICATION_JSON).
-                    body(new JSONErrorResponse(e, "Failed to get folder metadata for fileId: %d. %s", folderid, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new JSONErrorResponse(e, "Failed to get folder metadata for fileId: %d. %s", folderid, e.getMessage()));
         }
     }
 }
