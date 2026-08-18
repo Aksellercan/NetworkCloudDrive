@@ -289,7 +289,7 @@ public class FileSystemService implements FileSystemRepository {
         //check duplicate
         if (fileUtility.checkIfFileExistsDecodeNames(pathUtility.returnParentFolderPathFromFolderID(folder.getId()), newName))
             throw new FileAlreadyExistsException(String.format("Folder with name %s already exists", newName));
-        // Encode newName in BASE32
+        // Encode newName in BASE64
         String encodeBase32FolderName = encodingUtility.encodeBase32FolderName(folder.getId(), newName, folder.getUserid());
         //rename file
         Path renamedFolder =
@@ -298,7 +298,7 @@ public class FileSystemService implements FileSystemRepository {
         Path newUpdatedPath = Files.move(checkExists, renamedFolder);
         if (Files.exists(newUpdatedPath)) {
             //set new name and path
-            folder.setName(encodeBase32FolderName);
+            folder.setName(newName);
             //save
             sqLiteDAO.saveFolder(folder);
             logger.info("Renamed folder full path: {}", renamedFolder);
@@ -335,7 +335,7 @@ public class FileSystemService implements FileSystemRepository {
         // mimetype has bug in the library (cant detect types such as YAML)
         String newMimeType = fileUtility.getMimeTypeFromExtensionUsingTikaCore(newUpdatedPath.toFile()); /* <- get new mimetype of file */
         //set new name and path
-        file.setName(encodeBase32FolderName);
+        file.setName(newName);
         file.setMimiType(newMimeType != null ? newMimeType : file.getMimiType());
         //save
         sqLiteDAO.saveFile(file);

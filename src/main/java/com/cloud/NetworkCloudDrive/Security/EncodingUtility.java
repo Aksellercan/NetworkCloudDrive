@@ -48,8 +48,8 @@ public class EncodingUtility {
         return decodeBase32StringNoPadding(base32String).split(":");
     }
 
-    public long getMetadataIDFromEncodedBase32(String base32String) {
-        return Long.parseLong(decodedBase32SplitArray(base32String)[0]);
+    public long getMetadataIDFromEncodedBase64(String base64String) {
+        return Long.parseLong(decodedBase32SplitArray(base64String)[0]);
     }
 
     public boolean isEncodedStringUserDirectory(String encodedString) {

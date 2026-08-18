@@ -9,4 +9,5 @@ public enum ScanOptions {
     CREATE_THUMBNAILS,
     DONT_CREATE_THUMBNAILS,
     ONLY_THUMBNAILS,
+    SPECIAL_CASE
 }

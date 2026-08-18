@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 
@@ -39,7 +38,7 @@ public class InformationService implements InformationRepository {
     @Transactional
     @Override
     public FolderMetadata getFolderMetadataByFolderIdAndName(long folderId, String name, List<Long> skipList)
-            throws FileSystemException, SQLException {
+            throws FileSystemException {
         String idPath = sqLiteDAO.getIdPath(folderId, userSession.getId());
         List<FolderMetadata> findAllByPathList = sqLiteDAO.findAllContainingSectionOfIdPathIgnoreCase(idPath, userSession.getId());
         if (findAllByPathList.isEmpty())
@@ -60,7 +59,7 @@ public class InformationService implements InformationRepository {
     }
 
     @Override
-    public FileMetadata getFileMetadata(long id) throws FileNotFoundException, SQLException, FileSystemException {
+    public FileMetadata getFileMetadata(long id) throws FileNotFoundException, FileSystemException {
         FileMetadata retrievedFile = sqLiteDAO.queryFileMetadata(id, userSession.getId());
         retrievedFile.setLastUpdated(Instant.now());
         File fileCheck = fileUtility.returnFileIfItExists(
@@ -70,7 +69,7 @@ public class InformationService implements InformationRepository {
     }
 
     @Override
-    public FolderMetadata getFolderMetadata(long folderId) throws IOException, SQLException {
+    public FolderMetadata getFolderMetadata(long folderId) throws IOException {
         FolderMetadata folder = sqLiteDAO.queryFolderMetadata(folderId, userSession.getId());
         folder.setLastUpdated(Instant.now());
         File getFolder = fileUtility.returnFileIfItExists(pathUtility.resolvePathFromIdString(folder.getPath()));

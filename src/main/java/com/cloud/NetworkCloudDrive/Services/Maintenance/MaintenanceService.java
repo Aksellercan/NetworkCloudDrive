@@ -97,6 +97,9 @@ public class MaintenanceService implements MaintenanceRepository {
             case DONT_CREATE_THUMBNAILS:
                 scanDirectory(userDTO, startingDirectory, Files::exists, true, false);
                 break;
+            case SPECIAL_CASE:
+                scanDirectoryRebuild(userDTO, startingDirectory);
+                break;
         }
         scanResults.stopTimerAndGetTimeTaken();
         logger.info(scanResults.toString());
@@ -272,7 +275,7 @@ public class MaintenanceService implements MaintenanceRepository {
         return metadata.getId();
     }
 
-    private File handleFolderCheck(File currentFolder, long currentFolderId, UserDTO userDTO) throws SQLException, IOException {
+    private File handleFolderCheck(File currentFolder, long currentFolderId, UserDTO userDTO) throws IOException {
         FolderMetadata createdFolder = new FolderMetadata();
         sqLiteDAO.persistObjects(createdFolder);
         createdFolder.setPath(sqLiteDAO.getIdPath(currentFolderId, userDTO.getUserId()) + "/" + createdFolder.getId());
@@ -300,6 +303,63 @@ public class MaintenanceService implements MaintenanceRepository {
         } catch (IOException | NullPointerException | ExecutionException | InterruptedException e) {
             logger.error("Failed to create thumbnail {}", e.getMessage());
             return false;
+        }
+    }
+
+    public boolean scanDirectoryRebuild(UserDTO userDTO, Path startingPath) {
+        try {
+            List<Path> folders = fileUtility.getFileAndFolderPathsFromFolder(startingPath).stream().toList();
+            for (Path files : folders) {
+                logger.info("Currently on {}: {}", (Files.isRegularFile(files) ? "FILE" : "FOLDER"), files.getFileName());
+                if (fileUtility.isIgnoredFile(files.getFileName().toString())) {
+                    logger.info("Skip ignorable file or folder {}", files.getFileName().toString());
+                    continue;
+                }
+                if (Files.isRegularFile(files)) {
+                    scanResults.incrementDiscoveredFileCount();
+                    rebuildTableEntries(userDTO, files.toFile().getName(), true);
+                    continue;
+                }
+                if (!encodingUtility.isBase32Decodable(files.getFileName().toString())) {
+                    logger.warn("undecodable skipping");
+                    if (Files.isDirectory(files)) {
+                        scanResults.incrementDiscoveredFolderCount();
+                        if (!scanDirectoryRebuild(userDTO, files))
+                            throw new RuntimeException("Failed to enter folder");
+                    }
+                    continue;
+                }
+                long folderId = getFolderId(files.getParent().toFile(), userDTO.getUserId());
+                logger.info("Enter folder handling FolderID {}", folderId);
+                scanResults.incrementDiscoveredFolderCount();
+                rebuildTableEntries(userDTO, files.toFile().getName(), false);
+                if (!scanDirectoryRebuild(userDTO, files))
+                    throw new RuntimeException("Failed to enter created folder");
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("Exception occurred {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void rebuildTableEntries(UserDTO userDTO, String fileName, boolean isFile) {
+        long entityId = encodingUtility.getMetadataIDFromEncodedBase64(fileName);
+        String originalFileName = encodingUtility.decodedBase32SplitArray(fileName)[1];
+        if (isFile) {
+            FileMetadata metadata = sqLiteDAO.queryFileMetadata(entityId, userDTO.getUserId());
+            if (metadata != null) {
+                metadata.setName(originalFileName);
+                logger.info("set file metadata {}", metadata.getName());
+            }
+            sqLiteDAO.saveFile(metadata);
+        } else {
+            FolderMetadata metadata = sqLiteDAO.queryFolderMetadata(entityId, userDTO.getUserId());
+            if (metadata != null) {
+                metadata.setName(originalFileName);
+                logger.info("set folder metadata {}", metadata.getName());
+            }
+            sqLiteDAO.saveFolder(metadata);
         }
     }
 }

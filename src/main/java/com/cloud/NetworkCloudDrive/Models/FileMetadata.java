@@ -2,6 +2,7 @@ package com.cloud.NetworkCloudDrive.Models;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
 
@@ -35,6 +36,7 @@ public class FileMetadata {
     private boolean hasThumbnail = false;
 
     @Column(name = "lastUpdated")
+    @LastModifiedDate
     private Instant lastUpdated;
 
     public FileMetadata(String name, Long folderId, Long userid, String mimiType, Long size) {

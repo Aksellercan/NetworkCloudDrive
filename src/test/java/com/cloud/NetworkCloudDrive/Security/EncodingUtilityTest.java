@@ -77,7 +77,7 @@ class EncodingUtilityTest {
     @Test
     void getMetadataIDFromEncodedBase32_ReturnsCorrectId() {
         String encoded = encodingUtility.encodeBase32FolderName(77L, "photo.jpg", 2L);
-        long id = encodingUtility.getMetadataIDFromEncodedBase32(encoded);
+        long id = encodingUtility.getMetadataIDFromEncodedBase64(encoded);
         assertEquals(77L, id);
     }
 
