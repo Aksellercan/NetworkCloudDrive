@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemException;
 import java.sql.SQLException;
@@ -87,10 +89,11 @@ public class FileController {
             String actualPath = pathUtility.getFolderPath(metadata.getFolderId());
             String decodedFileName = encodingUtility.decodedBase32SplitArray(metadata.getName())[1];
             String safeQuotes = decodedFileName.replace("\"", "\\\"");
+            String serialize = URLEncoder.encode(safeQuotes, StandardCharsets.UTF_8);
             Resource file = fileRepository.getFile(metadata, actualPath).get();
             return ResponseEntity.ok().
                     header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + safeQuotes + "\" ")
+                            "attachment; filename=\"" + serialize + "\" ")
                     .contentType(MediaType.parseMediaType(metadata.getMimiType()))
                     .contentLength(metadata.getSize())
                     .body(file);
